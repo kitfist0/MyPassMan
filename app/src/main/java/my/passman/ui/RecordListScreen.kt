@@ -17,7 +17,11 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
-fun RecordListScreen(viewModel: RecordViewModel) {
+fun RecordListScreen(
+    viewModel: RecordViewModel,
+    onAddRecord: () -> Unit,
+    onEditRecord: (Record) -> Unit
+) {
     val records by viewModel.records.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
 
@@ -35,9 +39,7 @@ fun RecordListScreen(viewModel: RecordViewModel) {
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = {
-                viewModel.addRecord("Record ${records.size + 1}", "secret123", "My comment")
-            }) {
+            FloatingActionButton(onClick = onAddRecord) {
                 Icon(Icons.Default.Add, contentDescription = "Add")
             }
         }
@@ -50,17 +52,18 @@ fun RecordListScreen(viewModel: RecordViewModel) {
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(records, key = { it.id }) { record ->
-                RecordCard(record)
+                RecordCard(record, onClick = { onEditRecord(record) })
             }
         }
     }
 }
 
 @Composable
-fun RecordCard(record: Record) {
+fun RecordCard(record: Record, onClick: () -> Unit) {
     val dateFormat = remember { SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()) }
 
     Card(
+        onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {

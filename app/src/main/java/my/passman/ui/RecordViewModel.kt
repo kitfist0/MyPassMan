@@ -44,4 +44,16 @@ class RecordViewModel(application: Application) : AndroidViewModel(application) 
             dao.insertRecord(record)
         }
     }
+
+    fun updateRecord(record: Record) {
+        viewModelScope.launch {
+            dao.updateRecord(record.copy(modified = System.currentTimeMillis()))
+        }
+    }
+
+    fun deleteRecord(record: Record) {
+        viewModelScope.launch {
+            dao.deleteRecord(record)
+        }
+    }
 }
