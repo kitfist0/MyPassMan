@@ -2,6 +2,8 @@ package my.passman.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
@@ -111,7 +113,10 @@ fun EditRecordScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { onSave(name, secret) }) {
+            FloatingActionButton(
+                modifier = Modifier.imePadding(),
+                onClick = { onSave(name, secret) }
+            ) {
                 Icon(Icons.Default.Check, contentDescription = "Save")
             }
         }
@@ -119,8 +124,11 @@ fun EditRecordScreen(
         Column(
             modifier = Modifier
                 .padding(padding)
+                .consumeWindowInsets(padding)
+                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
                 .padding(16.dp)
-                .fillMaxSize(),
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             OutlinedTextField(
