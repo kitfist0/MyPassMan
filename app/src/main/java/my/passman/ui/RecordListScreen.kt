@@ -88,11 +88,6 @@ fun RecordCard(record: Record, onClick: () -> Unit) {
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "Secret: ${record.secret}",
-                style = MaterialTheme.typography.bodyMedium
-            )
             if (record.comment.isNotBlank()) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
