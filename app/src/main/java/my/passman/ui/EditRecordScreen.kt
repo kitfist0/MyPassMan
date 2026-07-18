@@ -1,6 +1,7 @@
 package my.passman.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -18,10 +19,12 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import my.passman.data.Record
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun EditRecordScreen(
     record: Record?,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
     onSave: (name: String, secret: String) -> Unit,
     onDelete: () -> Unit,
     onCancel: () -> Unit
@@ -113,13 +116,21 @@ fun EditRecordScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                modifier = Modifier.imePadding(),
-                onClick = { onSave(name, secret) }
-            ) {
-                Icon(Icons.Default.Check, contentDescription = "Save")
+            with(sharedTransitionScope) {
+                ExtendedFloatingActionButton(
+                    modifier = Modifier
+                        .imePadding()
+                        .sharedElement(
+                            rememberSharedContentState(key = "fab"),
+                            animatedVisibilityScope = animatedVisibilityScope
+                        ),
+                    onClick = { onSave(name, secret) },
+                    icon = { Icon(Icons.Default.Check, contentDescription = null) },
+                    text = { Text("Save") }
+                )
             }
-        }
+        },
+        floatingActionButtonPosition = FabPosition.Center
     ) { padding ->
         Column(
             modifier = Modifier
@@ -131,28 +142,42 @@ fun EditRecordScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text("Name") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
+            with(sharedTransitionScope) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Name") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .sharedElement(
+                            rememberSharedContentState(key = if (record != null) "name-${record.id}" else "new-name"),
+                            animatedVisibilityScope = animatedVisibilityScope
+                        ),
+                    singleLine = true
+                )
+            }
 
-            OutlinedTextField(
-                value = secret,
-                onValueChange = { secret = it },
-                label = { Text("Secret") },
-                modifier = Modifier.fillMaxWidth(),
-                visualTransformation = if (secretVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                trailingIcon = {
-                    val image = if (secretVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
-                    IconButton(onClick = { secretVisible = !secretVisible }) {
-                        Icon(image, contentDescription = if (secretVisible) "Hide secret" else "Show secret")
-                    }
-                },
-                singleLine = true
-            )
+            with(sharedTransitionScope) {
+                OutlinedTextField(
+                    value = secret,
+                    onValueChange = { secret = it },
+                    label = { Text("Secret") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .sharedElement(
+                            rememberSharedContentState(key = if (record != null) "secret-${record.id}" else "new-secret"),
+                            animatedVisibilityScope = animatedVisibilityScope
+                        ),
+                    visualTransformation = if (secretVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        val image = if (secretVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
+                        IconButton(onClick = { secretVisible = !secretVisible }) {
+                            Icon(image, contentDescription = if (secretVisible) "Hide secret" else "Show secret")
+                        }
+                    },
+                    singleLine = true
+                )
+            }
         }
     }
 }

@@ -1,5 +1,6 @@
 package my.passman.ui
 
+import androidx.compose.animation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -16,9 +17,12 @@ import my.passman.data.Record
 import java.text.SimpleDateFormat
 import java.util.*
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun RecordListScreen(
     viewModel: RecordViewModel,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
     onAddRecord: () -> Unit,
     onEditRecord: (Record) -> Unit
 ) {
@@ -45,11 +49,18 @@ fun RecordListScreen(
             }
         },
         floatingActionButton = {
-            FloatingActionButton(
-                modifier = Modifier.imePadding(),
-                onClick = onAddRecord
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Add")
+            with(sharedTransitionScope) {
+                FloatingActionButton(
+                    modifier = Modifier
+                        .imePadding()
+                        .sharedElement(
+                            rememberSharedContentState(key = "fab"),
+                            animatedVisibilityScope = animatedVisibilityScope
+                        ),
+                    onClick = onAddRecord
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Add")
+                }
             }
         }
     ) { padding ->
@@ -63,14 +74,25 @@ fun RecordListScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(records, key = { it.id }) { record ->
-                RecordCard(record, onClick = { onEditRecord(record) })
+                RecordCard(
+                    record = record,
+                    sharedTransitionScope = sharedTransitionScope,
+                    animatedVisibilityScope = animatedVisibilityScope,
+                    onClick = { onEditRecord(record) }
+                )
             }
         }
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-fun RecordCard(record: Record, onClick: () -> Unit) {
+fun RecordCard(
+    record: Record,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
+    onClick: () -> Unit
+) {
     val dateFormat = remember { SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()) }
 
     Card(
@@ -83,11 +105,26 @@ fun RecordCard(record: Record, onClick: () -> Unit) {
                 .padding(16.dp)
                 .fillMaxWidth()
         ) {
-            Text(
-                text = record.name,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
+            with(sharedTransitionScope) {
+                Text(
+                    text = record.name,
+                    modifier = Modifier.sharedElement(
+                        rememberSharedContentState(key = "name-${record.id}"),
+                        animatedVisibilityScope = animatedVisibilityScope
+                    ),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "*".repeat(record.secret.length),
+                    modifier = Modifier.sharedElement(
+                        rememberSharedContentState(key = "secret-${record.id}"),
+                        animatedVisibilityScope = animatedVisibilityScope
+                    ),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
             if (record.comment.isNotBlank()) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
