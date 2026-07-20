@@ -5,6 +5,7 @@ import androidx.compose.animation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
@@ -14,6 +15,7 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
@@ -25,20 +27,22 @@ fun EditRecordScreen(
     record: Record?,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
-    onSave: (name: String, secret: String) -> Unit,
+    onSave: (name: String, secret: String, comment: String) -> Unit,
     onDelete: () -> Unit,
     onCancel: () -> Unit
 ) {
     var name by remember { mutableStateOf(record?.name ?: "") }
     var secret by remember { mutableStateOf(record?.secret ?: "") }
+    var comment by remember { mutableStateOf(record?.comment ?: "") }
     var secretVisible by remember { mutableStateOf(false) }
     var showExitDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    val hasChanges = remember(name, secret) {
+    val hasChanges = remember(name, secret, comment) {
         val originalName = record?.name ?: ""
         val originalSecret = record?.secret ?: ""
-        name != originalName || secret != originalSecret
+        val originalComment = record?.comment ?: ""
+        name != originalName || secret != originalSecret || comment != originalComment
     }
 
     BackHandler {
@@ -56,7 +60,7 @@ fun EditRecordScreen(
             text = { Text("You have unsaved changes. Do you want to save them before leaving?") },
             confirmButton = {
                 TextButton(onClick = {
-                    onSave(name, secret)
+                    onSave(name, secret, comment)
                 }) {
                     Text("Yes")
                 }
@@ -124,7 +128,7 @@ fun EditRecordScreen(
                             rememberSharedContentState(key = "fab"),
                             animatedVisibilityScope = animatedVisibilityScope
                         ),
-                    onClick = { onSave(name, secret) },
+                    onClick = { onSave(name, secret, comment) },
                     icon = { Icon(Icons.Default.Check, contentDescription = null) },
                     text = { Text("Save") }
                 )
@@ -176,6 +180,22 @@ fun EditRecordScreen(
                         }
                     },
                     singleLine = true
+                )
+            }
+
+            with(sharedTransitionScope) {
+                OutlinedTextField(
+                    value = comment,
+                    onValueChange = { comment = it.replace("\n", "") },
+                    label = { Text("Comment") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .sharedElement(
+                            rememberSharedContentState(key = if (record != null) "comment-${record.id}" else "new-comment"),
+                            animatedVisibilityScope = animatedVisibilityScope
+                        ),
+                    minLines = 3,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
                 )
             }
         }

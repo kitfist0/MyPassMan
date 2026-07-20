@@ -75,11 +75,11 @@ class MainActivity : ComponentActivity() {
                                         record = targetScreen.record,
                                         sharedTransitionScope = sharedTransitionScope,
                                         animatedVisibilityScope = animatedVisibilityScope,
-                                        onSave = { name, secret ->
+                                        onSave = { name, secret, comment ->
                                             if (targetScreen.record == null) {
-                                                viewModel.addRecord(name, secret, "")
+                                                viewModel.addRecord(name, secret, comment)
                                             } else {
-                                                viewModel.updateRecord(targetScreen.record.copy(name = name, secret = secret))
+                                                viewModel.updateRecord(targetScreen.record.copy(name = name, secret = secret, comment = comment))
                                             }
                                             currentScreen = Screen.List
                                         },

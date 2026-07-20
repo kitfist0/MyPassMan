@@ -127,11 +127,17 @@ fun RecordCard(
             }
             if (record.comment.isNotBlank()) {
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "Comment: ${record.comment}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                with(sharedTransitionScope) {
+                    Text(
+                        text = "Comment: ${record.comment}",
+                        modifier = Modifier.sharedElement(
+                            rememberSharedContentState(key = "comment-${record.id}"),
+                            animatedVisibilityScope = animatedVisibilityScope
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
             Spacer(modifier = Modifier.height(8.dp))
             Row(
