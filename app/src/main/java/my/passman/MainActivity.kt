@@ -17,18 +17,20 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import my.passman.data.Record
 import my.passman.ui.EditRecordScreen
 import my.passman.ui.RecordListScreen
 import my.passman.ui.RecordViewModel
 import my.passman.ui.theme.MyPassManTheme
+import dagger.hilt.android.AndroidEntryPoint
 
 sealed class Screen {
     object List : Screen()
     data class Edit(val record: Record? = null) : Screen()
 }
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalSharedTransitionApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,7 +42,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    val viewModel: RecordViewModel = viewModel()
+                    val viewModel: RecordViewModel = hiltViewModel()
                     var currentScreen by remember { mutableStateOf<Screen>(Screen.List) }
 
                     SharedTransitionLayout {

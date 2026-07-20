@@ -1,17 +1,19 @@
 package my.passman.ui
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import my.passman.data.AppDatabase
 import my.passman.data.Record
+import my.passman.data.RecordDao
+import javax.inject.Inject
 
-class RecordViewModel(application: Application) : AndroidViewModel(application) {
-
-    private val dao = AppDatabase.getDatabase(application).recordDao()
+@HiltViewModel
+class RecordViewModel @Inject constructor(
+    private val dao: RecordDao,
+) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery = _searchQuery.asStateFlow()
