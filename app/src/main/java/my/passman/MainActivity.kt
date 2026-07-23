@@ -2,6 +2,7 @@ package my.passman
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedContent
@@ -17,7 +18,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import my.passman.data.Record
 import my.passman.ui.EditRecordScreen
 import my.passman.ui.RecordListScreen
@@ -45,6 +46,10 @@ class MainActivity : ComponentActivity() {
                     val viewModel: RecordViewModel = hiltViewModel()
                     var currentScreen by remember { mutableStateOf<Screen>(Screen.List) }
 
+                    BackHandler(enabled = currentScreen is Screen.Edit) {
+                        currentScreen = Screen.List
+                    }
+
                     SharedTransitionLayout {
                         AnimatedContent(
                             targetState = currentScreen,
@@ -61,7 +66,7 @@ class MainActivity : ComponentActivity() {
                         ) { targetScreen ->
                             val animatedVisibilityScope = this
                             val sharedTransitionScope = this@SharedTransitionLayout
-                            
+
                             when (targetScreen) {
                                 is Screen.List -> {
                                     RecordListScreen(
@@ -69,9 +74,12 @@ class MainActivity : ComponentActivity() {
                                         sharedTransitionScope = sharedTransitionScope,
                                         animatedVisibilityScope = animatedVisibilityScope,
                                         onAddRecord = { currentScreen = Screen.Edit() },
-                                        onEditRecord = { record -> currentScreen = Screen.Edit(record) }
+                                        onEditRecord = { record ->
+                                            currentScreen = Screen.Edit(record)
+                                        }
                                     )
                                 }
+
                                 is Screen.Edit -> {
                                     EditRecordScreen(
                                         record = targetScreen.record,
@@ -81,7 +89,13 @@ class MainActivity : ComponentActivity() {
                                             if (targetScreen.record == null) {
                                                 viewModel.addRecord(name, secret, comment)
                                             } else {
-                                                viewModel.updateRecord(targetScreen.record.copy(name = name, secret = secret, comment = comment))
+                                                viewModel.updateRecord(
+                                                    targetScreen.record.copy(
+                                                        name = name,
+                                                        secret = secret,
+                                                        comment = comment
+                                                    )
+                                                )
                                             }
                                             currentScreen = Screen.List
                                         },
