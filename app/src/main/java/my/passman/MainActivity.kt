@@ -23,12 +23,14 @@ import my.passman.data.Record
 import my.passman.ui.EditRecordScreen
 import my.passman.ui.RecordListScreen
 import my.passman.ui.RecordViewModel
+import my.passman.ui.SettingsScreen
 import my.passman.ui.theme.MyPassManTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 sealed class Screen {
     object List : Screen()
     data class Edit(val record: Record? = null) : Screen()
+    object Settings : Screen()
 }
 
 @AndroidEntryPoint
@@ -76,7 +78,8 @@ class MainActivity : ComponentActivity() {
                                         onAddRecord = { currentScreen = Screen.Edit() },
                                         onEditRecord = { record ->
                                             currentScreen = Screen.Edit(record)
-                                        }
+                                        },
+                                        onNavigateToSettings = { currentScreen = Screen.Settings }
                                     )
                                 }
 
@@ -104,6 +107,12 @@ class MainActivity : ComponentActivity() {
                                             currentScreen = Screen.List
                                         },
                                         onCancel = { currentScreen = Screen.List }
+                                    )
+                                }
+
+                                is Screen.Settings -> {
+                                    SettingsScreen(
+                                        onBack = { currentScreen = Screen.List }
                                     )
                                 }
                             }
