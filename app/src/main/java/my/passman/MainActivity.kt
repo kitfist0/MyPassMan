@@ -111,7 +111,10 @@ class MainActivity : ComponentActivity() {
                                 }
 
                                 is Screen.Settings -> {
+                                    val sortOrder by viewModel.sortOrder.collectAsState()
                                     SettingsScreen(
+                                        currentSortOrder = sortOrder,
+                                        onSortOrderChange = { viewModel.setSortOrder(it) },
                                         onBack = { currentScreen = Screen.List }
                                     )
                                 }
