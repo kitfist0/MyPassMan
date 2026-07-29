@@ -24,6 +24,9 @@ class RecordViewModel @Inject constructor(
     val sortOrder = settingsRepository.sortOrder
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SortOrder.BY_NAME)
 
+    val appTheme = settingsRepository.appTheme
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), my.passman.data.AppTheme.SYSTEM)
+
     @OptIn(ExperimentalCoroutinesApi::class)
     val records: StateFlow<List<Record>> = combine(
         _searchQuery,
@@ -51,6 +54,12 @@ class RecordViewModel @Inject constructor(
     fun setSortOrder(sortOrder: SortOrder) {
         viewModelScope.launch {
             settingsRepository.setSortOrder(sortOrder)
+        }
+    }
+
+    fun setAppTheme(theme: my.passman.data.AppTheme) {
+        viewModelScope.launch {
+            settingsRepository.setAppTheme(theme)
         }
     }
 

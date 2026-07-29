@@ -25,13 +25,26 @@ class SettingsRepository @Inject constructor(
             SortOrder.valueOf(sortOrderName)
         }
 
+    val appTheme: Flow<AppTheme> = context.dataStore.data
+        .map { preferences ->
+            val themeName = preferences[APP_THEME] ?: AppTheme.SYSTEM.name
+            AppTheme.valueOf(themeName)
+        }
+
     suspend fun setSortOrder(sortOrder: SortOrder) {
         context.dataStore.edit { preferences ->
             preferences[SORT_ORDER] = sortOrder.name
         }
     }
 
+    suspend fun setAppTheme(theme: AppTheme) {
+        context.dataStore.edit { preferences ->
+            preferences[APP_THEME] = theme.name
+        }
+    }
+
     private companion object {
         val SORT_ORDER = stringPreferencesKey("sort_order")
+        val APP_THEME = stringPreferencesKey("app_theme")
     }
 }

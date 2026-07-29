@@ -40,12 +40,14 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            MyPassManTheme {
+            val viewModel: RecordViewModel = hiltViewModel()
+            val appTheme by viewModel.appTheme.collectAsState()
+
+            MyPassManTheme(appTheme = appTheme) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    val viewModel: RecordViewModel = hiltViewModel()
                     var currentScreen by remember { mutableStateOf<Screen>(Screen.List) }
 
                     BackHandler(enabled = currentScreen is Screen.Edit) {
@@ -115,6 +117,8 @@ class MainActivity : ComponentActivity() {
                                     SettingsScreen(
                                         currentSortOrder = sortOrder,
                                         onSortOrderChange = { viewModel.setSortOrder(it) },
+                                        currentTheme = appTheme,
+                                        onThemeChange = { viewModel.setAppTheme(it) },
                                         onBack = { currentScreen = Screen.List }
                                     )
                                 }
