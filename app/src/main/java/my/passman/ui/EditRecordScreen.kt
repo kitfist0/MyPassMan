@@ -31,17 +31,17 @@ fun EditRecordScreen(
     onDelete: () -> Unit,
     onCancel: () -> Unit
 ) {
-    var name by remember { mutableStateOf(record?.name ?: "") }
-    var secret by remember { mutableStateOf(record?.secret ?: "") }
-    var comment by remember { mutableStateOf(record?.comment ?: "") }
+    var name by remember { mutableStateOf(record?.name.orEmpty()) }
+    var secret by remember { mutableStateOf(record?.secret.orEmpty()) }
+    var comment by remember { mutableStateOf(record?.comment.orEmpty()) }
     var secretVisible by remember { mutableStateOf(false) }
     var showExitDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     val hasChanges = remember(name, secret, comment) {
-        val originalName = record?.name ?: ""
-        val originalSecret = record?.secret ?: ""
-        val originalComment = record?.comment ?: ""
+        val originalName = record?.name.orEmpty()
+        val originalSecret = record?.secret.orEmpty()
+        val originalComment = record?.comment.orEmpty()
         name != originalName || secret != originalSecret || comment != originalComment
     }
 
