@@ -9,98 +9,95 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import my.passman.data.AppTheme
 import my.passman.data.SortOrder
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    currentSortOrder: SortOrder,
-    onSortOrderChange: (SortOrder) -> Unit,
-    currentTheme: AppTheme,
-    onThemeChange: (AppTheme) -> Unit,
+    viewModel: SettingsViewModel,
     onBack: () -> Unit
 ) {
-    var showSortDialog by remember { mutableStateOf(false) }
-    var showThemeDialog by remember { mutableStateOf(false) }
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
 
-    val sortOrderLabel = when (currentSortOrder) {
+    val sortOrderLabel = when (state.sortOrder) {
         SortOrder.BY_NAME -> "Alphabetical (A-Z)"
         SortOrder.BY_CREATED -> "Creation Time (Newest First)"
     }
 
-    val themeLabel = when (currentTheme) {
+    val themeLabel = when (state.theme) {
         AppTheme.LIGHT -> "Light"
         AppTheme.DARK -> "Dark"
         AppTheme.SYSTEM -> "System Default"
     }
 
-    if (showThemeDialog) {
+    if (state.showThemeDialog) {
         AlertDialog(
-            onDismissRequest = { showThemeDialog = false },
+            onDismissRequest = { viewModel.dismissThemeDialog() },
             title = { Text("Select Theme") },
             text = {
                 Column {
                     ThemeOptionRow(
                         label = "Light",
-                        selected = currentTheme == AppTheme.LIGHT,
+                        selected = state.theme == AppTheme.LIGHT,
                         onClick = {
-                            onThemeChange(AppTheme.LIGHT)
-                            showThemeDialog = false
+                            viewModel.onThemeChange(AppTheme.LIGHT)
+                            viewModel.dismissThemeDialog()
                         }
                     )
                     ThemeOptionRow(
                         label = "Dark",
-                        selected = currentTheme == AppTheme.DARK,
+                        selected = state.theme == AppTheme.DARK,
                         onClick = {
-                            onThemeChange(AppTheme.DARK)
-                            showThemeDialog = false
+                            viewModel.onThemeChange(AppTheme.DARK)
+                            viewModel.dismissThemeDialog()
                         }
                     )
                     ThemeOptionRow(
                         label = "System Default",
-                        selected = currentTheme == AppTheme.SYSTEM,
+                        selected = state.theme == AppTheme.SYSTEM,
                         onClick = {
-                            onThemeChange(AppTheme.SYSTEM)
-                            showThemeDialog = false
+                            viewModel.onThemeChange(AppTheme.SYSTEM)
+                            viewModel.dismissThemeDialog()
                         }
                     )
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showThemeDialog = false }) {
+                TextButton(onClick = { viewModel.dismissThemeDialog() }) {
                     Text("Cancel")
                 }
             }
         )
     }
 
-    if (showSortDialog) {
+    if (state.showSortDialog) {
         AlertDialog(
-            onDismissRequest = { showSortDialog = false },
+            onDismissRequest = { viewModel.dismissSortDialog() },
             title = { Text("Select Sort Order") },
             text = {
                 Column {
                     SortOptionRow(
                         label = "Alphabetical (A-Z)",
-                        selected = currentSortOrder == SortOrder.BY_NAME,
+                        selected = state.sortOrder == SortOrder.BY_NAME,
                         onClick = {
-                            onSortOrderChange(SortOrder.BY_NAME)
-                            showSortDialog = false
+                            viewModel.onSortOrderChange(SortOrder.BY_NAME)
+                            viewModel.dismissSortDialog()
                         }
                     )
                     SortOptionRow(
                         label = "Creation Time (Newest First)",
-                        selected = currentSortOrder == SortOrder.BY_CREATED,
+                        selected = state.sortOrder == SortOrder.BY_CREATED,
                         onClick = {
-                            onSortOrderChange(SortOrder.BY_CREATED)
-                            showSortDialog = false
+                            viewModel.onSortOrderChange(SortOrder.BY_CREATED)
+                            viewModel.dismissSortDialog()
                         }
                     )
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showSortDialog = false }) {
+                TextButton(onClick = { viewModel.dismissSortDialog() }) {
                     Text("Cancel")
                 }
             }
@@ -136,12 +133,12 @@ fun SettingsScreen(
                     ListItem(
                         headlineContent = { Text("Sorting") },
                         supportingContent = { Text(sortOrderLabel) },
-                        modifier = Modifier.clickable { showSortDialog = true }
+                        modifier = Modifier.clickable { viewModel.showSortDialog() }
                     )
                     ListItem(
                         headlineContent = { Text("App Theme") },
                         supportingContent = { Text(themeLabel) },
-                        modifier = Modifier.clickable { showThemeDialog = true }
+                        modifier = Modifier.clickable { viewModel.showThemeDialog() }
                     )
                 }
             }

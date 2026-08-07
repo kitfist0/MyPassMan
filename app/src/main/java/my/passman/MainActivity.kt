@@ -29,6 +29,7 @@ import my.passman.ui.EditRecordViewModel
 import my.passman.ui.RecordListScreen
 import my.passman.ui.RecordViewModel
 import my.passman.ui.SettingsScreen
+import my.passman.ui.SettingsViewModel
 import my.passman.ui.theme.MyPassManTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -133,12 +134,9 @@ class MainActivity : ComponentActivity() {
                                 }
 
                                 is Screen.Settings -> {
-                                    val sortOrder by viewModel.sortOrder.collectAsState()
+                                    val settingsViewModel: SettingsViewModel = hiltViewModel()
                                     SettingsScreen(
-                                        currentSortOrder = sortOrder,
-                                        onSortOrderChange = { viewModel.setSortOrder(it) },
-                                        currentTheme = appTheme,
-                                        onThemeChange = { viewModel.setAppTheme(it) },
+                                        viewModel = settingsViewModel,
                                         onBack = { currentScreen = Screen.List }
                                     )
                                 }
