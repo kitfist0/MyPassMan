@@ -19,48 +19,38 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import my.passman.data.Record
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun EditRecordScreen(
-    record: Record?,
+    viewModel: EditRecordViewModel,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
     onSave: (name: String, secret: String, comment: String) -> Unit,
     onDelete: () -> Unit,
     onCancel: () -> Unit
 ) {
-    var name by remember { mutableStateOf(record?.name.orEmpty()) }
-    var secret by remember { mutableStateOf(record?.secret.orEmpty()) }
-    var comment by remember { mutableStateOf(record?.comment.orEmpty()) }
-    var secretVisible by remember { mutableStateOf(false) }
-    var showExitDialog by remember { mutableStateOf(false) }
-    var showDeleteDialog by remember { mutableStateOf(false) }
-
-    val hasChanges = remember(name, secret, comment) {
-        val originalName = record?.name.orEmpty()
-        val originalSecret = record?.secret.orEmpty()
-        val originalComment = record?.comment.orEmpty()
-        name != originalName || secret != originalSecret || comment != originalComment
-    }
+    val record = viewModel.record
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val hasChanges by viewModel.hasChanges.collectAsStateWithLifecycle(false)
 
     BackHandler {
         if (hasChanges) {
-            showExitDialog = true
+            viewModel.showExitDialog()
         } else {
             onCancel()
         }
     }
 
-    if (showExitDialog) {
+    if (state.showExitDialog) {
         AlertDialog(
-            onDismissRequest = { showExitDialog = false },
+            onDismissRequest = { viewModel.dismissExitDialog() },
             title = { Text("Save changes?") },
             text = { Text("You have unsaved changes. Do you want to save them before leaving?") },
             confirmButton = {
                 TextButton(onClick = {
-                    onSave(name, secret, comment)
+                    onSave(state.name, state.secret, state.comment)
                 }) {
                     Text("Yes")
                 }
@@ -75,15 +65,15 @@ fun EditRecordScreen(
         )
     }
 
-    if (showDeleteDialog) {
+    if (state.showDeleteDialog) {
         AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
+            onDismissRequest = { viewModel.dismissDeleteDialog() },
             title = { Text("Delete Record?") },
             text = { Text("Are you sure you want to delete this record? This action cannot be undone.") },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        showDeleteDialog = false
+                        viewModel.dismissDeleteDialog()
                         onDelete()
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
@@ -92,7 +82,7 @@ fun EditRecordScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
+                TextButton(onClick = { viewModel.dismissDeleteDialog() }) {
                     Text("Cancel")
                 }
             }
@@ -105,14 +95,14 @@ fun EditRecordScreen(
                 title = { Text(if (record == null) "New Record" else "Edit Record") },
                 navigationIcon = {
                     IconButton(onClick = {
-                        if (hasChanges) showExitDialog = true else onCancel()
+                        if (hasChanges) viewModel.showExitDialog() else onCancel()
                     }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 },
                 actions = {
                     if (record != null) {
-                        IconButton(onClick = { showDeleteDialog = true }) {
+                        IconButton(onClick = { viewModel.showDeleteDialog() }) {
                             Icon(Icons.Default.Delete, contentDescription = "Delete")
                         }
                     }
@@ -128,7 +118,7 @@ fun EditRecordScreen(
                             rememberSharedContentState(key = "fab"),
                             animatedVisibilityScope = animatedVisibilityScope
                         ),
-                    onClick = { onSave(name, secret, comment) },
+                    onClick = { onSave(state.name, state.secret, state.comment) },
                     icon = { Icon(Icons.Default.Check, contentDescription = null) },
                     text = { Text("Save") }
                 )
@@ -148,8 +138,8 @@ fun EditRecordScreen(
         ) {
             with(sharedTransitionScope) {
                 OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
+                    value = state.name,
+                    onValueChange = viewModel::onNameChange,
                     label = { Text("Name") },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -163,8 +153,8 @@ fun EditRecordScreen(
 
             with(sharedTransitionScope) {
                 OutlinedTextField(
-                    value = secret,
-                    onValueChange = { secret = it },
+                    value = state.secret,
+                    onValueChange = viewModel::onSecretChange,
                     label = { Text("Secret") },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -172,11 +162,11 @@ fun EditRecordScreen(
                             rememberSharedContentState(key = if (record != null) "secret-${record.id}" else "new-secret"),
                             animatedVisibilityScope = animatedVisibilityScope
                         ),
-                    visualTransformation = if (secretVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    visualTransformation = if (state.secretVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {
-                        val image = if (secretVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
-                        IconButton(onClick = { secretVisible = !secretVisible }) {
-                            Icon(image, contentDescription = if (secretVisible) "Hide secret" else "Show secret")
+                        val image = if (state.secretVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
+                        IconButton(onClick = viewModel::toggleSecretVisibility) {
+                            Icon(image, contentDescription = if (state.secretVisible) "Hide secret" else "Show secret")
                         }
                     },
                     singleLine = true
@@ -185,8 +175,8 @@ fun EditRecordScreen(
 
             with(sharedTransitionScope) {
                 OutlinedTextField(
-                    value = comment,
-                    onValueChange = { comment = it.replace("\n", "") },
+                    value = state.comment,
+                    onValueChange = viewModel::onCommentChange,
                     label = { Text("Comment") },
                     modifier = Modifier
                         .fillMaxWidth()
