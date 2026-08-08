@@ -62,30 +62,4 @@ class RecordViewModel @Inject constructor(
             settingsRepository.setAppTheme(theme)
         }
     }
-
-    fun addRecord(name: String, secret: String, comment: String) {
-        viewModelScope.launch {
-            val now = System.currentTimeMillis()
-            val record = Record(
-                created = now,
-                modified = now,
-                name = name,
-                secret = secret,
-                comment = comment
-            )
-            dao.insertRecord(record)
-        }
-    }
-
-    fun updateRecord(record: Record) {
-        viewModelScope.launch {
-            dao.updateRecord(record.copy(modified = System.currentTimeMillis()))
-        }
-    }
-
-    fun deleteRecord(record: Record) {
-        viewModelScope.launch {
-            dao.deleteRecord(record)
-        }
-    }
 }

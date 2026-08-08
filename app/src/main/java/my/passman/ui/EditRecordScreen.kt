@@ -7,7 +7,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Visibility
@@ -27,15 +27,16 @@ fun EditRecordScreen(
     viewModel: EditRecordViewModel,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
-    onSave: (name: String, secret: String, comment: String) -> Unit,
+    onSave: () -> Unit,
     onDelete: () -> Unit,
     onCancel: () -> Unit
 ) {
-    val record = viewModel.record
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val hasChanges by viewModel.hasChanges.collectAsStateWithLifecycle(false)
 
-    BackHandler {
+    val recordId = state.recordId
+
+    BackHandler(enabled = !state.isLoading) {
         if (hasChanges) {
             viewModel.showExitDialog()
         } else {
@@ -50,7 +51,8 @@ fun EditRecordScreen(
             text = { Text("You have unsaved changes. Do you want to save them before leaving?") },
             confirmButton = {
                 TextButton(onClick = {
-                    onSave(state.name, state.secret, state.comment)
+                    viewModel.save()
+                    onSave()
                 }) {
                     Text("Yes")
                 }
@@ -74,6 +76,7 @@ fun EditRecordScreen(
                 TextButton(
                     onClick = {
                         viewModel.dismissDeleteDialog()
+                        viewModel.delete()
                         onDelete()
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
@@ -92,16 +95,16 @@ fun EditRecordScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (record == null) "New Record" else "Edit Record") },
+                title = { Text(if (recordId == null) "New Record" else "Edit Record") },
                 navigationIcon = {
                     IconButton(onClick = {
                         if (hasChanges) viewModel.showExitDialog() else onCancel()
                     }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 actions = {
-                    if (record != null) {
+                    if (recordId != null) {
                         IconButton(onClick = { viewModel.showDeleteDialog() }) {
                             Icon(Icons.Default.Delete, contentDescription = "Delete")
                         }
@@ -118,7 +121,10 @@ fun EditRecordScreen(
                             rememberSharedContentState(key = "fab"),
                             animatedVisibilityScope = animatedVisibilityScope
                         ),
-                    onClick = { onSave(state.name, state.secret, state.comment) },
+                    onClick = {
+                        viewModel.save()
+                        onSave()
+                    },
                     icon = { Icon(Icons.Default.Check, contentDescription = null) },
                     text = { Text("Save") }
                 )
@@ -126,67 +132,82 @@ fun EditRecordScreen(
         },
         floatingActionButtonPosition = FabPosition.Center
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .padding(padding)
-                .consumeWindowInsets(padding)
-                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
-                .padding(16.dp)
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            with(sharedTransitionScope) {
-                OutlinedTextField(
-                    value = state.name,
-                    onValueChange = viewModel::onNameChange,
-                    label = { Text("Name") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .sharedElement(
-                            rememberSharedContentState(key = if (record != null) "name-${record.id}" else "new-name"),
-                            animatedVisibilityScope = animatedVisibilityScope
-                        ),
-                    singleLine = true
-                )
+        if (state.isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentAlignment = androidx.compose.ui.Alignment.Center
+            ) {
+                CircularProgressIndicator()
             }
+        } else {
+            Column(
+                modifier = Modifier
+                    .padding(padding)
+                    .consumeWindowInsets(padding)
+                    .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
+                    .padding(16.dp)
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                with(sharedTransitionScope) {
+                    OutlinedTextField(
+                        value = state.name,
+                        onValueChange = viewModel::onNameChange,
+                        label = { Text("Name") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .sharedElement(
+                                rememberSharedContentState(key = if (recordId != null) "name-$recordId" else "new-name"),
+                                animatedVisibilityScope = animatedVisibilityScope
+                            ),
+                        singleLine = true
+                    )
+                }
 
-            with(sharedTransitionScope) {
-                OutlinedTextField(
-                    value = state.secret,
-                    onValueChange = viewModel::onSecretChange,
-                    label = { Text("Secret") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .sharedElement(
-                            rememberSharedContentState(key = if (record != null) "secret-${record.id}" else "new-secret"),
-                            animatedVisibilityScope = animatedVisibilityScope
-                        ),
-                    visualTransformation = if (state.secretVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                    trailingIcon = {
-                        val image = if (state.secretVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
-                        IconButton(onClick = viewModel::toggleSecretVisibility) {
-                            Icon(image, contentDescription = if (state.secretVisible) "Hide secret" else "Show secret")
-                        }
-                    },
-                    singleLine = true
-                )
-            }
+                with(sharedTransitionScope) {
+                    OutlinedTextField(
+                        value = state.secret,
+                        onValueChange = viewModel::onSecretChange,
+                        label = { Text("Secret") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .sharedElement(
+                                rememberSharedContentState(key = if (recordId != null) "secret-$recordId" else "new-secret"),
+                                animatedVisibilityScope = animatedVisibilityScope
+                            ),
+                        visualTransformation = if (state.secretVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon = {
+                            val image =
+                                if (state.secretVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
+                            IconButton(onClick = viewModel::toggleSecretVisibility) {
+                                Icon(
+                                    image,
+                                    contentDescription = if (state.secretVisible) "Hide secret" else "Show secret"
+                                )
+                            }
+                        },
+                        singleLine = true
+                    )
+                }
 
-            with(sharedTransitionScope) {
-                OutlinedTextField(
-                    value = state.comment,
-                    onValueChange = viewModel::onCommentChange,
-                    label = { Text("Comment") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .sharedElement(
-                            rememberSharedContentState(key = if (record != null) "comment-${record.id}" else "new-comment"),
-                            animatedVisibilityScope = animatedVisibilityScope
-                        ),
-                    minLines = 3,
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
-                )
+                with(sharedTransitionScope) {
+                    OutlinedTextField(
+                        value = state.comment,
+                        onValueChange = viewModel::onCommentChange,
+                        label = { Text("Comment") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .sharedElement(
+                                rememberSharedContentState(key = if (recordId != null) "comment-$recordId" else "new-comment"),
+                                animatedVisibilityScope = animatedVisibilityScope
+                            ),
+                        minLines = 3,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
+                    )
+                }
             }
         }
     }

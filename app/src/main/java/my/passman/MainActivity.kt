@@ -19,11 +19,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.ViewModelStore
-import androidx.lifecycle.ViewModelStoreOwner
-import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
-import androidx.lifecycle.viewmodel.compose.viewModel
-import my.passman.data.Record
 import my.passman.ui.EditRecordScreen
 import my.passman.ui.EditRecordViewModel
 import my.passman.ui.RecordListScreen
@@ -35,7 +30,7 @@ import dagger.hilt.android.AndroidEntryPoint
 
 sealed class Screen {
     object List : Screen()
-    data class Edit(val record: Record? = null) : Screen()
+    data class Edit(val recordId: Long? = null) : Screen()
     object Settings : Screen()
 }
 
@@ -84,53 +79,28 @@ class MainActivity : ComponentActivity() {
                                         sharedTransitionScope = sharedTransitionScope,
                                         animatedVisibilityScope = animatedVisibilityScope,
                                         onAddRecord = { currentScreen = Screen.Edit() },
-                                        onEditRecord = { record ->
-                                            currentScreen = Screen.Edit(record)
+                                        onEditRecord = { id ->
+                                            currentScreen = Screen.Edit(id)
                                         },
                                         onNavigateToSettings = { currentScreen = Screen.Settings }
                                     )
                                 }
 
                                 is Screen.Edit -> {
-                                    val viewModelStoreOwner = remember {
-                                        object : ViewModelStoreOwner {
-                                            override val viewModelStore = ViewModelStore()
+                                    val editRecordViewModel: EditRecordViewModel = hiltViewModel(
+                                        key = targetScreen.recordId?.let { "edit-$it" } ?: "create",
+                                        creationCallback = { factory: EditRecordViewModel.Factory ->
+                                            factory.create(targetScreen.recordId)
                                         }
-                                    }
-                                    DisposableEffect(viewModelStoreOwner) {
-                                        onDispose { viewModelStoreOwner.viewModelStore.clear() }
-                                    }
-                                    CompositionLocalProvider(
-                                        LocalViewModelStoreOwner provides viewModelStoreOwner
-                                    ) {
-                                        val editViewModel: EditRecordViewModel = viewModel(
-                                            initializer = { EditRecordViewModel(targetScreen.record) }
-                                        )
-                                        EditRecordScreen(
-                                            viewModel = editViewModel,
-                                            sharedTransitionScope = sharedTransitionScope,
-                                            animatedVisibilityScope = animatedVisibilityScope,
-                                            onSave = { name, secret, comment ->
-                                                if (targetScreen.record == null) {
-                                                    viewModel.addRecord(name, secret, comment)
-                                                } else {
-                                                    viewModel.updateRecord(
-                                                        targetScreen.record.copy(
-                                                            name = name,
-                                                            secret = secret,
-                                                            comment = comment
-                                                        )
-                                                    )
-                                                }
-                                                currentScreen = Screen.List
-                                            },
-                                            onDelete = {
-                                                targetScreen.record?.let { viewModel.deleteRecord(it) }
-                                                currentScreen = Screen.List
-                                            },
-                                            onCancel = { currentScreen = Screen.List }
-                                        )
-                                    }
+                                    )
+                                    EditRecordScreen(
+                                        viewModel = editRecordViewModel,
+                                        sharedTransitionScope = sharedTransitionScope,
+                                        animatedVisibilityScope = animatedVisibilityScope,
+                                        onSave = { currentScreen = Screen.List },
+                                        onDelete = { currentScreen = Screen.List },
+                                        onCancel = { currentScreen = Screen.List }
+                                    )
                                 }
 
                                 is Screen.Settings -> {

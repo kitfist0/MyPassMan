@@ -29,7 +29,7 @@ fun RecordListScreen(
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
     onAddRecord: () -> Unit,
-    onEditRecord: (Record) -> Unit,
+    onEditRecord: (Long) -> Unit,
     onNavigateToSettings: () -> Unit
 ) {
     val records by viewModel.records.collectAsStateWithLifecycle()
@@ -119,7 +119,7 @@ fun RecordListScreen(
                         record = record,
                         sharedTransitionScope = sharedTransitionScope,
                         animatedVisibilityScope = animatedVisibilityScope,
-                        onClick = { onEditRecord(record) }
+                        onClick = { onEditRecord(record.id) }
                     )
                 }
             }
