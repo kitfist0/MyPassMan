@@ -25,7 +25,7 @@ import java.util.*
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun RecordListScreen(
-    viewModel: RecordViewModel,
+    viewModel: RecordListViewModel,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
     onAddRecord: () -> Unit,

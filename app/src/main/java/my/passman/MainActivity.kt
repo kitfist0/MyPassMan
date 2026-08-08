@@ -19,14 +19,16 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import my.passman.data.SettingsRepository
 import my.passman.ui.EditRecordScreen
 import my.passman.ui.EditRecordViewModel
 import my.passman.ui.RecordListScreen
-import my.passman.ui.RecordViewModel
+import my.passman.ui.RecordListViewModel
 import my.passman.ui.SettingsScreen
 import my.passman.ui.SettingsViewModel
 import my.passman.ui.theme.MyPassManTheme
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 sealed class Screen {
     object List : Screen()
@@ -36,13 +38,16 @@ sealed class Screen {
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var settingsRepository: SettingsRepository
+
     @OptIn(ExperimentalSharedTransitionApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            val viewModel: RecordViewModel = hiltViewModel()
-            val appTheme by viewModel.appTheme.collectAsState()
+            val appTheme by settingsRepository.appTheme.collectAsState(initial = my.passman.data.AppTheme.SYSTEM)
 
             MyPassManTheme(appTheme = appTheme) {
                 Surface(
@@ -74,11 +79,12 @@ class MainActivity : ComponentActivity() {
 
                             when (targetScreen) {
                                 is Screen.List -> {
+                                    val recordListViewModel: RecordListViewModel = hiltViewModel()
                                     RecordListScreen(
-                                        viewModel = viewModel,
+                                        viewModel = recordListViewModel,
                                         sharedTransitionScope = sharedTransitionScope,
                                         animatedVisibilityScope = animatedVisibilityScope,
-                                        onAddRecord = { currentScreen = Screen.Edit() },
+                                        onAddRecord = { currentScreen = Screen.Edit(null) },
                                         onEditRecord = { id ->
                                             currentScreen = Screen.Edit(id)
                                         },
