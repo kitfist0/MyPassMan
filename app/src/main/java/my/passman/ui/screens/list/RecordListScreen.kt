@@ -1,4 +1,4 @@
-package my.passman.ui
+package my.passman.ui.screens.list
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.layout.*

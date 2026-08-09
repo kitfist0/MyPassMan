@@ -1,4 +1,4 @@
-package my.passman.ui
+package my.passman.ui.screens.edit
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

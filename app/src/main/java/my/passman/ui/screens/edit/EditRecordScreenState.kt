@@ -1,4 +1,4 @@
-package my.passman.ui
+package my.passman.ui.screens.edit
 
 data class EditRecordScreenState(
     val recordId: Long? = null,

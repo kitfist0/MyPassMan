@@ -1,4 +1,4 @@
-package my.passman.ui
+package my.passman.ui.screens.edit
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -137,7 +138,7 @@ fun EditRecordScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),
-                contentAlignment = androidx.compose.ui.Alignment.Center
+                contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator()
             }

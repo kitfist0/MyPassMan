@@ -1,4 +1,4 @@
-package my.passman.ui
+package my.passman.ui.screens.settings
 
 import my.passman.data.AppTheme
 import my.passman.data.SortOrder
