@@ -32,8 +32,7 @@ fun RecordListScreen(
     onEditRecord: (Long) -> Unit,
     onNavigateToSettings: () -> Unit
 ) {
-    val records by viewModel.records.collectAsStateWithLifecycle()
-    val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
@@ -48,7 +47,7 @@ fun RecordListScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     OutlinedTextField(
-                        value = searchQuery,
+                        value = state.searchQuery,
                         onValueChange = { viewModel.updateSearchQuery(it) },
                         modifier = Modifier
                             .weight(1f)
@@ -82,7 +81,7 @@ fun RecordListScreen(
             }
         }
     ) { padding ->
-        if (records.isEmpty()) {
+        if (state.records.isEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -98,7 +97,7 @@ fun RecordListScreen(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = if (searchQuery.isEmpty()) "No records yet" else "No matches found",
+                        text = if (state.searchQuery.isEmpty()) "No records yet" else "No matches found",
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -114,7 +113,7 @@ fun RecordListScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(records, key = { it.id }) { record ->
+                items(state.records, key = { it.id }) { record ->
                     RecordCard(
                         record = record,
                         sharedTransitionScope = sharedTransitionScope,

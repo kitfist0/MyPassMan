@@ -18,13 +18,12 @@ class RecordListViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
-    val searchQuery = _searchQuery.asStateFlow()
 
     private val sortOrder = settingsRepository.sortOrder
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SortOrder.BY_NAME)
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val records: StateFlow<List<Record>> = combine(
+    private val records: StateFlow<List<Record>> = combine(
         _searchQuery,
         sortOrder
     ) { query, sort ->
@@ -42,6 +41,16 @@ class RecordListViewModel @Inject constructor(
             }
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val uiState: StateFlow<RecordListScreenState> = combine(
+        records,
+        _searchQuery
+    ) { recordsList, query ->
+        RecordListScreenState(
+            records = recordsList,
+            searchQuery = query
+        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), RecordListScreenState())
 
     fun updateSearchQuery(query: String) {
         _searchQuery.value = query
