@@ -9,4 +9,5 @@ data class EditRecordScreenState(
     val secretVisible: Boolean = false,
     val showExitDialog: Boolean = false,
     val showDeleteDialog: Boolean = false,
+    val canSave: Boolean = false,
 )

@@ -33,16 +33,16 @@ fun EditRecordScreen(
     onCancel: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val hasChanges by viewModel.hasChanges.collectAsStateWithLifecycle(false)
 
     val recordId = state.recordId
 
+    LaunchedEffect(Unit) {
+        viewModel.exitEvent.receive()
+        onCancel()
+    }
+
     BackHandler(enabled = !state.isLoading) {
-        if (hasChanges) {
-            viewModel.showExitDialog()
-        } else {
-            onCancel()
-        }
+        viewModel.onBackPressed()
     }
 
     if (state.showExitDialog) {
@@ -51,10 +51,12 @@ fun EditRecordScreen(
             title = { Text("Save changes?") },
             text = { Text("You have unsaved changes. Do you want to save them before leaving?") },
             confirmButton = {
-                TextButton(onClick = {
-                    viewModel.save()
-                    onSave()
-                }) {
+                TextButton(
+                    onClick = {
+                        viewModel.save()
+                        onSave()
+                    }
+                ) {
                     Text("Yes")
                 }
             },
@@ -98,9 +100,7 @@ fun EditRecordScreen(
             TopAppBar(
                 title = { Text(if (recordId == null) "New Record" else "Edit Record") },
                 navigationIcon = {
-                    IconButton(onClick = {
-                        if (hasChanges) viewModel.showExitDialog() else onCancel()
-                    }) {
+                    IconButton(onClick = { viewModel.onBackPressed() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
@@ -114,21 +114,27 @@ fun EditRecordScreen(
             )
         },
         floatingActionButton = {
-            with(sharedTransitionScope) {
-                ExtendedFloatingActionButton(
-                    modifier = Modifier
-                        .imePadding()
-                        .sharedElement(
-                            rememberSharedContentState(key = "fab"),
-                            animatedVisibilityScope = animatedVisibilityScope
-                        ),
-                    onClick = {
-                        viewModel.save()
-                        onSave()
-                    },
-                    icon = { Icon(Icons.Default.Check, contentDescription = null) },
-                    text = { Text("Save") }
-                )
+            AnimatedVisibility(
+                visible = state.canSave,
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                with(sharedTransitionScope) {
+                    ExtendedFloatingActionButton(
+                        modifier = Modifier
+                            .imePadding()
+                            .sharedElement(
+                                rememberSharedContentState(key = "fab"),
+                                animatedVisibilityScope = animatedVisibilityScope
+                            ),
+                        onClick = {
+                            viewModel.save()
+                            onSave()
+                        },
+                        icon = { Icon(Icons.Default.Check, contentDescription = null) },
+                        text = { Text("Save") }
+                    )
+                }
             }
         },
         floatingActionButtonPosition = FabPosition.Center

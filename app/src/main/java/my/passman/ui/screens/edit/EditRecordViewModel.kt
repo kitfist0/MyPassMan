@@ -6,9 +6,10 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import my.passman.data.Record
@@ -16,7 +17,7 @@ import my.passman.data.RecordDao
 
 @HiltViewModel(assistedFactory = EditRecordViewModel.Factory::class)
 class EditRecordViewModel @AssistedInject constructor(
-    private val dao: RecordDao,
+    private val recordDao: RecordDao,
     @Assisted val recordId: Long?
 ) : ViewModel() {
 
@@ -25,29 +26,38 @@ class EditRecordViewModel @AssistedInject constructor(
     )
     val uiState = _uiState.asStateFlow()
 
-    val hasChanges = _uiState.map { state ->
-        !state.isLoading && (
-            state.name != originalName ||
-                state.secret != originalSecret ||
-                state.comment != originalComment
-        )
-    }
+    private val _exitEvent = Channel<Unit>(Channel.BUFFERED)
+    val exitEvent: ReceiveChannel<Unit> = _exitEvent
 
     private var originalName: String = ""
     private var originalSecret: String = ""
     private var originalComment: String = ""
     private var originalCreated: Long = 0
 
+    private fun EditRecordScreenState.hasChanges(): Boolean =
+        !isLoading && (name != originalName || secret != originalSecret || comment != originalComment)
+
+    private fun update(transform: (EditRecordScreenState) -> EditRecordScreenState) {
+        _uiState.update { state ->
+            transform(state).let {
+                it.copy(
+                    canSave = it.name.isNotBlank() && it.secret.isNotBlank() &&
+                            (it.recordId == null || it.hasChanges())
+                )
+            }
+        }
+    }
+
     init {
         if (recordId != null) {
             viewModelScope.launch {
-                val record = dao.getRecordById(recordId)
+                val record = recordDao.getRecordById(recordId)
                 if (record != null) {
                     originalName = record.name
                     originalSecret = record.secret
                     originalComment = record.comment
                     originalCreated = record.created
-                    _uiState.update {
+                    update {
                         it.copy(
                             isLoading = false,
                             name = record.name,
@@ -56,42 +66,51 @@ class EditRecordViewModel @AssistedInject constructor(
                         )
                     }
                 } else {
-                    _uiState.update { it.copy(isLoading = false, recordId = null) }
+                    update { it.copy(isLoading = false, recordId = null) }
                 }
             }
         }
     }
 
     fun onNameChange(value: String) {
-        _uiState.update { it.copy(name = value) }
+        update { it.copy(name = value) }
     }
 
     fun onSecretChange(value: String) {
-        _uiState.update { it.copy(secret = value) }
+        update { it.copy(secret = value) }
     }
 
     fun onCommentChange(value: String) {
-        _uiState.update { it.copy(comment = value.replace("\n", "")) }
+        update { it.copy(comment = value.replace("\n", "")) }
     }
 
     fun toggleSecretVisibility() {
-        _uiState.update { it.copy(secretVisible = !it.secretVisible) }
+        update { it.copy(secretVisible = !it.secretVisible) }
+    }
+
+    fun onBackPressed() {
+        val state = _uiState.value
+        if (state.hasChanges() && state.canSave) {
+            showExitDialog()
+        } else {
+            _exitEvent.trySend(Unit)
+        }
     }
 
     fun showExitDialog() {
-        _uiState.update { it.copy(showExitDialog = true) }
+        update { it.copy(showExitDialog = true) }
     }
 
     fun dismissExitDialog() {
-        _uiState.update { it.copy(showExitDialog = false) }
+        update { it.copy(showExitDialog = false) }
     }
 
     fun showDeleteDialog() {
-        _uiState.update { it.copy(showDeleteDialog = true) }
+        update { it.copy(showDeleteDialog = true) }
     }
 
     fun dismissDeleteDialog() {
-        _uiState.update { it.copy(showDeleteDialog = false) }
+        update { it.copy(showDeleteDialog = false) }
     }
 
     fun save(): Long? {
@@ -105,11 +124,11 @@ class EditRecordViewModel @AssistedInject constructor(
                 secret = state.secret,
                 comment = state.comment
             )
-            viewModelScope.launch { dao.insertRecord(record) }
+            viewModelScope.launch { recordDao.insertRecord(record) }
             null
         } else {
             viewModelScope.launch {
-                dao.updateRecord(
+                recordDao.updateRecord(
                     Record(
                         id = state.recordId,
                         created = originalCreated,
@@ -127,7 +146,7 @@ class EditRecordViewModel @AssistedInject constructor(
     fun delete() {
         val id = _uiState.value.recordId ?: return
         viewModelScope.launch {
-            dao.getRecordById(id)?.let { dao.deleteRecord(it) }
+            recordDao.getRecordById(id)?.let { recordDao.deleteRecord(it) }
         }
     }
 
