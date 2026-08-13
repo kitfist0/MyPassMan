@@ -62,6 +62,7 @@ fun EditRecordScreen(
             },
             dismissButton = {
                 TextButton(onClick = {
+                    viewModel.dismissExitDialog()
                     onCancel()
                 }) {
                     Text("No")

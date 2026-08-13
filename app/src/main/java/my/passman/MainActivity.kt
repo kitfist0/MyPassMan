@@ -2,7 +2,6 @@ package my.passman
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedContent
@@ -30,10 +29,12 @@ import my.passman.ui.theme.MyPassManTheme
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
+import java.util.UUID
+
 sealed class Screen {
-    object List : Screen()
-    data class Edit(val recordId: Long? = null) : Screen()
-    object Settings : Screen()
+    data object List : Screen()
+    data class Edit(val recordId: Long? = null, val sessionKey: String = UUID.randomUUID().toString()) : Screen()
+    data object Settings : Screen()
 }
 
 @AndroidEntryPoint
@@ -55,10 +56,6 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     var currentScreen by remember { mutableStateOf<Screen>(Screen.List) }
-
-                    BackHandler(enabled = currentScreen is Screen.Edit) {
-                        currentScreen = Screen.List
-                    }
 
                     SharedTransitionLayout {
                         AnimatedContent(
@@ -94,7 +91,7 @@ class MainActivity : ComponentActivity() {
 
                                 is Screen.Edit -> {
                                     val editRecordViewModel: EditRecordViewModel = hiltViewModel(
-                                        key = targetScreen.recordId?.let { "edit-$it" } ?: "create",
+                                        key = "edit-${targetScreen.recordId}-${targetScreen.sessionKey}",
                                         creationCallback = { factory: EditRecordViewModel.Factory ->
                                             factory.create(targetScreen.recordId)
                                         }

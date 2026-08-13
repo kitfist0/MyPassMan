@@ -34,17 +34,20 @@ class EditRecordViewModel @AssistedInject constructor(
     private var originalComment: String = ""
     private var originalCreated: Long = 0
 
-    private fun EditRecordScreenState.hasChanges(): Boolean =
-        !isLoading && (name != originalName || secret != originalSecret || comment != originalComment)
+    private fun EditRecordScreenState.hasChanges(): Boolean {
+        if (isLoading || recordId == null && name.isEmpty() && secret.isEmpty() && comment.isEmpty()) {
+            return false
+        }
+        return name != originalName || secret != originalSecret || comment != originalComment
+    }
 
     private fun update(transform: (EditRecordScreenState) -> EditRecordScreenState) {
         _uiState.update { state ->
-            transform(state).let {
-                it.copy(
-                    canSave = it.name.isNotBlank() && it.secret.isNotBlank() &&
-                            (it.recordId == null || it.hasChanges())
-                )
-            }
+            val newState = transform(state)
+            newState.copy(
+                canSave = newState.name.isNotBlank() && newState.secret.isNotBlank() &&
+                        (newState.recordId == null || newState.hasChanges())
+            )
         }
     }
 
@@ -57,12 +60,14 @@ class EditRecordViewModel @AssistedInject constructor(
                     originalSecret = record.secret
                     originalComment = record.comment
                     originalCreated = record.created
-                    update {
+                    // Сначала обновляем данные, isLoading станет false и hasChanges() вернет false
+                    _uiState.update {
                         it.copy(
                             isLoading = false,
                             name = record.name,
                             secret = record.secret,
-                            comment = record.comment
+                            comment = record.comment,
+                            canSave = false
                         )
                     }
                 } else {
