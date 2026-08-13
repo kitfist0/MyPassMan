@@ -1,6 +1,8 @@
 package my.passman.ui.screens.list
 
 import androidx.compose.animation.*
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
@@ -14,11 +16,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import my.passman.data.Record
+import my.passman.util.ClipboardUtils
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -119,7 +123,7 @@ fun RecordListScreen(
     }
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
+@OptIn(ExperimentalSharedTransitionApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun RecordCard(
     record: Record,
@@ -127,15 +131,27 @@ fun RecordCard(
     animatedVisibilityScope: AnimatedVisibilityScope,
     onClick: () -> Unit
 ) {
+    val context = LocalContext.current
     val dateFormat = remember { SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()) }
 
     Card(
-        onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier
+                .combinedClickable(
+                    onClick = onClick,
+                    onLongClick = {
+                        ClipboardUtils.copyToClipboard(
+                            context = context,
+                            text = record.secret,
+                            label = "password",
+                            isSensitive = true,
+                            toastMessage = "Password copied to clipboard"
+                        )
+                    }
+                )
                 .padding(16.dp)
                 .fillMaxWidth()
         ) {
