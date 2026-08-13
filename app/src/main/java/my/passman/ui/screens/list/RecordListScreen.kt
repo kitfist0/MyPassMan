@@ -176,21 +176,19 @@ fun RecordCard(
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            if (record.comment.isNotBlank()) {
-                Spacer(modifier = Modifier.height(4.dp))
-                with(sharedTransitionScope) {
-                    Text(
-                        text = "Comment: ${record.comment}",
-                        modifier = Modifier.sharedElement(
-                            rememberSharedContentState(key = "comment-${record.id}"),
-                            animatedVisibilityScope = animatedVisibilityScope
-                        ),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
+            Spacer(modifier = Modifier.height(4.dp))
+            with(sharedTransitionScope) {
+                Text(
+                    text = record.comment,
+                    modifier = Modifier.sharedElement(
+                        rememberSharedContentState(key = "comment-${record.id}"),
+                        animatedVisibilityScope = animatedVisibilityScope
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
         }
     }
