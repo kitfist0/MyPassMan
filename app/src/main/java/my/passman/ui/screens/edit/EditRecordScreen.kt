@@ -21,6 +21,9 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
@@ -208,6 +211,28 @@ fun EditRecordScreen(
                         minLines = 3,
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
                     )
+                }
+
+                if (recordId != null) {
+                    val dateFormat = remember { SimpleDateFormat("dd.MM.yyyy HH:mm:ss", Locale.getDefault()) }
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    state.created?.let {
+                        Text(
+                            text = "Created: ${dateFormat.format(Date(it))}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    
+                    state.modified?.let {
+                        Text(
+                            text = "Modified: ${dateFormat.format(Date(it))}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
         }

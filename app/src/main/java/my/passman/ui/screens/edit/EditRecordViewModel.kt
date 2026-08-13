@@ -67,7 +67,9 @@ class EditRecordViewModel @AssistedInject constructor(
                             name = record.name,
                             secret = record.secret,
                             comment = record.comment,
-                            canSave = false
+                            canSave = false,
+                            created = record.created,
+                            modified = record.modified
                         )
                     }
                 } else {

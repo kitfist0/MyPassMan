@@ -10,4 +10,6 @@ data class EditRecordScreenState(
     val showExitDialog: Boolean = false,
     val showDeleteDialog: Boolean = false,
     val canSave: Boolean = false,
+    val created: Long? = null,
+    val modified: Long? = null,
 )
