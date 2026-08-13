@@ -23,8 +23,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import my.passman.data.Record
 import my.passman.util.ClipboardUtils
-import java.text.SimpleDateFormat
-import java.util.*
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -132,7 +130,6 @@ fun RecordCard(
     onClick: () -> Unit
 ) {
     val context = LocalContext.current
-    val dateFormat = remember { SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()) }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -194,16 +191,6 @@ fun RecordCard(
                         overflow = TextOverflow.Ellipsis
                     )
                 }
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
-            ) {
-                Text(
-                    text = "Modified: ${dateFormat.format(Date(record.modified))}",
-                    style = MaterialTheme.typography.labelSmall
-                )
             }
         }
     }
