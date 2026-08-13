@@ -119,22 +119,15 @@ fun EditRecordScreen(
                 enter = fadeIn(),
                 exit = fadeOut()
             ) {
-                with(sharedTransitionScope) {
-                    ExtendedFloatingActionButton(
-                        modifier = Modifier
-                            .imePadding()
-                            .sharedElement(
-                                rememberSharedContentState(key = "fab"),
-                                animatedVisibilityScope = animatedVisibilityScope
-                            ),
-                        onClick = {
-                            viewModel.save()
-                            onSave()
-                        },
-                        icon = { Icon(Icons.Default.Check, contentDescription = null) },
-                        text = { Text("Save") }
-                    )
-                }
+                ExtendedFloatingActionButton(
+                    modifier = Modifier.imePadding(),
+                    onClick = {
+                        viewModel.save()
+                        onSave()
+                    },
+                    icon = { Icon(Icons.Default.Check, contentDescription = null) },
+                    text = { Text("Save") }
+                )
             }
         },
         floatingActionButtonPosition = FabPosition.Center

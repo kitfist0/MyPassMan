@@ -66,18 +66,11 @@ fun RecordListScreen(
             }
         },
         floatingActionButton = {
-            with(sharedTransitionScope) {
-                FloatingActionButton(
-                    modifier = Modifier
-                        .imePadding()
-                        .sharedElement(
-                            rememberSharedContentState(key = "fab"),
-                            animatedVisibilityScope = animatedVisibilityScope
-                        ),
-                    onClick = onAddRecord
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = "Add")
-                }
+            FloatingActionButton(
+                modifier = Modifier.imePadding(),
+                onClick = onAddRecord
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Add")
             }
         }
     ) { padding ->
