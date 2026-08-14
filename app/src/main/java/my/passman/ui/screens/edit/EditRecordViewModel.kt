@@ -30,15 +30,16 @@ class EditRecordViewModel @AssistedInject constructor(
     val exitEvent: ReceiveChannel<Unit> = _exitEvent
 
     private var originalName: String = ""
+    private var originalLogin: String = ""
     private var originalSecret: String = ""
     private var originalComment: String = ""
     private var originalCreated: Long = 0
 
     private fun EditRecordScreenState.hasChanges(): Boolean {
-        if (isLoading || recordId == null && name.isEmpty() && secret.isEmpty() && comment.isEmpty()) {
+        if (isLoading || recordId == null && name.isEmpty() && login.isEmpty() && secret.isEmpty() && comment.isEmpty()) {
             return false
         }
-        return name != originalName || secret != originalSecret || comment != originalComment
+        return name != originalName || login != originalLogin || secret != originalSecret || comment != originalComment
     }
 
     private fun update(transform: (EditRecordScreenState) -> EditRecordScreenState) {
@@ -57,6 +58,7 @@ class EditRecordViewModel @AssistedInject constructor(
                 val record = recordDao.getRecordById(recordId)
                 if (record != null) {
                     originalName = record.name
+                    originalLogin = record.login
                     originalSecret = record.secret
                     originalComment = record.comment
                     originalCreated = record.created
@@ -65,6 +67,7 @@ class EditRecordViewModel @AssistedInject constructor(
                         it.copy(
                             isLoading = false,
                             name = record.name,
+                            login = record.login,
                             secret = record.secret,
                             comment = record.comment,
                             canSave = false,
@@ -81,6 +84,10 @@ class EditRecordViewModel @AssistedInject constructor(
 
     fun onNameChange(value: String) {
         update { it.copy(name = value) }
+    }
+
+    fun onLoginChange(value: String) {
+        update { it.copy(login = value) }
     }
 
     fun onSecretChange(value: String) {
@@ -128,6 +135,7 @@ class EditRecordViewModel @AssistedInject constructor(
                 created = now,
                 modified = now,
                 name = state.name,
+                login = state.login,
                 secret = state.secret,
                 comment = state.comment
             )
@@ -141,6 +149,7 @@ class EditRecordViewModel @AssistedInject constructor(
                         created = originalCreated,
                         modified = System.currentTimeMillis(),
                         name = state.name,
+                        login = state.login,
                         secret = state.secret,
                         comment = state.comment
                     )

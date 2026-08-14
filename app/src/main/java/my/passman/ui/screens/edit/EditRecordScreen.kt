@@ -173,6 +173,21 @@ fun EditRecordScreen(
 
                 with(sharedTransitionScope) {
                     OutlinedTextField(
+                        value = state.login,
+                        onValueChange = viewModel::onLoginChange,
+                        label = { Text("Login") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .sharedElement(
+                                rememberSharedContentState(key = if (recordId != null) "login-$recordId" else "new-login"),
+                                animatedVisibilityScope = animatedVisibilityScope
+                            ),
+                        singleLine = true
+                    )
+                }
+
+                with(sharedTransitionScope) {
+                    OutlinedTextField(
                         value = state.secret,
                         onValueChange = viewModel::onSecretChange,
                         label = { Text("Secret") },

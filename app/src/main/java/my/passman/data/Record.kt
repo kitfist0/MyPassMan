@@ -10,6 +10,7 @@ data class Record(
     val created: Long,
     val modified: Long,
     val name: String,
+    val login: String,
     val secret: String,
     val comment: String,
 )

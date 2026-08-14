@@ -4,6 +4,7 @@ data class EditRecordScreenState(
     val recordId: Long? = null,
     val isLoading: Boolean = false,
     val name: String = "",
+    val login: String = "",
     val secret: String = "",
     val comment: String = "",
     val secretVisible: Boolean = false,

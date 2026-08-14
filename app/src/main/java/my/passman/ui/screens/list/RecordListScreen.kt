@@ -164,6 +164,19 @@ fun RecordCard(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+                if (record.login.isNotBlank()) {
+                    Text(
+                        text = record.login,
+                        modifier = Modifier.sharedElement(
+                            rememberSharedContentState(key = "login-${record.id}"),
+                            animatedVisibilityScope = animatedVisibilityScope
+                        ),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.secondary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "*".repeat(record.secret.length),
