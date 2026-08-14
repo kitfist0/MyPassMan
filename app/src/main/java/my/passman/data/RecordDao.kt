@@ -20,6 +20,6 @@ interface RecordDao {
     @Delete
     suspend fun deleteRecord(record: Record)
 
-    @Query("SELECT * FROM records WHERE name LIKE '%' || :searchQuery || '%'")
+    @Query("SELECT * FROM records WHERE name LIKE '%' || :searchQuery || '%' OR login LIKE '%' || :searchQuery || '%'")
     fun searchRecords(searchQuery: String): Flow<List<Record>>
 }
