@@ -9,6 +9,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -16,11 +17,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import my.passman.util.ClipboardUtils
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -36,8 +39,10 @@ fun EditRecordScreen(
     onCancel: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
     val recordId = state.recordId
+    val isNewRecord = recordId == null
 
     LaunchedEffect(Unit) {
         viewModel.exitEvent.receive()
@@ -102,7 +107,7 @@ fun EditRecordScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (recordId == null) "New Record" else "Edit Record") },
+                title = { Text(if (isNewRecord) "New Record" else "Edit Record") },
                 navigationIcon = {
                     IconButton(onClick = { viewModel.onBackPressed() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -182,6 +187,25 @@ fun EditRecordScreen(
                                 rememberSharedContentState(key = if (recordId != null) "login-$recordId" else "new-login"),
                                 animatedVisibilityScope = animatedVisibilityScope
                             ),
+                        trailingIcon = {
+                            if (!isNewRecord && state.login.isNotBlank()) {
+                                IconButton(
+                                    onClick = {
+                                        ClipboardUtils.copyToClipboard(
+                                            context = context,
+                                            text = state.login,
+                                            label = "login",
+                                            toastMessage = "Login copied"
+                                        )
+                                    }
+                                ) {
+                                    Icon(
+                                        Icons.Default.ContentCopy,
+                                        contentDescription = "Copy login"
+                                    )
+                                }
+                            }
+                        },
                         singleLine = true
                     )
                 }
@@ -199,13 +223,31 @@ fun EditRecordScreen(
                             ),
                         visualTransformation = if (state.secretVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         trailingIcon = {
-                            val image =
-                                if (state.secretVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
-                            IconButton(onClick = viewModel::toggleSecretVisibility) {
-                                Icon(
-                                    image,
-                                    contentDescription = if (state.secretVisible) "Hide secret" else "Show secret"
-                                )
+                            Row {
+                                IconButton(onClick = viewModel::toggleSecretVisibility) {
+                                    Icon(
+                                        if (state.secretVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                        contentDescription = if (state.secretVisible) "Hide secret" else "Show secret"
+                                    )
+                                }
+                                if (!isNewRecord && state.secret.isNotBlank()) {
+                                    IconButton(
+                                        onClick = {
+                                            ClipboardUtils.copyToClipboard(
+                                                context = context,
+                                                text = state.secret,
+                                                label = "password",
+                                                isSensitive = true,
+                                                toastMessage = "Password copied"
+                                            )
+                                        }
+                                    ) {
+                                        Icon(
+                                            Icons.Default.ContentCopy,
+                                            contentDescription = "Copy secret"
+                                        )
+                                    }
+                                }
                             }
                         },
                         singleLine = true
@@ -229,10 +271,12 @@ fun EditRecordScreen(
                 }
 
                 if (recordId != null) {
-                    val dateFormat = remember { SimpleDateFormat("dd.MM.yyyy HH:mm:ss", Locale.getDefault()) }
-                    
+                    val dateFormat = remember {
+                        SimpleDateFormat("dd.MM.yyyy HH:mm:ss", Locale.getDefault())
+                    }
+
                     Spacer(modifier = Modifier.height(8.dp))
-                    
+
                     state.created?.let {
                         Text(
                             text = "Created: ${dateFormat.format(Date(it))}",
@@ -240,7 +284,7 @@ fun EditRecordScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    
+
                     state.modified?.let {
                         Text(
                             text = "Modified: ${dateFormat.format(Date(it))}",
