@@ -18,11 +18,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import my.passman.R
 import my.passman.util.ClipboardUtils
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -41,6 +43,11 @@ fun EditRecordScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
+    val loginLabel = stringResource(R.string.label_login).lowercase()
+    val loginCopiedToast = stringResource(R.string.login_copied_toast)
+    val passwordLabel = stringResource(R.string.clipboard_password_label)
+    val passwordCopiedToast = stringResource(R.string.password_copied_toast)
+
     val recordId = state.recordId
     val isNewRecord = recordId == null
 
@@ -56,8 +63,8 @@ fun EditRecordScreen(
     if (state.showExitDialog) {
         AlertDialog(
             onDismissRequest = { viewModel.dismissExitDialog() },
-            title = { Text("Save changes?") },
-            text = { Text("You have unsaved changes. Do you want to save them before leaving?") },
+            title = { Text(stringResource(R.string.save_changes_title)) },
+            text = { Text(stringResource(R.string.save_changes_text)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -65,7 +72,7 @@ fun EditRecordScreen(
                         onSave()
                     }
                 ) {
-                    Text("Yes")
+                    Text(stringResource(R.string.yes))
                 }
             },
             dismissButton = {
@@ -73,7 +80,7 @@ fun EditRecordScreen(
                     viewModel.dismissExitDialog()
                     onCancel()
                 }) {
-                    Text("No")
+                    Text(stringResource(R.string.no))
                 }
             }
         )
@@ -82,8 +89,8 @@ fun EditRecordScreen(
     if (state.showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { viewModel.dismissDeleteDialog() },
-            title = { Text("Delete Record?") },
-            text = { Text("Are you sure you want to delete this record? This action cannot be undone.") },
+            title = { Text(stringResource(R.string.delete_record_title)) },
+            text = { Text(stringResource(R.string.delete_record_text)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -93,12 +100,12 @@ fun EditRecordScreen(
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("Delete")
+                    Text(stringResource(R.string.delete))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { viewModel.dismissDeleteDialog() }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -107,16 +114,16 @@ fun EditRecordScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (isNewRecord) "New Record" else "Edit Record") },
+                title = { Text(if (isNewRecord) stringResource(R.string.new_record) else stringResource(R.string.edit_record)) },
                 navigationIcon = {
                     IconButton(onClick = { viewModel.onBackPressed() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_description))
                     }
                 },
                 actions = {
                     if (recordId != null) {
                         IconButton(onClick = { viewModel.showDeleteDialog() }) {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete")
+                            Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete_description))
                         }
                     }
                 }
@@ -135,7 +142,7 @@ fun EditRecordScreen(
                         onSave()
                     },
                     icon = { Icon(Icons.Default.Check, contentDescription = null) },
-                    text = { Text("Save") }
+                    text = { Text(stringResource(R.string.save)) }
                 )
             }
         },
@@ -165,7 +172,7 @@ fun EditRecordScreen(
                     OutlinedTextField(
                         value = state.name,
                         onValueChange = viewModel::onNameChange,
-                        label = { Text("Name") },
+                        label = { Text(stringResource(R.string.label_name)) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .sharedElement(
@@ -180,7 +187,7 @@ fun EditRecordScreen(
                     OutlinedTextField(
                         value = state.login,
                         onValueChange = viewModel::onLoginChange,
-                        label = { Text("Login") },
+                        label = { Text(stringResource(R.string.label_login)) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .sharedElement(
@@ -194,14 +201,14 @@ fun EditRecordScreen(
                                         ClipboardUtils.copyToClipboard(
                                             context = context,
                                             text = state.login,
-                                            label = "login",
-                                            toastMessage = "Login copied"
+                                            label = loginLabel,
+                                            toastMessage = loginCopiedToast
                                         )
                                     }
                                 ) {
                                     Icon(
                                         Icons.Default.ContentCopy,
-                                        contentDescription = "Copy login"
+                                        contentDescription = stringResource(R.string.copy_login)
                                     )
                                 }
                             }
@@ -214,7 +221,7 @@ fun EditRecordScreen(
                     OutlinedTextField(
                         value = state.secret,
                         onValueChange = viewModel::onSecretChange,
-                        label = { Text("Secret") },
+                        label = { Text(stringResource(R.string.label_secret)) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .sharedElement(
@@ -227,7 +234,7 @@ fun EditRecordScreen(
                                 IconButton(onClick = viewModel::toggleSecretVisibility) {
                                     Icon(
                                         if (state.secretVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                        contentDescription = if (state.secretVisible) "Hide secret" else "Show secret"
+                                        contentDescription = if (state.secretVisible) stringResource(R.string.hide_secret) else stringResource(R.string.show_secret)
                                     )
                                 }
                                 if (!isNewRecord && state.secret.isNotBlank()) {
@@ -236,15 +243,15 @@ fun EditRecordScreen(
                                             ClipboardUtils.copyToClipboard(
                                                 context = context,
                                                 text = state.secret,
-                                                label = "password",
+                                                label = passwordLabel,
                                                 isSensitive = true,
-                                                toastMessage = "Password copied"
+                                                toastMessage = passwordCopiedToast
                                             )
                                         }
                                     ) {
                                         Icon(
                                             Icons.Default.ContentCopy,
-                                            contentDescription = "Copy secret"
+                                            contentDescription = stringResource(R.string.copy_secret)
                                         )
                                     }
                                 }
@@ -258,7 +265,7 @@ fun EditRecordScreen(
                     OutlinedTextField(
                         value = state.comment,
                         onValueChange = viewModel::onCommentChange,
-                        label = { Text("Comment") },
+                        label = { Text(stringResource(R.string.label_comment)) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .sharedElement(
@@ -279,7 +286,7 @@ fun EditRecordScreen(
 
                     state.created?.let {
                         Text(
-                            text = "Created: ${dateFormat.format(Date(it))}",
+                            text = stringResource(R.string.created_format, dateFormat.format(Date(it))),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -287,7 +294,7 @@ fun EditRecordScreen(
 
                     state.modified?.let {
                         Text(
-                            text = "Modified: ${dateFormat.format(Date(it))}",
+                            text = stringResource(R.string.modified_format, dateFormat.format(Date(it))),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

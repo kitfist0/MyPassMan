@@ -16,4 +16,39 @@
     <string name="select_theme">Select Theme</string>
     <string name="select_sort">Select Sort Order</string>
     <string name="cancel">Cancel</string>
+
+    <!-- Record List Screen -->
+    <string name="search_placeholder">Search by name...</string>
+    <string name="settings_description">Settings</string>
+    <string name="add_description">Add</string>
+    <string name="no_records">No records yet</string>
+    <string name="no_matches">No matches found</string>
+    <string name="clipboard_password_label">password</string>
+    <string name="password_copied">Password copied to clipboard</string>
+
+    <!-- Edit Record Screen -->
+    <string name="save_changes_title">Save changes?</string>
+    <string name="save_changes_text">You have unsaved changes. Do you want to save them before leaving?</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="delete_record_title">Delete Record?</string>
+    <string name="delete_record_text">Are you sure you want to delete this record? This action cannot be undone.</string>
+    <string name="delete">Delete</string>
+    <string name="new_record">New Record</string>
+    <string name="edit_record">Edit Record</string>
+    <string name="back_description">Back</string>
+    <string name="delete_description">Delete</string>
+    <string name="save">Save</string>
+    <string name="label_name">Name</string>
+    <string name="label_login">Login</string>
+    <string name="label_secret">Secret</string>
+    <string name="label_comment">Comment</string>
+    <string name="hide_secret">Hide secret</string>
+    <string name="show_secret">Show secret</string>
+    <string name="created_format">Created: %s</string>
+    <string name="modified_format">Modified: %s</string>
+    <string name="copy_login">Copy login</string>
+    <string name="copy_secret">Copy secret</string>
+    <string name="login_copied_toast">Login copied</string>
+    <string name="password_copied_toast">Password copied</string>
 </resources>

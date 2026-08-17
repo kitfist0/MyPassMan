@@ -17,10 +17,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import my.passman.R
 import my.passman.data.Record
 import my.passman.util.ClipboardUtils
 
@@ -54,7 +56,7 @@ fun RecordListScreen(
                         modifier = Modifier
                             .weight(1f)
                             .padding(16.dp),
-                        placeholder = { Text("Search by name...") },
+                        placeholder = { Text(stringResource(R.string.search_placeholder)) },
                         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                         singleLine = true
                     )
@@ -62,7 +64,7 @@ fun RecordListScreen(
                         onClick = onNavigateToSettings,
                         modifier = Modifier.padding(end = 8.dp)
                     ) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings")
+                        Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.settings_description))
                     }
                 }
             }
@@ -72,7 +74,7 @@ fun RecordListScreen(
                 modifier = Modifier.imePadding(),
                 onClick = onAddRecord
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add")
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_description))
             }
         }
     ) { padding ->
@@ -92,7 +94,7 @@ fun RecordListScreen(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = if (state.searchQuery.isEmpty()) "No records yet" else "No matches found",
+                        text = if (state.searchQuery.isEmpty()) stringResource(R.string.no_records) else stringResource(R.string.no_matches),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -130,6 +132,8 @@ fun RecordCard(
     onClick: () -> Unit
 ) {
     val context = LocalContext.current
+    val passwordLabel = stringResource(R.string.clipboard_password_label)
+    val passwordCopiedToast = stringResource(R.string.password_copied)
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -143,9 +147,9 @@ fun RecordCard(
                         ClipboardUtils.copyToClipboard(
                             context = context,
                             text = record.secret,
-                            label = "password",
+                            label = passwordLabel,
                             isSensitive = true,
-                            toastMessage = "Password copied to clipboard"
+                            toastMessage = passwordCopiedToast
                         )
                     }
                 )
