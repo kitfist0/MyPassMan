@@ -129,34 +129,18 @@ class EditRecordViewModel @AssistedInject constructor(
 
     fun save(): Long? {
         val state = _uiState.value
-        return if (state.recordId == null) {
-            val now = System.currentTimeMillis()
-            val record = Record(
-                created = now,
-                modified = now,
-                name = state.name,
-                login = state.login,
-                secret = state.secret,
-                comment = state.comment
-            )
-            viewModelScope.launch { recordDao.insertRecord(record) }
-            null
-        } else {
-            viewModelScope.launch {
-                recordDao.updateRecord(
-                    Record(
-                        id = state.recordId,
-                        created = originalCreated,
-                        modified = System.currentTimeMillis(),
-                        name = state.name,
-                        login = state.login,
-                        secret = state.secret,
-                        comment = state.comment
-                    )
-                )
-            }
-            state.recordId
-        }
+        val now = System.currentTimeMillis()
+        val record = Record(
+            id = state.recordId ?: 0,
+            created = if (state.recordId == null) now else originalCreated,
+            modified = now,
+            name = state.name,
+            login = state.login,
+            secret = state.secret,
+            comment = state.comment
+        )
+        viewModelScope.launch { recordDao.upsertRecord(record) }
+        return state.recordId
     }
 
     fun delete() {

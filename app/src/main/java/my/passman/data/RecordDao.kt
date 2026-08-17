@@ -11,11 +11,8 @@ interface RecordDao {
     @Query("SELECT * FROM records ORDER BY id DESC")
     fun getAllRecords(): Flow<List<Record>>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertRecord(record: Record)
-
-    @Update
-    suspend fun updateRecord(record: Record)
+    @Upsert
+    suspend fun upsertRecord(record: Record)
 
     @Delete
     suspend fun deleteRecord(record: Record)
