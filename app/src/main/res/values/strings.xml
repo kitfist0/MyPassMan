@@ -1,3 +1,19 @@
 <resources>
     <string name="app_name">MyPassMan</string>
+    <string name="about_title">About MyPassMan</string>
+    <string name="about_version">Version: %1$s</string>
+    <string name="about_description">A simple and secure password manager for Android.</string>
+    <string name="close">Close</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_sorting">Sorting</string>
+    <string name="settings_theme">App Theme</string>
+    <string name="settings_about">About App</string>
+    <string name="sort_alphabetical">Alphabetical (A-Z)</string>
+    <string name="sort_creation_time">Creation Time (Newest First)</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_system">System Default</string>
+    <string name="select_theme">Select Theme</string>
+    <string name="select_sort">Select Sort Order</string>
+    <string name="cancel">Cancel</string>
 </resources>

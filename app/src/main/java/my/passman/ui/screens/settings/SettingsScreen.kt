@@ -8,38 +8,42 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import my.passman.data.AppTheme
 import my.passman.data.SortOrder
+import my.passman.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel,
-    onBack: () -> Unit
+    onBack: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
     val sortOrderLabel = when (state.sortOrder) {
-        SortOrder.BY_NAME -> "Alphabetical (A-Z)"
-        SortOrder.BY_CREATED -> "Creation Time (Newest First)"
+        SortOrder.BY_NAME -> stringResource(R.string.sort_alphabetical)
+        SortOrder.BY_CREATED -> stringResource(R.string.sort_creation_time)
     }
 
     val themeLabel = when (state.theme) {
-        AppTheme.LIGHT -> "Light"
-        AppTheme.DARK -> "Dark"
-        AppTheme.SYSTEM -> "System Default"
+        AppTheme.LIGHT -> stringResource(R.string.theme_light)
+        AppTheme.DARK -> stringResource(R.string.theme_dark)
+        AppTheme.SYSTEM -> stringResource(R.string.theme_system)
     }
 
     if (state.showThemeDialog) {
         AlertDialog(
             onDismissRequest = { viewModel.dismissThemeDialog() },
-            title = { Text("Select Theme") },
+            title = { Text(stringResource(R.string.select_theme)) },
             text = {
                 Column {
                     ThemeOptionRow(
-                        label = "Light",
+                        label = stringResource(R.string.theme_light),
                         selected = state.theme == AppTheme.LIGHT,
                         onClick = {
                             viewModel.onThemeChange(AppTheme.LIGHT)
@@ -47,7 +51,7 @@ fun SettingsScreen(
                         }
                     )
                     ThemeOptionRow(
-                        label = "Dark",
+                        label = stringResource(R.string.theme_dark),
                         selected = state.theme == AppTheme.DARK,
                         onClick = {
                             viewModel.onThemeChange(AppTheme.DARK)
@@ -55,7 +59,7 @@ fun SettingsScreen(
                         }
                     )
                     ThemeOptionRow(
-                        label = "System Default",
+                        label = stringResource(R.string.theme_system),
                         selected = state.theme == AppTheme.SYSTEM,
                         onClick = {
                             viewModel.onThemeChange(AppTheme.SYSTEM)
@@ -66,7 +70,7 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { viewModel.dismissThemeDialog() }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -75,11 +79,11 @@ fun SettingsScreen(
     if (state.showSortDialog) {
         AlertDialog(
             onDismissRequest = { viewModel.dismissSortDialog() },
-            title = { Text("Select Sort Order") },
+            title = { Text(stringResource(R.string.select_sort)) },
             text = {
                 Column {
                     SortOptionRow(
-                        label = "Alphabetical (A-Z)",
+                        label = stringResource(R.string.sort_alphabetical),
                         selected = state.sortOrder == SortOrder.BY_NAME,
                         onClick = {
                             viewModel.onSortOrderChange(SortOrder.BY_NAME)
@@ -87,7 +91,7 @@ fun SettingsScreen(
                         }
                     )
                     SortOptionRow(
-                        label = "Creation Time (Newest First)",
+                        label = stringResource(R.string.sort_creation_time),
                         selected = state.sortOrder == SortOrder.BY_CREATED,
                         onClick = {
                             viewModel.onSortOrderChange(SortOrder.BY_CREATED)
@@ -98,7 +102,35 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { viewModel.dismissSortDialog() }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        )
+    }
+
+    if (state.showAboutDialog) {
+        val packageInfo = remember {
+            try {
+                context.packageManager.getPackageInfo(context.packageName, 0)
+            } catch (_: Exception) {
+                null
+            }
+        }
+        val versionName = packageInfo?.versionName ?: "Unknown"
+
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissAboutDialog() },
+            title = { Text(stringResource(R.string.about_title)) },
+            text = {
+                Column {
+                    Text(stringResource(R.string.about_version, versionName))
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(stringResource(R.string.about_description))
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { viewModel.dismissAboutDialog() }) {
+                    Text(stringResource(R.string.close))
                 }
             }
         )
@@ -107,7 +139,7 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Settings") },
+                title = { Text(stringResource(R.string.settings_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -131,14 +163,18 @@ fun SettingsScreen(
             ) {
                 Column {
                     ListItem(
-                        headlineContent = { Text("Sorting") },
+                        headlineContent = { Text(stringResource(R.string.settings_sorting)) },
                         supportingContent = { Text(sortOrderLabel) },
                         modifier = Modifier.clickable { viewModel.showSortDialog() }
                     )
                     ListItem(
-                        headlineContent = { Text("App Theme") },
+                        headlineContent = { Text(stringResource(R.string.settings_theme)) },
                         supportingContent = { Text(themeLabel) },
                         modifier = Modifier.clickable { viewModel.showThemeDialog() }
+                    )
+                    ListItem(
+                        headlineContent = { Text(stringResource(R.string.settings_about)) },
+                        modifier = Modifier.clickable { viewModel.showAboutDialog() }
                     )
                 }
             }

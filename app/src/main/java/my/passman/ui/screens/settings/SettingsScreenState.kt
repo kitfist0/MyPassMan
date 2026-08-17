@@ -8,4 +8,5 @@ data class SettingsScreenState(
     val theme: AppTheme = AppTheme.SYSTEM,
     val showSortDialog: Boolean = false,
     val showThemeDialog: Boolean = false,
+    val showAboutDialog: Boolean = false,
 )

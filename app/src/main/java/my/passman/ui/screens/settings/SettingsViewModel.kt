@@ -26,7 +26,8 @@ class SettingsViewModel @Inject constructor(
             sortOrder = sortOrder,
             theme = theme,
             showSortDialog = dialogState.showSortDialog,
-            showThemeDialog = dialogState.showThemeDialog
+            showThemeDialog = dialogState.showThemeDialog,
+            showAboutDialog = dialogState.showAboutDialog
         )
     }.stateIn(
         viewModelScope,
@@ -37,6 +38,7 @@ class SettingsViewModel @Inject constructor(
     private data class DialogState(
         val showSortDialog: Boolean = false,
         val showThemeDialog: Boolean = false,
+        val showAboutDialog: Boolean = false,
     )
 
     fun onSortOrderChange(sortOrder: SortOrder) {
@@ -65,5 +67,13 @@ class SettingsViewModel @Inject constructor(
 
     fun dismissThemeDialog() {
         _dialogState.update { it.copy(showThemeDialog = false) }
+    }
+
+    fun showAboutDialog() {
+        _dialogState.update { it.copy(showAboutDialog = true) }
+    }
+
+    fun dismissAboutDialog() {
+        _dialogState.update { it.copy(showAboutDialog = false) }
     }
 }
