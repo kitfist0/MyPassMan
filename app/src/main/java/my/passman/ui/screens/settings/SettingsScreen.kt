@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -13,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import my.passman.data.AppTheme
@@ -142,6 +145,7 @@ fun SettingsScreen(
 
     if (state.showBackupPasswordDialog) {
         var password by remember { mutableStateOf("") }
+        var passwordVisible by remember { mutableStateOf(false) }
         val missingRequirements = remember(password) { PasswordValidator.validate(password) }
         val isExport = state.backupMode == BackupMode.EXPORT
         val canConfirm = if (isExport) missingRequirements.isEmpty() else password.isNotBlank()
@@ -172,7 +176,15 @@ fun SettingsScreen(
                         value = password,
                         onValueChange = { password = it },
                         label = { Text(stringResource(R.string.label_secret)) },
-                        visualTransformation = PasswordVisualTransformation(),
+                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon = {
+                            val image = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
+                            val description = if (passwordVisible) stringResource(R.string.hide_secret) else stringResource(R.string.show_secret)
+
+                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                Icon(imageVector = image, contentDescription = description)
+                            }
+                        },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                         isError = isExport && password.isNotEmpty() && missingRequirements.isNotEmpty()
