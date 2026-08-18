@@ -56,6 +56,9 @@
     <string name="settings_import">Import Database</string>
     <string name="backup_password_title">Backup Password</string>
     <string name="backup_password_message">Enter a password to encrypt/decrypt your backup. You will need this password to restore data.</string>
+    <string name="password_requirement_min_length">At least 8 characters</string>
+    <string name="password_requirement_letters_digits">Letters and digits</string>
+    <string name="password_requirement_symbol">At least one symbol</string>
     <string name="export_success">Database exported successfully</string>
     <string name="export_error">Export failed: %s</string>
     <string name="import_success">Database imported successfully</string>

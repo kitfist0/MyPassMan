@@ -3,6 +3,8 @@ package my.passman.ui.screens.settings
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -16,6 +18,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import my.passman.data.AppTheme
 import my.passman.data.SortOrder
 import my.passman.R
+import my.passman.util.PasswordValidator
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -139,12 +142,31 @@ fun SettingsScreen(
 
     if (state.showBackupPasswordDialog) {
         var password by remember { mutableStateOf("") }
+        val missingRequirements = remember(password) { PasswordValidator.validate(password) }
+        val isExport = state.backupMode == BackupMode.EXPORT
+        val canConfirm = if (isExport) missingRequirements.isEmpty() else password.isNotBlank()
+
         AlertDialog(
             onDismissRequest = { viewModel.dismissBackupPasswordDialog() },
             title = { Text(stringResource(R.string.backup_password_title)) },
             text = {
                 Column {
                     Text(stringResource(R.string.backup_password_message))
+                    if (isExport) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        RequirementItem(
+                            label = stringResource(R.string.password_requirement_min_length),
+                            isMet = PasswordValidator.PasswordRequirement.MIN_LENGTH !in missingRequirements
+                        )
+                        RequirementItem(
+                            label = stringResource(R.string.password_requirement_letters_digits),
+                            isMet = PasswordValidator.PasswordRequirement.LETTERS_AND_DIGITS !in missingRequirements
+                        )
+                        RequirementItem(
+                            label = stringResource(R.string.password_requirement_symbol),
+                            isMet = PasswordValidator.PasswordRequirement.HAS_SYMBOL !in missingRequirements
+                        )
+                    }
                     Spacer(modifier = Modifier.height(16.dp))
                     OutlinedTextField(
                         value = password,
@@ -152,13 +174,14 @@ fun SettingsScreen(
                         label = { Text(stringResource(R.string.label_secret)) },
                         visualTransformation = PasswordVisualTransformation(),
                         singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        isError = isExport && password.isNotEmpty() && missingRequirements.isNotEmpty()
                     )
                 }
             },
             confirmButton = {
                 TextButton(
-                    enabled = password.isNotBlank(),
+                    enabled = canConfirm,
                     onClick = { viewModel.onBackupPasswordEntered(password) }
                 ) {
                     Text(stringResource(R.string.yes))
@@ -225,6 +248,30 @@ fun SettingsScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun RequirementItem(
+    label: String,
+    isMet: Boolean
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(vertical = 2.dp)
+    ) {
+        Icon(
+            imageVector = if (isMet) Icons.Default.Check else Icons.Default.Close,
+            contentDescription = null,
+            tint = if (isMet) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error.copy(alpha = 0.6f),
+            modifier = Modifier.size(16.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = if (isMet) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
