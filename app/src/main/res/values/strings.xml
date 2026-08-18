@@ -51,4 +51,14 @@
     <string name="copy_secret">Copy secret</string>
     <string name="login_copied_toast">Login copied</string>
     <string name="password_copied_toast">Password copied</string>
+
+    <string name="settings_export">Export Database</string>
+    <string name="settings_import">Import Database</string>
+    <string name="backup_password_title">Backup Password</string>
+    <string name="backup_password_message">Enter a password to encrypt/decrypt your backup. You will need this password to restore data.</string>
+    <string name="export_success">Database exported successfully</string>
+    <string name="export_error">Export failed: %s</string>
+    <string name="import_success">Database imported successfully</string>
+    <string name="import_error">Import failed: %s</string>
+    <string name="invalid_password">Invalid password or corrupted file</string>
 </resources>

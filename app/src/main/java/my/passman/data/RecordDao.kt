@@ -19,4 +19,17 @@ interface RecordDao {
 
     @Query("SELECT * FROM records WHERE name LIKE '%' || :searchQuery || '%' OR login LIKE '%' || :searchQuery || '%'")
     fun searchRecords(searchQuery: String): Flow<List<Record>>
+
+    @Query("SELECT * FROM records")
+    suspend fun getRecordsList(): List<Record>
+
+    @Transaction
+    suspend fun importRecords(records: List<Record>) {
+        records.forEach { record ->
+            val existing = getRecordById(record.id)
+            if (existing == null || record.modified > existing.modified) {
+                upsertRecord(record)
+            }
+        }
+    }
 }

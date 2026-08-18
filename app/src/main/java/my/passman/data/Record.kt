@@ -2,7 +2,9 @@ package my.passman.data
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import kotlinx.serialization.Serializable
 
+@Serializable
 @Entity(tableName = "records")
 data class Record(
     @PrimaryKey(autoGenerate = true)

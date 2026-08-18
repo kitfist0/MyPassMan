@@ -1,8 +1,11 @@
 package my.passman
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalSharedTransitionApi
@@ -17,6 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import my.passman.data.SettingsRepository
 import my.passman.ui.screens.edit.EditRecordScreen
@@ -28,7 +32,6 @@ import my.passman.ui.screens.settings.SettingsViewModel
 import my.passman.ui.theme.MyPassManTheme
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
-
 import java.util.UUID
 
 sealed class Screen {
@@ -48,6 +51,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
+            val context = LocalContext.current
             val appTheme by settingsRepository.appTheme.collectAsState(initial = my.passman.data.AppTheme.SYSTEM)
 
             MyPassManTheme(appTheme = appTheme) {
@@ -108,6 +112,43 @@ class MainActivity : ComponentActivity() {
 
                                 is Screen.Settings -> {
                                     val settingsViewModel: SettingsViewModel = hiltViewModel()
+
+                                    val createDocumentLauncher = rememberLauncherForActivityResult(
+                                        ActivityResultContracts.CreateDocument("application/octet-stream")
+                                    ) { uri ->
+                                        uri?.let {
+                                            context.contentResolver.openOutputStream(it)?.let { os ->
+                                                settingsViewModel.executeExport(os)
+                                            }
+                                        }
+                                    }
+
+                                    val openDocumentLauncher = rememberLauncherForActivityResult(
+                                        ActivityResultContracts.OpenDocument()
+                                    ) { uri ->
+                                        uri?.let {
+                                            context.contentResolver.openInputStream(it)?.let { isStream ->
+                                                settingsViewModel.onImportFileSelected(isStream)
+                                            }
+                                        }
+                                    }
+
+                                    LaunchedEffect(settingsViewModel) {
+                                        for (event in settingsViewModel.events) {
+                                            when (event) {
+                                                SettingsViewModel.SettingsEvent.RequestExportFile -> {
+                                                    createDocumentLauncher.launch("mypassman_backup.pman")
+                                                }
+                                                SettingsViewModel.SettingsEvent.RequestImportFile -> {
+                                                    openDocumentLauncher.launch(arrayOf("application/octet-stream", "*/*"))
+                                                }
+                                                is SettingsViewModel.SettingsEvent.ShowToast -> {
+                                                    Toast.makeText(context, event.message, Toast.LENGTH_LONG).show()
+                                                }
+                                            }
+                                        }
+                                    }
+
                                     SettingsScreen(
                                         viewModel = settingsViewModel,
                                         onBack = { currentScreen = Screen.List }

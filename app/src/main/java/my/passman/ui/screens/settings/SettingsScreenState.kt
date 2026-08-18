@@ -9,4 +9,10 @@ data class SettingsScreenState(
     val showSortDialog: Boolean = false,
     val showThemeDialog: Boolean = false,
     val showAboutDialog: Boolean = false,
+    val showBackupPasswordDialog: Boolean = false,
+    val backupMode: BackupMode? = null,
 )
+
+enum class BackupMode {
+    EXPORT, IMPORT
+}

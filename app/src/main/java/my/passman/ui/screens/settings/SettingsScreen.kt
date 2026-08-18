@@ -10,6 +10,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import my.passman.data.AppTheme
@@ -136,6 +137,41 @@ fun SettingsScreen(
         )
     }
 
+    if (state.showBackupPasswordDialog) {
+        var password by remember { mutableStateOf("") }
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissBackupPasswordDialog() },
+            title = { Text(stringResource(R.string.backup_password_title)) },
+            text = {
+                Column {
+                    Text(stringResource(R.string.backup_password_message))
+                    Spacer(modifier = Modifier.height(16.dp))
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text(stringResource(R.string.label_secret)) },
+                        visualTransformation = PasswordVisualTransformation(),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = password.isNotBlank(),
+                    onClick = { viewModel.onBackupPasswordEntered(password) }
+                ) {
+                    Text(stringResource(R.string.yes))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.dismissBackupPasswordDialog() }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -172,6 +208,16 @@ fun SettingsScreen(
                         supportingContent = { Text(themeLabel) },
                         modifier = Modifier.clickable { viewModel.showThemeDialog() }
                     )
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                    ListItem(
+                        headlineContent = { Text(stringResource(R.string.settings_export)) },
+                        modifier = Modifier.clickable { viewModel.onExportClick() }
+                    )
+                    ListItem(
+                        headlineContent = { Text(stringResource(R.string.settings_import)) },
+                        modifier = Modifier.clickable { viewModel.onImportClick() }
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                     ListItem(
                         headlineContent = { Text(stringResource(R.string.settings_about)) },
                         modifier = Modifier.clickable { viewModel.showAboutDialog() }

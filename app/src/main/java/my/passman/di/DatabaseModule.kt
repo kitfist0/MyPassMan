@@ -8,11 +8,18 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import my.passman.data.AppDatabase
 import my.passman.data.RecordDao
+import my.passman.util.BackupManager
 import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
+    
+    @Provides
+    @Singleton
+    fun provideBackupManager(recordDao: RecordDao): BackupManager {
+        return BackupManager(recordDao)
+    }
 
     @Provides
     @Singleton
