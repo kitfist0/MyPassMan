@@ -43,6 +43,8 @@
     <string name="label_login">Login</string>
     <string name="label_secret">Secret</string>
     <string name="label_comment">Comment</string>
+    <string name="label_tag">Tag</string>
+    <string name="no_tag">No Tag</string>
     <string name="hide_secret">Hide secret</string>
     <string name="show_secret">Show secret</string>
     <string name="created_format">Created: %s</string>

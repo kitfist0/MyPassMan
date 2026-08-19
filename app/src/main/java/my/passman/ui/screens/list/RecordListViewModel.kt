@@ -9,11 +9,13 @@ import my.passman.data.Record
 import my.passman.data.RecordDao
 import my.passman.data.SettingsRepository
 import my.passman.data.SortOrder
+import my.passman.data.TagDao
 import javax.inject.Inject
 
 @HiltViewModel
 class RecordListViewModel @Inject constructor(
     private val dao: RecordDao,
+    tagDao: TagDao,
     settingsRepository: SettingsRepository
 ) : ViewModel() {
 
@@ -42,12 +44,17 @@ class RecordListViewModel @Inject constructor(
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    private val allTags = tagDao.getAllTags()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     val uiState: StateFlow<RecordListScreenState> = combine(
         records,
+        allTags,
         _searchQuery
-    ) { recordsList, query ->
+    ) { recordsList, tagsList, query ->
         RecordListScreenState(
             records = recordsList,
+            tags = tagsList,
             searchQuery = query
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), RecordListScreenState())

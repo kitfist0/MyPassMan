@@ -111,8 +111,10 @@ fun RecordListScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(state.records, key = { it.id }) { record ->
+                    val tag = state.tags.find { it.id == record.tagId }
                     RecordCard(
                         record = record,
+                        tagName = tag?.name,
                         sharedTransitionScope = sharedTransitionScope,
                         animatedVisibilityScope = animatedVisibilityScope,
                         onClick = { onEditRecord(record.id) }
@@ -127,6 +129,7 @@ fun RecordListScreen(
 @Composable
 fun RecordCard(
     record: Record,
+    tagName: String?,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
     onClick: () -> Unit
@@ -139,7 +142,7 @@ fun RecordCard(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(
+        Box(
             modifier = Modifier
                 .combinedClickable(
                     onClick = onClick,
@@ -156,55 +159,72 @@ fun RecordCard(
                 .padding(16.dp)
                 .fillMaxWidth()
         ) {
-            with(sharedTransitionScope) {
-                Text(
-                    text = record.name,
-                    modifier = Modifier.sharedElement(
-                        rememberSharedContentState(key = "name-${record.id}"),
-                        animatedVisibilityScope = animatedVisibilityScope
-                    ),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                if (record.login.isNotBlank()) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                with(sharedTransitionScope) {
                     Text(
-                        text = record.login,
+                        text = record.name,
+                        modifier = Modifier
+                            .fillMaxWidth(0.7f)
+                            .sharedElement(
+                                rememberSharedContentState(key = "name-${record.id}"),
+                                animatedVisibilityScope = animatedVisibilityScope
+                            ),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    if (record.login.isNotBlank()) {
+                        Text(
+                            text = record.login,
+                            modifier = Modifier.sharedElement(
+                                rememberSharedContentState(key = "login-${record.id}"),
+                                animatedVisibilityScope = animatedVisibilityScope
+                            ),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.secondary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "*".repeat(record.secret.length),
                         modifier = Modifier.sharedElement(
-                            rememberSharedContentState(key = "login-${record.id}"),
+                            rememberSharedContentState(key = "secret-${record.id}"),
                             animatedVisibilityScope = animatedVisibilityScope
                         ),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.secondary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "*".repeat(record.secret.length),
-                    modifier = Modifier.sharedElement(
-                        rememberSharedContentState(key = "secret-${record.id}"),
-                        animatedVisibilityScope = animatedVisibilityScope
-                    ),
-                    style = MaterialTheme.typography.bodyMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                with(sharedTransitionScope) {
+                    Text(
+                        text = record.comment,
+                        modifier = Modifier.sharedElement(
+                            rememberSharedContentState(key = "comment-${record.id}"),
+                            animatedVisibilityScope = animatedVisibilityScope
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
-            Spacer(modifier = Modifier.height(4.dp))
-            with(sharedTransitionScope) {
-                Text(
-                    text = record.comment,
-                    modifier = Modifier.sharedElement(
-                        rememberSharedContentState(key = "comment-${record.id}"),
-                        animatedVisibilityScope = animatedVisibilityScope
-                    ),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+
+            if (tagName != null) {
+                SuggestionChip(
+                    onClick = {},
+                    label = {
+                        Text(
+                            text = tagName,
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    },
+                    modifier = Modifier.align(Alignment.TopEnd)
                 )
             }
         }

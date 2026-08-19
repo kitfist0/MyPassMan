@@ -14,10 +14,12 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import my.passman.data.Record
 import my.passman.data.RecordDao
+import my.passman.data.TagDao
 
 @HiltViewModel(assistedFactory = EditRecordViewModel.Factory::class)
 class EditRecordViewModel @AssistedInject constructor(
     private val recordDao: RecordDao,
+    private val tagDao: TagDao,
     @Assisted val recordId: Long?
 ) : ViewModel() {
 
@@ -33,13 +35,14 @@ class EditRecordViewModel @AssistedInject constructor(
     private var originalLogin: String = ""
     private var originalSecret: String = ""
     private var originalComment: String = ""
+    private var originalTagId: Long? = null
     private var originalCreated: Long = 0
 
     private fun EditRecordScreenState.hasChanges(): Boolean {
         if (isLoading || recordId == null && name.isEmpty() && login.isEmpty() && secret.isEmpty() && comment.isEmpty()) {
             return false
         }
-        return name != originalName || login != originalLogin || secret != originalSecret || comment != originalComment
+        return name != originalName || login != originalLogin || secret != originalSecret || comment != originalComment || selectedTagId != originalTagId
     }
 
     private fun update(transform: (EditRecordScreenState) -> EditRecordScreenState) {
@@ -53,6 +56,11 @@ class EditRecordViewModel @AssistedInject constructor(
     }
 
     init {
+        viewModelScope.launch {
+            tagDao.getAllTags().collect { tags ->
+                update { it.copy(allTags = tags) }
+            }
+        }
         if (recordId != null) {
             viewModelScope.launch {
                 val record = recordDao.getRecordById(recordId)
@@ -61,6 +69,7 @@ class EditRecordViewModel @AssistedInject constructor(
                     originalLogin = record.login
                     originalSecret = record.secret
                     originalComment = record.comment
+                    originalTagId = record.tagId
                     originalCreated = record.created
                     // Сначала обновляем данные, isLoading станет false и hasChanges() вернет false
                     _uiState.update {
@@ -70,6 +79,7 @@ class EditRecordViewModel @AssistedInject constructor(
                             login = record.login,
                             secret = record.secret,
                             comment = record.comment,
+                            selectedTagId = record.tagId,
                             canSave = false,
                             created = record.created,
                             modified = record.modified
@@ -96,6 +106,10 @@ class EditRecordViewModel @AssistedInject constructor(
 
     fun onCommentChange(value: String) {
         update { it.copy(comment = value.replace("\n", "")) }
+    }
+
+    fun onTagChange(tagId: Long?) {
+        update { it.copy(selectedTagId = tagId) }
     }
 
     fun toggleSecretVisibility() {
@@ -137,7 +151,8 @@ class EditRecordViewModel @AssistedInject constructor(
             name = state.name,
             login = state.login,
             secret = state.secret,
-            comment = state.comment
+            comment = state.comment,
+            tagId = state.selectedTagId,
         )
         viewModelScope.launch { recordDao.upsertRecord(record) }
         return state.recordId

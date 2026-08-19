@@ -114,16 +114,28 @@ fun EditRecordScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (isNewRecord) stringResource(R.string.new_record) else stringResource(R.string.edit_record)) },
+                title = {
+                    Text(
+                        if (isNewRecord) stringResource(R.string.new_record) else stringResource(
+                            R.string.edit_record
+                        )
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = { viewModel.onBackPressed() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_description))
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.back_description)
+                        )
                     }
                 },
                 actions = {
                     if (recordId != null) {
                         IconButton(onClick = { viewModel.showDeleteDialog() }) {
-                            Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete_description))
+                            Icon(
+                                Icons.Default.Delete,
+                                contentDescription = stringResource(R.string.delete_description)
+                            )
                         }
                     }
                 }
@@ -234,7 +246,9 @@ fun EditRecordScreen(
                                 IconButton(onClick = viewModel::toggleSecretVisibility) {
                                     Icon(
                                         if (state.secretVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                        contentDescription = if (state.secretVisible) stringResource(R.string.hide_secret) else stringResource(R.string.show_secret)
+                                        contentDescription = if (state.secretVisible) stringResource(
+                                            R.string.hide_secret
+                                        ) else stringResource(R.string.show_secret)
                                     )
                                 }
                                 if (!isNewRecord && state.secret.isNotBlank()) {
@@ -277,6 +291,49 @@ fun EditRecordScreen(
                     )
                 }
 
+                var expanded by remember { mutableStateOf(false) }
+                val selectedTag = state.allTags.find { it.id == state.selectedTagId }
+
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = !expanded },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedTextField(
+                        value = selectedTag?.name ?: stringResource(R.string.no_tag),
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text(stringResource(R.string.label_tag)) },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                        modifier = Modifier
+                            .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true)
+                            .fillMaxWidth()
+                    )
+
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.no_tag)) },
+                            onClick = {
+                                viewModel.onTagChange(null)
+                                expanded = false
+                            }
+                        )
+                        state.allTags.forEach { tag ->
+                            DropdownMenuItem(
+                                text = { Text(tag.name) },
+                                onClick = {
+                                    viewModel.onTagChange(tag.id)
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
                 if (recordId != null) {
                     val dateFormat = remember {
                         SimpleDateFormat("dd.MM.yyyy HH:mm:ss", Locale.getDefault())
@@ -286,7 +343,10 @@ fun EditRecordScreen(
 
                     state.created?.let {
                         Text(
-                            text = stringResource(R.string.created_format, dateFormat.format(Date(it))),
+                            text = stringResource(
+                                R.string.created_format,
+                                dateFormat.format(Date(it))
+                            ),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -294,7 +354,10 @@ fun EditRecordScreen(
 
                     state.modified?.let {
                         Text(
-                            text = stringResource(R.string.modified_format, dateFormat.format(Date(it))),
+                            text = stringResource(
+                                R.string.modified_format,
+                                dateFormat.format(Date(it))
+                            ),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
