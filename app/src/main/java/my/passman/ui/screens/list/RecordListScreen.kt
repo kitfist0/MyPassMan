@@ -110,14 +110,13 @@ fun RecordListScreen(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(state.records, key = { it.id }) { record ->
-                    val tag = state.tags.find { it.id == record.tagId }
+                items(state.records, key = { it.record.id }) { item ->
                     RecordCard(
-                        record = record,
-                        tagName = tag?.name,
+                        record = item.record,
+                        tagName = item.tag?.name,
                         sharedTransitionScope = sharedTransitionScope,
                         animatedVisibilityScope = animatedVisibilityScope,
-                        onClick = { onEditRecord(record.id) }
+                        onClick = { onEditRecord(item.record.id) }
                     )
                 }
             }

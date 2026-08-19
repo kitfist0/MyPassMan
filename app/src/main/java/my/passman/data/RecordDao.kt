@@ -8,8 +8,9 @@ interface RecordDao {
     @Query("SELECT * FROM records WHERE id = :id")
     suspend fun getRecordById(id: Long): Record?
 
+    @Transaction
     @Query("SELECT * FROM records ORDER BY id DESC")
-    fun getAllRecords(): Flow<List<Record>>
+    fun getAllRecords(): Flow<List<RecordWithTag>>
 
     @Upsert
     suspend fun upsertRecord(record: Record)
@@ -17,8 +18,9 @@ interface RecordDao {
     @Delete
     suspend fun deleteRecord(record: Record)
 
+    @Transaction
     @Query("SELECT * FROM records WHERE name LIKE '%' || :searchQuery || '%' OR login LIKE '%' || :searchQuery || '%'")
-    fun searchRecords(searchQuery: String): Flow<List<Record>>
+    fun searchRecords(searchQuery: String): Flow<List<RecordWithTag>>
 
     @Query("SELECT * FROM records")
     suspend fun getRecordsList(): List<Record>

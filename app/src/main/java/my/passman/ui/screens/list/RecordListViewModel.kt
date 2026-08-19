@@ -5,18 +5,16 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
-import my.passman.data.Record
+import my.passman.data.RecordWithTag
 import my.passman.data.RecordDao
 import my.passman.data.SettingsRepository
 import my.passman.data.SortOrder
-import my.passman.data.TagDao
 import javax.inject.Inject
 
 @HiltViewModel
 class RecordListViewModel @Inject constructor(
     private val dao: RecordDao,
-    tagDao: TagDao,
-    settingsRepository: SettingsRepository
+    settingsRepository: SettingsRepository,
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
@@ -25,7 +23,7 @@ class RecordListViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SortOrder.BY_NAME)
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    private val records: StateFlow<List<Record>> = combine(
+    private val records: StateFlow<List<RecordWithTag>> = combine(
         _searchQuery,
         sortOrder
     ) { query, sort ->
@@ -38,23 +36,18 @@ class RecordListViewModel @Inject constructor(
         }
         flow.map { list ->
             when (sort) {
-                SortOrder.BY_NAME -> list.sortedBy { it.name.lowercase() }
-                SortOrder.BY_CREATED -> list.sortedByDescending { it.created }
+                SortOrder.BY_NAME -> list.sortedBy { it.record.name.lowercase() }
+                SortOrder.BY_CREATED -> list.sortedByDescending { it.record.created }
             }
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    private val allTags = tagDao.getAllTags()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
     val uiState: StateFlow<RecordListScreenState> = combine(
         records,
-        allTags,
         _searchQuery
-    ) { recordsList, tagsList, query ->
+    ) { recordsList, query ->
         RecordListScreenState(
             records = recordsList,
-            tags = tagsList,
             searchQuery = query
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), RecordListScreenState())
