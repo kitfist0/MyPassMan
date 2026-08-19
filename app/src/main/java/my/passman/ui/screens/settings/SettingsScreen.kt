@@ -27,6 +27,7 @@ import my.passman.util.PasswordValidator
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel,
+    onManageTags: () -> Unit,
     onBack: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -242,6 +243,10 @@ fun SettingsScreen(
                         headlineContent = { Text(stringResource(R.string.settings_theme)) },
                         supportingContent = { Text(themeLabel) },
                         modifier = Modifier.clickable { viewModel.showThemeDialog() }
+                    )
+                    ListItem(
+                        headlineContent = { Text(stringResource(R.string.settings_manage_tags)) },
+                        modifier = Modifier.clickable { onManageTags() }
                     )
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                     ListItem(

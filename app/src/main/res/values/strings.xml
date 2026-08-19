@@ -52,6 +52,17 @@
     <string name="login_copied_toast">Login copied</string>
     <string name="password_copied_toast">Password copied</string>
 
+    <!-- Tags Screen -->
+    <string name="tags_title">Manage Tags</string>
+    <string name="no_tags">No tags created yet</string>
+    <string name="add_tag_title">Add New Tag</string>
+    <string name="label_tag_name">Tag Name</string>
+    <string name="add">Add</string>
+    <string name="add_tag_description">Add tag</string>
+    <string name="settings_manage_tags">Manage Tags</string>
+    <string name="delete_tag_title">Delete Tag?</string>
+    <string name="delete_tag_text">Are you sure you want to delete the tag \"%1$s\"? It will be removed from all associated records.</string>
+
     <string name="settings_export">Export Database</string>
     <string name="settings_import">Import Database</string>
     <string name="backup_password_title">Backup Password</string>

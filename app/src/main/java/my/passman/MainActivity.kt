@@ -29,6 +29,8 @@ import my.passman.ui.screens.list.RecordListScreen
 import my.passman.ui.screens.list.RecordListViewModel
 import my.passman.ui.screens.settings.SettingsScreen
 import my.passman.ui.screens.settings.SettingsViewModel
+import my.passman.ui.screens.tags.TagsScreen
+import my.passman.ui.screens.tags.TagsViewModel
 import my.passman.ui.theme.MyPassManTheme
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -38,6 +40,7 @@ sealed class Screen {
     data object List : Screen()
     data class Edit(val recordId: Long? = null, val sessionKey: String = UUID.randomUUID().toString()) : Screen()
     data object Settings : Screen()
+    data object Tags : Screen()
 }
 
 @AndroidEntryPoint
@@ -151,7 +154,16 @@ class MainActivity : ComponentActivity() {
 
                                     SettingsScreen(
                                         viewModel = settingsViewModel,
+                                        onManageTags = { currentScreen = Screen.Tags },
                                         onBack = { currentScreen = Screen.List }
+                                    )
+                                }
+
+                                is Screen.Tags -> {
+                                    val tagsViewModel: TagsViewModel = hiltViewModel()
+                                    TagsScreen(
+                                        viewModel = tagsViewModel,
+                                        onBack = { currentScreen = Screen.Settings }
                                     )
                                 }
                             }
