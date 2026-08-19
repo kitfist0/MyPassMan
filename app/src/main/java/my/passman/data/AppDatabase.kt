@@ -5,9 +5,12 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [Record::class], version = 1, exportSchema = false)
+@Database(entities = [Record::class, Tag::class], version = 1, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
+
     abstract fun recordDao(): RecordDao
+
+    abstract fun tagDao(): TagDao
 
     companion object {
         @Volatile
@@ -18,7 +21,7 @@ abstract class AppDatabase : RoomDatabase() {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
-                    "passman_database"
+                    "pass_man_database"
                 ).build()
                 INSTANCE = instance
                 instance
