@@ -216,7 +216,7 @@ fun RecordCard(
 
             if (tagName != null) {
                 SuggestionChip(
-                    onClick = {},
+                    onClick = onClick,
                     label = {
                         Text(
                             text = tagName,
