@@ -79,4 +79,11 @@
     <string name="import_success">Database imported successfully</string>
     <string name="import_error">Import failed: %s</string>
     <string name="invalid_password">Invalid password or corrupted file</string>
+
+    <!-- PIN Screen -->
+    <string name="pin_title_set">Create PIN</string>
+    <string name="pin_title_confirm">Confirm PIN</string>
+    <string name="pin_title_unlock">Enter PIN</string>
+    <string name="pin_error_mismatch">PINs do not match</string>
+    <string name="pin_error_invalid">Invalid PIN</string>
 </resources>

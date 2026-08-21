@@ -28,6 +28,9 @@ import my.passman.ui.screens.edit.EditRecordViewModel
 import my.passman.ui.screens.list.RecordListScreen
 import my.passman.ui.screens.list.RecordListViewModel
 import my.passman.ui.screens.settings.SettingsScreen
+import my.passman.ui.screens.pin.PinMode
+import my.passman.ui.screens.pin.PinScreen
+import my.passman.ui.screens.pin.PinViewModel
 import my.passman.ui.screens.settings.SettingsViewModel
 import my.passman.ui.screens.tags.TagsScreen
 import my.passman.ui.screens.tags.TagsViewModel
@@ -41,6 +44,7 @@ sealed class Screen {
     data class Edit(val recordId: Long? = null, val sessionKey: String = UUID.randomUUID().toString()) : Screen()
     data object Settings : Screen()
     data object Tags : Screen()
+    data class Pin(val mode: PinMode) : Screen()
 }
 
 @AndroidEntryPoint
@@ -164,6 +168,18 @@ class MainActivity : ComponentActivity() {
                                     TagsScreen(
                                         viewModel = tagsViewModel,
                                         onBack = { currentScreen = Screen.Settings }
+                                    )
+                                }
+
+                                is Screen.Pin -> {
+                                    val pinViewModel: PinViewModel = hiltViewModel(
+                                        creationCallback = { factory: PinViewModel.Factory ->
+                                            factory.create(targetScreen.mode)
+                                        }
+                                    )
+                                    PinScreen(
+                                        viewModel = pinViewModel,
+                                        onSuccess = { currentScreen = Screen.List }
                                     )
                                 }
                             }
