@@ -24,24 +24,70 @@ fun TagsScreen(
     onBack: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val dialogState = state.dialog
 
-    if (state.showAddDialog) {
-        val isValid = remember(state.enteredTagName) { Tag.isValidName(state.enteredTagName) }
+    when (val dialog = dialogState.activeDialog) {
+        TagsDialog.Add -> {
+            val isValid = remember(dialogState.tagName) { Tag.isValidName(dialogState.tagName) }
 
-        AlertDialog(
-            onDismissRequest = { viewModel.dismissAddDialog() },
-            title = { Text(stringResource(R.string.add_tag_title)) },
-            text = {
-                Column {
+            AlertDialog(
+                onDismissRequest = { viewModel.dismissDialog() },
+                title = { Text(stringResource(R.string.add_tag_title)) },
+                text = {
+                    Column {
+                        OutlinedTextField(
+                            value = dialogState.tagName,
+                            onValueChange = viewModel::onTagNameChange,
+                            label = { Text(stringResource(R.string.label_tag_name)) },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            isError = dialogState.tagName.isNotEmpty() && !isValid,
+                            supportingText = {
+                                if (dialogState.tagName.isNotEmpty() && !isValid) {
+                                    Text(
+                                        text = stringResource(R.string.tag_name_error, Tag.MAX_NAME_LENGTH),
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                }
+                            }
+                        )
+                    }
+                },
+                confirmButton = {
+                    TextButton(
+                        enabled = isValid,
+                        onClick = {
+                            viewModel.onAddDialogConfirmButtonClick()
+                            viewModel.dismissDialog()
+                        }
+                    ) {
+                        Text(stringResource(R.string.add))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { viewModel.dismissDialog() }) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                }
+            )
+        }
+
+        is TagsDialog.Edit -> {
+            val isValid = remember(dialogState.tagName) { Tag.isValidName(dialogState.tagName) }
+
+            AlertDialog(
+                onDismissRequest = { viewModel.dismissDialog() },
+                title = { Text(stringResource(R.string.edit_tag_title)) },
+                text = {
                     OutlinedTextField(
-                        value = state.enteredTagName,
+                        value = dialogState.tagName,
                         onValueChange = viewModel::onTagNameChange,
                         label = { Text(stringResource(R.string.label_tag_name)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
-                        isError = state.enteredTagName.isNotEmpty() && !isValid,
+                        isError = dialogState.tagName.isNotEmpty() && !isValid,
                         supportingText = {
-                            if (state.enteredTagName.isNotEmpty() && !isValid) {
+                            if (dialogState.tagName.isNotEmpty() && !isValid) {
                                 Text(
                                     text = stringResource(R.string.tag_name_error, Tag.MAX_NAME_LENGTH),
                                     color = MaterialTheme.colorScheme.error
@@ -49,92 +95,51 @@ fun TagsScreen(
                             }
                         }
                     )
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    enabled = isValid,
-                    onClick = {
-                        viewModel.addTag()
-                        viewModel.dismissAddDialog()
-                    }
-                ) {
-                    Text(stringResource(R.string.add))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { viewModel.dismissAddDialog() }) {
-                    Text(stringResource(R.string.cancel))
-                }
-            }
-        )
-    }
-
-    state.tagToEdit?.let { tag ->
-        val isValid = remember(state.enteredTagName) { Tag.isValidName(state.enteredTagName) }
-
-        AlertDialog(
-            onDismissRequest = { viewModel.dismissEditDialog() },
-            title = { Text(stringResource(R.string.edit_tag_title)) },
-            text = {
-                OutlinedTextField(
-                    value = state.enteredTagName,
-                    onValueChange = viewModel::onTagNameChange,
-                    label = { Text(stringResource(R.string.label_tag_name)) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    isError = state.enteredTagName.isNotEmpty() && !isValid,
-                    supportingText = {
-                        if (state.enteredTagName.isNotEmpty() && !isValid) {
-                            Text(
-                                text = stringResource(R.string.tag_name_error, Tag.MAX_NAME_LENGTH),
-                                color = MaterialTheme.colorScheme.error
-                            )
+                },
+                confirmButton = {
+                    TextButton(
+                        enabled = isValid && dialogState.tagName != dialog.tag.name,
+                        onClick = {
+                            viewModel.onEditDialogConfirmButtonClick()
+                            viewModel.dismissDialog()
                         }
+                    ) {
+                        Text(stringResource(R.string.save))
                     }
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    enabled = isValid && state.enteredTagName != tag.name,
-                    onClick = {
-                        viewModel.updateTag()
-                        viewModel.dismissEditDialog()
+                },
+                dismissButton = {
+                    TextButton(onClick = { viewModel.dismissDialog() }) {
+                        Text(stringResource(R.string.cancel))
                     }
-                ) {
-                    Text(stringResource(R.string.save))
                 }
-            },
-            dismissButton = {
-                TextButton(onClick = { viewModel.dismissEditDialog() }) {
-                    Text(stringResource(R.string.cancel))
-                }
-            }
-        )
-    }
+            )
+        }
 
-    state.tagToDelete?.let { tag ->
-        AlertDialog(
-            onDismissRequest = { viewModel.dismissDeleteConfirmation() },
-            title = { Text(stringResource(R.string.delete_tag_title)) },
-            text = { Text(stringResource(R.string.delete_tag_text, tag.name)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        viewModel.deleteTag(tag)
-                        viewModel.dismissDeleteConfirmation()
-                    },
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Text(stringResource(R.string.delete))
+        is TagsDialog.Delete -> {
+            AlertDialog(
+                onDismissRequest = { viewModel.dismissDialog() },
+                title = { Text(stringResource(R.string.delete_tag_title)) },
+                text = { Text(stringResource(R.string.delete_tag_text, dialog.tag.name)) },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            viewModel.onDeleteDialogConfirmButtonClick(dialog.tag)
+                            viewModel.dismissDialog()
+                        },
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text(stringResource(R.string.delete))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { viewModel.dismissDialog() }) {
+                        Text(stringResource(R.string.cancel))
+                    }
                 }
-            },
-            dismissButton = {
-                TextButton(onClick = { viewModel.dismissDeleteConfirmation() }) {
-                    Text(stringResource(R.string.cancel))
-                }
-            }
-        )
+            )
+        }
+
+        null -> { /* No dialog */ }
     }
 
     Scaffold(

@@ -19,7 +19,7 @@ class TagsViewModel @Inject constructor(
     private val tagDao: TagDao
 ) : ViewModel() {
 
-    private val _dialogState = MutableStateFlow(DialogState())
+    private val _dialogState = MutableStateFlow(TagsDialogState())
 
     val uiState: StateFlow<TagsScreenState> = combine(
         tagDao.getAllTags(),
@@ -27,10 +27,7 @@ class TagsViewModel @Inject constructor(
     ) { tags, dialogState ->
         TagsScreenState(
             tags = tags,
-            enteredTagName = dialogState.enteredTagName,
-            showAddDialog = dialogState.showAddDialog,
-            tagToDelete = dialogState.tagToDelete,
-            tagToEdit = dialogState.tagToEdit
+            dialog = dialogState
         )
     }.stateIn(
         scope = viewModelScope,
@@ -38,62 +35,50 @@ class TagsViewModel @Inject constructor(
         initialValue = TagsScreenState()
     )
 
-    private data class DialogState(
-        val enteredTagName: String = "",
-        val showAddDialog: Boolean = false,
-        val tagToDelete: Tag? = null,
-        val tagToEdit: Tag? = null
-    )
-
     fun onTagNameChange(name: String) {
         if (name.length <= Tag.MAX_NAME_LENGTH) {
-            _dialogState.update { it.copy(enteredTagName = name) }
+            _dialogState.update { it.copy(tagName = name) }
         }
     }
 
     fun showAddDialog() {
-        _dialogState.update { it.copy(showAddDialog = true, enteredTagName = "") }
+        _dialogState.update { it.copy(activeDialog = TagsDialog.Add, tagName = "") }
     }
 
-    fun dismissAddDialog() {
-        _dialogState.update { it.copy(showAddDialog = false, enteredTagName = "") }
+    fun dismissDialog() {
+        _dialogState.update { it.copy(activeDialog = null, tagName = "") }
     }
 
     fun showDeleteConfirmation(tag: Tag) {
-        _dialogState.update { it.copy(tagToDelete = tag) }
-    }
-
-    fun dismissDeleteConfirmation() {
-        _dialogState.update { it.copy(tagToDelete = null) }
+        _dialogState.update { it.copy(activeDialog = TagsDialog.Delete(tag)) }
     }
 
     fun showEditDialog(tag: Tag) {
-        _dialogState.update { it.copy(tagToEdit = tag, enteredTagName = tag.name) }
+        _dialogState.update { it.copy(activeDialog = TagsDialog.Edit(tag), tagName = tag.name) }
     }
 
-    fun dismissEditDialog() {
-        _dialogState.update { it.copy(tagToEdit = null, enteredTagName = "") }
-    }
-
-    fun addTag() {
-        val name = _dialogState.value.enteredTagName
+    fun onAddDialogConfirmButtonClick() {
+        val name = _dialogState.value.tagName
         if (name.isBlank()) return
         viewModelScope.launch {
             tagDao.upsertTag(Tag(name = name.trim()))
         }
     }
 
-    fun updateTag() {
+    fun onEditDialogConfirmButtonClick() {
         val state = _dialogState.value
-        val tag = state.tagToEdit ?: return
-        val newName = state.enteredTagName
-        if (newName.isBlank() || newName == tag.name) return
-        viewModelScope.launch {
-            tagDao.upsertTag(tag.copy(name = newName.trim()))
+        val activeDialog = state.activeDialog
+        if (activeDialog is TagsDialog.Edit) {
+            val tag = activeDialog.tag
+            val newName = state.tagName
+            if (newName.isBlank() || newName == tag.name) return
+            viewModelScope.launch {
+                tagDao.upsertTag(tag.copy(name = newName.trim()))
+            }
         }
     }
 
-    fun deleteTag(tag: Tag) {
+    fun onDeleteDialogConfirmButtonClick(tag: Tag) {
         viewModelScope.launch {
             tagDao.deleteTag(tag)
         }

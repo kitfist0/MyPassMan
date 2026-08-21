@@ -4,8 +4,16 @@ import my.passman.data.Tag
 
 data class TagsScreenState(
     val tags: List<Tag> = emptyList(),
-    val enteredTagName: String = "",
-    val showAddDialog: Boolean = false,
-    val tagToDelete: Tag? = null,
-    val tagToEdit: Tag? = null,
+    val dialog: TagsDialogState = TagsDialogState(),
 )
+
+data class TagsDialogState(
+    val activeDialog: TagsDialog? = null,
+    val tagName: String = ""
+)
+
+sealed interface TagsDialog {
+    data object Add : TagsDialog
+    data class Edit(val tag: Tag) : TagsDialog
+    data class Delete(val tag: Tag) : TagsDialog
+}
