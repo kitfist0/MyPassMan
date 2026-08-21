@@ -58,10 +58,11 @@
     <string name="tags_title">Manage Tags</string>
     <string name="no_tags">No tags created yet</string>
     <string name="add_tag_title">Add New Tag</string>
+    <string name="edit_tag_title">Edit Tag</string>
     <string name="label_tag_name">Tag Name</string>
     <string name="add">Add</string>
     <string name="add_tag_description">Add tag</string>
-    <string name="tag_name_error">Tag must be 1-25 characters long and contain only letters, numbers, dots, or hyphens (no spaces).</string>
+    <string name="tag_name_error">Tag must be 1-%1$d characters long and contain only letters, numbers, dots, or hyphens (no spaces).</string>
     <string name="settings_manage_tags">Manage Tags</string>
     <string name="delete_tag_title">Delete Tag?</string>
     <string name="delete_tag_text">Are you sure you want to delete the tag \"%1$s\"? It will be removed from all associated records.</string>

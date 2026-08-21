@@ -27,8 +27,10 @@ class TagsViewModel @Inject constructor(
     ) { tags, dialogState ->
         TagsScreenState(
             tags = tags,
+            enteredTagName = dialogState.enteredTagName,
             showAddDialog = dialogState.showAddDialog,
-            tagToDelete = dialogState.tagToDelete
+            tagToDelete = dialogState.tagToDelete,
+            tagToEdit = dialogState.tagToEdit
         )
     }.stateIn(
         scope = viewModelScope,
@@ -37,16 +39,24 @@ class TagsViewModel @Inject constructor(
     )
 
     private data class DialogState(
+        val enteredTagName: String = "",
         val showAddDialog: Boolean = false,
-        val tagToDelete: Tag? = null
+        val tagToDelete: Tag? = null,
+        val tagToEdit: Tag? = null
     )
 
+    fun onTagNameChange(name: String) {
+        if (name.length <= Tag.MAX_NAME_LENGTH) {
+            _dialogState.update { it.copy(enteredTagName = name) }
+        }
+    }
+
     fun showAddDialog() {
-        _dialogState.update { it.copy(showAddDialog = true) }
+        _dialogState.update { it.copy(showAddDialog = true, enteredTagName = "") }
     }
 
     fun dismissAddDialog() {
-        _dialogState.update { it.copy(showAddDialog = false) }
+        _dialogState.update { it.copy(showAddDialog = false, enteredTagName = "") }
     }
 
     fun showDeleteConfirmation(tag: Tag) {
@@ -57,10 +67,29 @@ class TagsViewModel @Inject constructor(
         _dialogState.update { it.copy(tagToDelete = null) }
     }
 
-    fun addTag(name: String) {
+    fun showEditDialog(tag: Tag) {
+        _dialogState.update { it.copy(tagToEdit = tag, enteredTagName = tag.name) }
+    }
+
+    fun dismissEditDialog() {
+        _dialogState.update { it.copy(tagToEdit = null, enteredTagName = "") }
+    }
+
+    fun addTag() {
+        val name = _dialogState.value.enteredTagName
         if (name.isBlank()) return
         viewModelScope.launch {
             tagDao.upsertTag(Tag(name = name.trim()))
+        }
+    }
+
+    fun updateTag() {
+        val state = _dialogState.value
+        val tag = state.tagToEdit ?: return
+        val newName = state.enteredTagName
+        if (newName.isBlank() || newName == tag.name) return
+        viewModelScope.launch {
+            tagDao.upsertTag(tag.copy(name = newName.trim()))
         }
     }
 

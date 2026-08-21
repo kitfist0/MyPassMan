@@ -26,10 +26,7 @@ fun TagsScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
     if (state.showAddDialog) {
-        var tagName by remember { mutableStateOf("") }
-        val isValid = remember(tagName) {
-            tagName.length in 1..25 && tagName.all { it.isLetterOrDigit() || it == '.' || it == '-' }
-        }
+        val isValid = remember(state.enteredTagName) { Tag.isValidName(state.enteredTagName) }
 
         AlertDialog(
             onDismissRequest = { viewModel.dismissAddDialog() },
@@ -37,16 +34,16 @@ fun TagsScreen(
             text = {
                 Column {
                     OutlinedTextField(
-                        value = tagName,
-                        onValueChange = { if (it.length <= 25) tagName = it },
+                        value = state.enteredTagName,
+                        onValueChange = viewModel::onTagNameChange,
                         label = { Text(stringResource(R.string.label_tag_name)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
-                        isError = tagName.isNotEmpty() && !isValid,
+                        isError = state.enteredTagName.isNotEmpty() && !isValid,
                         supportingText = {
-                            if (tagName.isNotEmpty() && !isValid) {
+                            if (state.enteredTagName.isNotEmpty() && !isValid) {
                                 Text(
-                                    text = stringResource(R.string.tag_name_error),
+                                    text = stringResource(R.string.tag_name_error, Tag.MAX_NAME_LENGTH),
                                     color = MaterialTheme.colorScheme.error
                                 )
                             }
@@ -58,7 +55,7 @@ fun TagsScreen(
                 TextButton(
                     enabled = isValid,
                     onClick = {
-                        viewModel.addTag(tagName)
+                        viewModel.addTag()
                         viewModel.dismissAddDialog()
                     }
                 ) {
@@ -67,6 +64,49 @@ fun TagsScreen(
             },
             dismissButton = {
                 TextButton(onClick = { viewModel.dismissAddDialog() }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        )
+    }
+
+    state.tagToEdit?.let { tag ->
+        val isValid = remember(state.enteredTagName) { Tag.isValidName(state.enteredTagName) }
+
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissEditDialog() },
+            title = { Text(stringResource(R.string.edit_tag_title)) },
+            text = {
+                OutlinedTextField(
+                    value = state.enteredTagName,
+                    onValueChange = viewModel::onTagNameChange,
+                    label = { Text(stringResource(R.string.label_tag_name)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = state.enteredTagName.isNotEmpty() && !isValid,
+                    supportingText = {
+                        if (state.enteredTagName.isNotEmpty() && !isValid) {
+                            Text(
+                                text = stringResource(R.string.tag_name_error, Tag.MAX_NAME_LENGTH),
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = isValid && state.enteredTagName != tag.name,
+                    onClick = {
+                        viewModel.updateTag()
+                        viewModel.dismissEditDialog()
+                    }
+                ) {
+                    Text(stringResource(R.string.save))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.dismissEditDialog() }) {
                     Text(stringResource(R.string.cancel))
                 }
             }
@@ -136,9 +176,11 @@ fun TagsScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(state.tags, key = { it.id }) { tag ->
-                    TagItem(tag = tag) {
-                        viewModel.showDeleteConfirmation(tag)
-                    }
+                    TagItem(
+                        tag = tag,
+                        onDelete = { viewModel.showDeleteConfirmation(tag) },
+                        onClick = { viewModel.showEditDialog(tag) }
+                    )
                 }
             }
         }
@@ -149,8 +191,10 @@ fun TagsScreen(
 private fun TagItem(
     tag: Tag,
     onDelete: () -> Unit,
+    onClick: () -> Unit,
 ) {
     Card(
+        onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainer
