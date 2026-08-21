@@ -27,21 +27,36 @@ fun TagsScreen(
 
     if (state.showAddDialog) {
         var tagName by remember { mutableStateOf("") }
+        val isValid = remember(tagName) {
+            tagName.length in 1..25 && tagName.all { it.isLetterOrDigit() || it == '.' || it == '-' }
+        }
+
         AlertDialog(
             onDismissRequest = { viewModel.dismissAddDialog() },
             title = { Text(stringResource(R.string.add_tag_title)) },
             text = {
-                OutlinedTextField(
-                    value = tagName,
-                    onValueChange = { tagName = it },
-                    label = { Text(stringResource(R.string.label_tag_name)) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Column {
+                    OutlinedTextField(
+                        value = tagName,
+                        onValueChange = { if (it.length <= 25) tagName = it },
+                        label = { Text(stringResource(R.string.label_tag_name)) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        isError = tagName.isNotEmpty() && !isValid,
+                        supportingText = {
+                            if (tagName.isNotEmpty() && !isValid) {
+                                Text(
+                                    text = stringResource(R.string.tag_name_error),
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        }
+                    )
+                }
             },
             confirmButton = {
                 TextButton(
-                    enabled = tagName.isNotBlank(),
+                    enabled = isValid,
                     onClick = {
                         viewModel.addTag(tagName)
                         viewModel.dismissAddDialog()
