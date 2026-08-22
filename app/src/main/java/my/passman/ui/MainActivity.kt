@@ -1,4 +1,4 @@
-package my.passman
+package my.passman.ui
 
 import android.os.Bundle
 import android.widget.Toast
@@ -22,7 +22,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import my.passman.data.SettingsRepository
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import my.passman.ui.screens.edit.EditRecordScreen
 import my.passman.ui.screens.edit.EditRecordViewModel
 import my.passman.ui.screens.list.RecordListScreen
@@ -36,22 +36,9 @@ import my.passman.ui.screens.tags.TagsScreen
 import my.passman.ui.screens.tags.TagsViewModel
 import my.passman.ui.theme.MyPassManTheme
 import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
-import java.util.UUID
-
-sealed class Screen {
-    data object List : Screen()
-    data class Edit(val recordId: Long? = null, val sessionKey: String = UUID.randomUUID().toString()) : Screen()
-    data object Settings : Screen()
-    data object Tags : Screen()
-    data class Pin(val mode: PinMode) : Screen()
-}
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-
-    @Inject
-    lateinit var settingsRepository: SettingsRepository
 
     @OptIn(ExperimentalSharedTransitionApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -59,30 +46,18 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             val context = LocalContext.current
-            val appTheme by settingsRepository.appTheme.collectAsState(initial = my.passman.data.AppTheme.SYSTEM)
-            val storedPinHash by settingsRepository.pinHash.collectAsState(initial = "LOADING")
+
+            val viewModel: MainViewModel = hiltViewModel()
+            val appTheme by viewModel.appTheme.collectAsStateWithLifecycle()
+            val currentScreen by viewModel.currentScreen.collectAsStateWithLifecycle()
+            val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
 
             MyPassManTheme(appTheme = appTheme) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    var currentScreen by remember { mutableStateOf<Screen>(Screen.List) }
-                    var isAuthorized by remember { mutableStateOf(false) }
-
-                    LaunchedEffect(storedPinHash) {
-                        if (storedPinHash == "LOADING") {
-                            return@LaunchedEffect
-                        }
-
-                        if (storedPinHash != null && !isAuthorized) {
-                            currentScreen = Screen.Pin(PinMode.UNLOCK)
-                        } else {
-                            isAuthorized = true
-                        }
-                    }
-
-                    if (storedPinHash == "LOADING") {
+                    if (isLoading) {
                         return@Surface
                     }
 
@@ -110,11 +85,11 @@ class MainActivity : ComponentActivity() {
                                         viewModel = recordListViewModel,
                                         sharedTransitionScope = sharedTransitionScope,
                                         animatedVisibilityScope = animatedVisibilityScope,
-                                        onAddRecord = { currentScreen = Screen.Edit(null) },
+                                        onAddRecord = { viewModel.navigateTo(Screen.Edit(null)) },
                                         onEditRecord = { id ->
-                                            currentScreen = Screen.Edit(id)
+                                            viewModel.navigateTo(Screen.Edit(id))
                                         },
-                                        onNavigateToSettings = { currentScreen = Screen.Settings }
+                                        onNavigateToSettings = { viewModel.navigateTo(Screen.Settings) }
                                     )
                                 }
 
@@ -129,9 +104,9 @@ class MainActivity : ComponentActivity() {
                                         viewModel = editRecordViewModel,
                                         sharedTransitionScope = sharedTransitionScope,
                                         animatedVisibilityScope = animatedVisibilityScope,
-                                        onSave = { currentScreen = Screen.List },
-                                        onDelete = { currentScreen = Screen.List },
-                                        onCancel = { currentScreen = Screen.List }
+                                        onSave = { viewModel.navigateTo(Screen.List) },
+                                        onDelete = { viewModel.navigateTo(Screen.List) },
+                                        onCancel = { viewModel.navigateTo(Screen.List) }
                                     )
                                 }
 
@@ -168,7 +143,7 @@ class MainActivity : ComponentActivity() {
                                                     openDocumentLauncher.launch(arrayOf("application/octet-stream", "*/*"))
                                                 }
                                                 SettingsViewModel.SettingsEvent.RequestPinSetup -> {
-                                                    currentScreen = Screen.Pin(PinMode.SET)
+                                                    viewModel.navigateTo(Screen.Pin(PinMode.SET))
                                                 }
                                                 is SettingsViewModel.SettingsEvent.ShowToast -> {
                                                     Toast.makeText(context, event.message, Toast.LENGTH_LONG).show()
@@ -179,16 +154,17 @@ class MainActivity : ComponentActivity() {
 
                                     SettingsScreen(
                                         viewModel = settingsViewModel,
-                                        onManageTags = { currentScreen = Screen.Tags },
-                                        onBack = { currentScreen = Screen.List }
-                                    )
+                                        onManageTags = { viewModel.navigateTo(Screen.Tags) }
+                                    ) {
+                                        viewModel.navigateTo(Screen.List)
+                                    }
                                 }
 
                                 is Screen.Tags -> {
                                     val tagsViewModel: TagsViewModel = hiltViewModel()
                                     TagsScreen(
                                         viewModel = tagsViewModel,
-                                        onBack = { currentScreen = Screen.Settings }
+                                        onBack = { viewModel.navigateTo(Screen.Settings) },
                                     )
                                 }
 
@@ -200,14 +176,7 @@ class MainActivity : ComponentActivity() {
                                     )
                                     PinScreen(
                                         viewModel = pinViewModel,
-                                        onSuccess = {
-                                            isAuthorized = true
-                                            currentScreen = if (targetScreen.mode == PinMode.SET || targetScreen.mode == PinMode.CONFIRM) {
-                                                Screen.Settings
-                                            } else {
-                                                Screen.List
-                                            }
-                                        }
+                                        onSuccess = { viewModel.onPinSuccess(targetScreen.mode) }
                                     )
                                 }
                             }
