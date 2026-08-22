@@ -29,11 +29,13 @@ class SettingsViewModel @Inject constructor(
     val uiState: StateFlow<SettingsScreenState> = combine(
         settingsRepository.sortOrder,
         settingsRepository.appTheme,
+        settingsRepository.pinHash,
         _dialogState
-    ) { sortOrder, theme, dialogState ->
+    ) { sortOrder, theme, pinHash, dialogState ->
         SettingsScreenState(
             sortOrder = sortOrder,
             theme = theme,
+            isPinEnabled = pinHash != null,
             showSortDialog = dialogState.showSortDialog,
             showThemeDialog = dialogState.showThemeDialog,
             showAboutDialog = dialogState.showAboutDialog,
@@ -57,10 +59,21 @@ class SettingsViewModel @Inject constructor(
     sealed class SettingsEvent {
         data object RequestExportFile : SettingsEvent()
         data object RequestImportFile : SettingsEvent()
+        data object RequestPinSetup : SettingsEvent()
         data class ShowToast(val message: String) : SettingsEvent()
     }
 
     private var pendingPassword = charArrayOf()
+
+    fun onPinToggleClick() {
+        viewModelScope.launch {
+            if (uiState.value.isPinEnabled) {
+                settingsRepository.clearPin()
+            } else {
+                _events.send(SettingsEvent.RequestPinSetup)
+            }
+        }
+    }
 
     fun onExportClick() {
         _dialogState.update { it.copy(showBackupPasswordDialog = true, backupMode = BackupMode.EXPORT) }

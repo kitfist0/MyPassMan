@@ -8,6 +8,7 @@
     <string name="settings_sorting">Sorting</string>
     <string name="settings_theme">App Theme</string>
     <string name="settings_about">About App</string>
+    <string name="settings_pin">PIN Protection</string>
     <string name="sort_alphabetical">Alphabetical (A-Z)</string>
     <string name="sort_creation_time">Creation Time (Newest First)</string>
     <string name="theme_light">Light</string>
@@ -18,7 +19,7 @@
     <string name="cancel">Cancel</string>
 
     <!-- Record List Screen -->
-    <string name="search_placeholder">Search by name...</string>
+    <string name="search_placeholder">Search by name…</string>
     <string name="settings_description">Settings</string>
     <string name="add_description">Add</string>
     <string name="no_records">No records yet</string>

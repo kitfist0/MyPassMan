@@ -1,6 +1,7 @@
 package my.passman.ui.screens.pin
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -8,10 +9,14 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import my.passman.data.SettingsRepository
 
 @HiltViewModel(assistedFactory = PinViewModel.Factory::class)
 class PinViewModel @AssistedInject constructor(
+    private val settingsRepository: SettingsRepository,
     @Assisted private val mode: PinMode
 ) : ViewModel() {
 
@@ -30,7 +35,7 @@ class PinViewModel @AssistedInject constructor(
     }
 
     fun onDeleteClick() {
-        _uiState.update { 
+        _uiState.update {
             if (it.pin.isNotEmpty()) {
                 it.copy(pin = it.pin.dropLast(1), error = null)
             } else {
@@ -41,24 +46,29 @@ class PinViewModel @AssistedInject constructor(
 
     private fun handlePinEntryComplete() {
         val enteredPin = _uiState.value.pin
-        when (_uiState.value.mode) {
-            PinMode.SET -> {
-                firstEnteredPin = enteredPin
-                _uiState.update { it.copy(pin = "", mode = PinMode.CONFIRM) }
-            }
-            PinMode.CONFIRM -> {
-                if (enteredPin == firstEnteredPin) {
-                    _uiState.update { it.copy(isSuccess = true) }
-                } else {
-                    _uiState.update { it.copy(pin = "", error = "mismatch") }
+        viewModelScope.launch {
+            when (_uiState.value.mode) {
+                PinMode.SET -> {
+                    firstEnteredPin = enteredPin
+                    _uiState.update { it.copy(pin = "", mode = PinMode.CONFIRM) }
                 }
-            }
-            PinMode.UNLOCK -> {
-                // Temporary logic for testing UI: any 4 digits work except "0000"
-                if (enteredPin != "0000") {
-                    _uiState.update { it.copy(isSuccess = true) }
-                } else {
-                    _uiState.update { it.copy(pin = "", error = "invalid") }
+
+                PinMode.CONFIRM -> {
+                    if (enteredPin == firstEnteredPin) {
+                        settingsRepository.setPin(enteredPin)
+                        _uiState.update { it.copy(isSuccess = true) }
+                    } else {
+                        _uiState.update { it.copy(pin = "", error = "mismatch") }
+                    }
+                }
+
+                PinMode.UNLOCK -> {
+                    val storedHash = settingsRepository.pinHash.first()
+                    if (storedHash == null || settingsRepository.hashPin(enteredPin) == storedHash) {
+                        _uiState.update { it.copy(isSuccess = true) }
+                    } else {
+                        _uiState.update { it.copy(pin = "", error = "invalid") }
+                    }
                 }
             }
         }

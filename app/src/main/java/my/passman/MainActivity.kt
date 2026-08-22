@@ -60,6 +60,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             val context = LocalContext.current
             val appTheme by settingsRepository.appTheme.collectAsState(initial = my.passman.data.AppTheme.SYSTEM)
+            val storedPinHash by settingsRepository.pinHash.collectAsState(initial = "LOADING")
 
             MyPassManTheme(appTheme = appTheme) {
                 Surface(
@@ -67,6 +68,23 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     var currentScreen by remember { mutableStateOf<Screen>(Screen.List) }
+                    var isAuthorized by remember { mutableStateOf(false) }
+
+                    LaunchedEffect(storedPinHash) {
+                        if (storedPinHash == "LOADING") {
+                            return@LaunchedEffect
+                        }
+
+                        if (storedPinHash != null && !isAuthorized) {
+                            currentScreen = Screen.Pin(PinMode.UNLOCK)
+                        } else {
+                            isAuthorized = true
+                        }
+                    }
+
+                    if (storedPinHash == "LOADING") {
+                        return@Surface
+                    }
 
                     SharedTransitionLayout {
                         AnimatedContent(
@@ -149,6 +167,9 @@ class MainActivity : ComponentActivity() {
                                                 SettingsViewModel.SettingsEvent.RequestImportFile -> {
                                                     openDocumentLauncher.launch(arrayOf("application/octet-stream", "*/*"))
                                                 }
+                                                SettingsViewModel.SettingsEvent.RequestPinSetup -> {
+                                                    currentScreen = Screen.Pin(PinMode.SET)
+                                                }
                                                 is SettingsViewModel.SettingsEvent.ShowToast -> {
                                                     Toast.makeText(context, event.message, Toast.LENGTH_LONG).show()
                                                 }
@@ -179,7 +200,14 @@ class MainActivity : ComponentActivity() {
                                     )
                                     PinScreen(
                                         viewModel = pinViewModel,
-                                        onSuccess = { currentScreen = Screen.List }
+                                        onSuccess = {
+                                            isAuthorized = true
+                                            currentScreen = if (targetScreen.mode == PinMode.SET || targetScreen.mode == PinMode.CONFIRM) {
+                                                Screen.Settings
+                                            } else {
+                                                Screen.List
+                                            }
+                                        }
                                     )
                                 }
                             }

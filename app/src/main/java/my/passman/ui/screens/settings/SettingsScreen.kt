@@ -245,6 +245,16 @@ fun SettingsScreen(
                         modifier = Modifier.clickable { viewModel.showThemeDialog() }
                     )
                     ListItem(
+                        headlineContent = { Text(stringResource(R.string.settings_pin)) },
+                        trailingContent = {
+                            Switch(
+                                checked = state.isPinEnabled,
+                                onCheckedChange = { viewModel.onPinToggleClick() }
+                            )
+                        },
+                        modifier = Modifier.clickable { viewModel.onPinToggleClick() }
+                    )
+                    ListItem(
                         headlineContent = { Text(stringResource(R.string.settings_manage_tags)) },
                         modifier = Modifier.clickable { onManageTags() }
                     )
