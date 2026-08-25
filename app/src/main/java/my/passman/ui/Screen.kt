@@ -12,5 +12,8 @@ sealed class Screen {
 
     data object Settings : Screen()
     data object Tags : Screen()
-    data class Pin(val mode: PinMode) : Screen()
+    data class Pin(
+        val mode: PinMode,
+        val sessionKey: String = UUID.randomUUID().toString()
+    ) : Screen()
 }

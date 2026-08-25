@@ -142,9 +142,6 @@ class MainActivity : ComponentActivity() {
                                                 SettingsViewModel.SettingsEvent.RequestImportFile -> {
                                                     openDocumentLauncher.launch(arrayOf("application/octet-stream", "*/*"))
                                                 }
-                                                SettingsViewModel.SettingsEvent.RequestPinSetup -> {
-                                                    viewModel.navigateTo(Screen.Pin(PinMode.SET))
-                                                }
                                                 is SettingsViewModel.SettingsEvent.ShowToast -> {
                                                     Toast.makeText(context, event.message, Toast.LENGTH_LONG).show()
                                                 }
@@ -154,7 +151,8 @@ class MainActivity : ComponentActivity() {
 
                                     SettingsScreen(
                                         viewModel = settingsViewModel,
-                                        onManageTags = { viewModel.navigateTo(Screen.Tags) }
+                                        onManageTags = { viewModel.navigateTo(Screen.Tags) },
+                                        onSetupNewPin = { viewModel.navigateTo(Screen.Pin(PinMode.SET)) },
                                     ) {
                                         viewModel.navigateTo(Screen.List)
                                     }
@@ -170,6 +168,7 @@ class MainActivity : ComponentActivity() {
 
                                 is Screen.Pin -> {
                                     val pinViewModel: PinViewModel = hiltViewModel(
+                                        key = "pin-${targetScreen.mode}-${targetScreen.sessionKey}",
                                         creationCallback = { factory: PinViewModel.Factory ->
                                             factory.create(targetScreen.mode)
                                         }

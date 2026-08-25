@@ -28,6 +28,7 @@ import my.passman.util.PasswordValidator
 fun SettingsScreen(
     viewModel: SettingsViewModel,
     onManageTags: () -> Unit,
+    onSetupNewPin: () -> Unit,
     onBack: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -249,10 +250,17 @@ fun SettingsScreen(
                         trailingContent = {
                             Switch(
                                 checked = state.isPinEnabled,
-                                onCheckedChange = { viewModel.onPinToggleClick() }
+                                onCheckedChange = { b ->
+                                    if (b) {
+                                        onSetupNewPin()
+                                    } else {
+                                        viewModel.clearPin()
+                                    }
+                                }
                             )
                         },
-                        modifier = Modifier.clickable { viewModel.onPinToggleClick() }
+                        modifier = Modifier.clickable {
+                        }
                     )
                     ListItem(
                         headlineContent = { Text(stringResource(R.string.settings_manage_tags)) },
