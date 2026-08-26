@@ -35,6 +35,9 @@ class SettingsRepository @Inject constructor(
     val pinHash: Flow<String?> = context.dataStore.data
         .map { preferences -> preferences[PIN_HASH] }
 
+    val pinLength: Flow<Int> = context.dataStore.data
+        .map { preferences -> preferences[PIN_LENGTH] ?: 4 }
+
     suspend fun setSortOrder(sortOrder: SortOrder) {
         context.dataStore.edit { preferences ->
             preferences[SORT_ORDER] = sortOrder.name
@@ -51,12 +54,14 @@ class SettingsRepository @Inject constructor(
         val hash = hashPin(pin)
         context.dataStore.edit { preferences ->
             preferences[PIN_HASH] = hash
+            preferences[PIN_LENGTH] = pin.length
         }
     }
 
     suspend fun clearPin() {
         context.dataStore.edit { preferences ->
             preferences.remove(PIN_HASH)
+            preferences.remove(PIN_LENGTH)
         }
     }
 
@@ -71,5 +76,6 @@ class SettingsRepository @Inject constructor(
         val SORT_ORDER = stringPreferencesKey("sort_order")
         val APP_THEME = stringPreferencesKey("app_theme")
         val PIN_HASH = stringPreferencesKey("pin_hash")
+        val PIN_LENGTH = androidx.datastore.preferences.core.intPreferencesKey("pin_length")
     }
 }

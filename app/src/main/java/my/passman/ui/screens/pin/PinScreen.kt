@@ -5,6 +5,7 @@ import androidx.compose.animation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Backspace
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -64,9 +65,13 @@ fun PinScreen(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    repeat(4) { index ->
-                        val isFilled = index < state.pin.length
-                        PinDot(isFilled = isFilled, isError = state.error != null)
+                    val dotCount = if (state.mode == PinMode.SET) 6 else state.expectedLength
+                    repeat(dotCount) { index ->
+                        val isVisible = state.mode != PinMode.SET || index < state.pin.length.coerceAtLeast(4)
+                        if (isVisible) {
+                            val isFilled = index < state.pin.length
+                            PinDot(isFilled = isFilled, isError = state.error != null)
+                        }
                     }
                 }
 
@@ -109,7 +114,23 @@ fun PinScreen(
                     ) {
                         row.forEach { item ->
                             when (item) {
-                                "" -> Spacer(modifier = Modifier.size(80.dp))
+                                "" -> {
+                                    if (state.mode == PinMode.SET && state.pin.length >= 4) {
+                                        IconButton(
+                                            onClick = viewModel::onConfirmClick,
+                                            modifier = Modifier.size(80.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Check,
+                                                contentDescription = stringResource(R.string.save),
+                                                modifier = Modifier.size(32.dp),
+                                                tint = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                    } else {
+                                        Spacer(modifier = Modifier.size(80.dp))
+                                    }
+                                }
                                 "delete" -> {
                                     IconButton(
                                         onClick = viewModel::onDeleteClick,

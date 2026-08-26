@@ -25,12 +25,34 @@ class PinViewModel @AssistedInject constructor(
 
     private var firstEnteredPin: String = ""
 
+    init {
+        if (mode == PinMode.UNLOCK) {
+            viewModelScope.launch {
+                settingsRepository.pinLength.collect { length ->
+                    _uiState.update { it.copy(expectedLength = length) }
+                }
+            }
+        }
+    }
+
     fun onDigitClick(digit: String) {
-        if (_uiState.value.pin.length < 4) {
-            _uiState.update { it.copy(pin = it.pin + digit, error = null) }
-            if (_uiState.value.pin.length == 4) {
+        val currentPin = _uiState.value.pin
+        val maxLength = if (_uiState.value.mode == PinMode.SET) 6 else _uiState.value.expectedLength
+
+        if (currentPin.length < maxLength) {
+            val newPin = currentPin + digit
+            _uiState.update { it.copy(pin = newPin, error = null) }
+            
+            // Auto-submit for confirmation or unlocking
+            if (_uiState.value.mode != PinMode.SET && newPin.length == _uiState.value.expectedLength) {
                 handlePinEntryComplete()
             }
+        }
+    }
+
+    fun onConfirmClick() {
+        if (_uiState.value.pin.length >= 4) {
+            handlePinEntryComplete()
         }
     }
 
@@ -50,7 +72,9 @@ class PinViewModel @AssistedInject constructor(
             when (_uiState.value.mode) {
                 PinMode.SET -> {
                     firstEnteredPin = enteredPin
-                    _uiState.update { it.copy(pin = "", mode = PinMode.CONFIRM) }
+                    _uiState.update { 
+                        it.copy(pin = "", mode = PinMode.CONFIRM, expectedLength = enteredPin.length) 
+                    }
                 }
 
                 PinMode.CONFIRM -> {
