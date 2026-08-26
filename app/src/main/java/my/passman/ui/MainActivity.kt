@@ -175,6 +175,7 @@ class MainActivity : ComponentActivity() {
                                     )
                                     PinScreen(
                                         viewModel = pinViewModel,
+                                        onBack = { viewModel.navigateTo(Screen.Settings) },
                                         onSuccess = { viewModel.onPinSuccess(targetScreen.mode) }
                                     )
                                 }

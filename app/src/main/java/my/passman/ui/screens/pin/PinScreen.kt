@@ -1,5 +1,6 @@
 package my.passman.ui.screens.pin
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -18,9 +19,14 @@ import my.passman.R
 @Composable
 fun PinScreen(
     viewModel: PinViewModel,
+    onBack: () -> Unit,
     onSuccess: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    BackHandler(enabled = state.mode == PinMode.SET || state.mode == PinMode.CONFIRM) {
+        onBack()
+    }
 
     LaunchedEffect(state.isSuccess) {
         if (state.isSuccess) {
