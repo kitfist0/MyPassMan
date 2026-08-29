@@ -65,7 +65,11 @@ fun PinScreen(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    val dotCount = if (state.mode == PinMode.SET) 6 else state.expectedLength
+                    val dotCount = when (state.mode) {
+                        PinMode.SET -> 6
+                        PinMode.CONFIRM -> state.expectedLength
+                        PinMode.UNLOCK -> state.pin.length
+                    }
                     repeat(dotCount) { index ->
                         val isVisible = state.mode != PinMode.SET || index < state.pin.length.coerceAtLeast(4)
                         if (isVisible) {
