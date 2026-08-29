@@ -6,6 +6,7 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,6 +14,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import my.passman.data.SettingsRepository
+import kotlin.time.Duration.Companion.milliseconds
 
 @HiltViewModel(assistedFactory = PinViewModel.Factory::class)
 class PinViewModel @AssistedInject constructor(
@@ -36,6 +38,8 @@ class PinViewModel @AssistedInject constructor(
     }
 
     fun onDigitClick(digit: String) {
+        if (_uiState.value.isValidating) return
+
         val currentPin = _uiState.value.pin
         val maxLength = if (_uiState.value.mode == PinMode.SET) 6 else _uiState.value.expectedLength
 
@@ -57,6 +61,10 @@ class PinViewModel @AssistedInject constructor(
     }
 
     fun onDeleteClick() {
+        if (_uiState.value.isValidating) {
+            return
+        }
+
         _uiState.update {
             if (it.pin.isNotEmpty()) {
                 it.copy(pin = it.pin.dropLast(1), error = null)
@@ -87,11 +95,13 @@ class PinViewModel @AssistedInject constructor(
                 }
 
                 PinMode.UNLOCK -> {
+                    _uiState.update { it.copy(isValidating = true) }
+                    delay(500.milliseconds)
                     val storedHash = settingsRepository.pinHash.first()
                     if (storedHash == null || settingsRepository.hashPin(enteredPin) == storedHash) {
-                        _uiState.update { it.copy(isSuccess = true) }
+                        _uiState.update { it.copy(isSuccess = true, isValidating = false) }
                     } else {
-                        _uiState.update { it.copy(pin = "", error = "invalid") }
+                        _uiState.update { it.copy(pin = "", error = "invalid", isValidating = false) }
                     }
                 }
             }

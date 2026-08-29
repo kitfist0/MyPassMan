@@ -5,7 +5,8 @@ data class PinScreenState(
     val expectedLength: Int = 4,
     val mode: PinMode = PinMode.UNLOCK,
     val error: String? = null,
-    val isSuccess: Boolean = false
+    val isSuccess: Boolean = false,
+    val isValidating: Boolean = false
 )
 
 enum class PinMode {
