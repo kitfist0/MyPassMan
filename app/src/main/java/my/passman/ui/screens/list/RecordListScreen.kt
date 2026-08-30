@@ -34,7 +34,7 @@ fun RecordListScreen(
     animatedVisibilityScope: AnimatedVisibilityScope,
     onAddRecord: () -> Unit,
     onEditRecord: (Long) -> Unit,
-    onNavigateToSettings: () -> Unit
+    onNavigateToSettings: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -42,27 +42,29 @@ fun RecordListScreen(
         topBar = {
             Surface(
                 color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 3.dp
+                tonalElevation = 3.dp,
             ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .statusBarsPadding(),
-                    verticalAlignment = Alignment.CenterVertically
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .statusBarsPadding(),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     OutlinedTextField(
                         value = state.searchQuery,
                         onValueChange = { viewModel.updateSearchQuery(it) },
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(16.dp),
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .padding(16.dp),
                         placeholder = { Text(stringResource(R.string.search_placeholder)) },
                         leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                        singleLine = true
+                        singleLine = true,
                     )
                     IconButton(
                         onClick = onNavigateToSettings,
-                        modifier = Modifier.padding(end = 8.dp)
+                        modifier = Modifier.padding(end = 8.dp),
                     ) {
                         Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.settings_description))
                     }
@@ -72,43 +74,52 @@ fun RecordListScreen(
         floatingActionButton = {
             FloatingActionButton(
                 modifier = Modifier.imePadding(),
-                onClick = onAddRecord
+                onClick = onAddRecord,
             ) {
                 Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_description))
             }
-        }
+        },
     ) { padding ->
         if (state.records.isEmpty()) {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(padding),
+                contentAlignment = Alignment.Center,
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(
                         imageVector = Icons.Default.Inbox,
                         contentDescription = null,
                         modifier = Modifier.size(64.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = if (state.searchQuery.isEmpty()) stringResource(R.string.no_records) else stringResource(R.string.no_matches),
+                        text =
+                            if (state.searchQuery.isEmpty()) {
+                                stringResource(
+                                    R.string.no_records,
+                                )
+                            } else {
+                                stringResource(R.string.no_matches)
+                            },
                         style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
         } else {
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .consumeWindowInsets(padding)
-                    .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                        .consumeWindowInsets(padding)
+                        .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)),
                 contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 items(state.records, key = { it.record.id }) { item ->
                     RecordCard(
@@ -116,7 +127,7 @@ fun RecordListScreen(
                         tagName = item.tag?.name,
                         sharedTransitionScope = sharedTransitionScope,
                         animatedVisibilityScope = animatedVisibilityScope,
-                        onClick = { onEditRecord(item.record.id) }
+                        onClick = { onEditRecord(item.record.id) },
                     )
                 }
             }
@@ -131,7 +142,7 @@ fun RecordCard(
     tagName: String?,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     val context = LocalContext.current
     val passwordLabel = stringResource(R.string.clipboard_password_label)
@@ -139,77 +150,81 @@ fun RecordCard(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
         Box(
-            modifier = Modifier
-                .combinedClickable(
-                    onClick = onClick,
-                    onLongClick = {
-                        ClipboardUtils.copyToClipboard(
-                            context = context,
-                            text = record.secret,
-                            label = passwordLabel,
-                            isSensitive = true,
-                            toastMessage = passwordCopiedToast
-                        )
-                    }
-                )
-                .padding(16.dp)
-                .fillMaxWidth()
+            modifier =
+                Modifier
+                    .combinedClickable(
+                        onClick = onClick,
+                        onLongClick = {
+                            ClipboardUtils.copyToClipboard(
+                                context = context,
+                                text = record.secret,
+                                label = passwordLabel,
+                                isSensitive = true,
+                                toastMessage = passwordCopiedToast,
+                            )
+                        },
+                    ).padding(16.dp)
+                    .fillMaxWidth(),
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 with(sharedTransitionScope) {
                     Text(
                         text = record.name,
-                        modifier = Modifier
-                            .fillMaxWidth(0.7f)
-                            .sharedElement(
-                                rememberSharedContentState(key = "name-${record.id}"),
-                                animatedVisibilityScope = animatedVisibilityScope
-                            ),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth(0.7f)
+                                .sharedElement(
+                                    rememberSharedContentState(key = "name-${record.id}"),
+                                    animatedVisibilityScope = animatedVisibilityScope,
+                                ),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
                     )
                     if (record.login.isNotBlank()) {
                         Text(
                             text = record.login,
-                            modifier = Modifier.sharedElement(
-                                rememberSharedContentState(key = "login-${record.id}"),
-                                animatedVisibilityScope = animatedVisibilityScope
-                            ),
+                            modifier =
+                                Modifier.sharedElement(
+                                    rememberSharedContentState(key = "login-${record.id}"),
+                                    animatedVisibilityScope = animatedVisibilityScope,
+                                ),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.secondary,
                             maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = TextOverflow.Ellipsis,
                         )
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "*".repeat(record.secret.length),
-                        modifier = Modifier.sharedElement(
-                            rememberSharedContentState(key = "secret-${record.id}"),
-                            animatedVisibilityScope = animatedVisibilityScope
-                        ),
+                        modifier =
+                            Modifier.sharedElement(
+                                rememberSharedContentState(key = "secret-${record.id}"),
+                                animatedVisibilityScope = animatedVisibilityScope,
+                            ),
                         style = MaterialTheme.typography.bodyMedium,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
                 Spacer(modifier = Modifier.height(4.dp))
                 with(sharedTransitionScope) {
                     Text(
                         text = record.comment,
-                        modifier = Modifier.sharedElement(
-                            rememberSharedContentState(key = "comment-${record.id}"),
-                            animatedVisibilityScope = animatedVisibilityScope
-                        ),
+                        modifier =
+                            Modifier.sharedElement(
+                                rememberSharedContentState(key = "comment-${record.id}"),
+                                animatedVisibilityScope = animatedVisibilityScope,
+                            ),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
@@ -220,10 +235,10 @@ fun RecordCard(
                     label = {
                         Text(
                             text = tagName,
-                            style = MaterialTheme.typography.labelSmall
+                            style = MaterialTheme.typography.labelSmall,
                         )
                     },
-                    modifier = Modifier.align(Alignment.TopEnd)
+                    modifier = Modifier.align(Alignment.TopEnd),
                 )
             }
         }

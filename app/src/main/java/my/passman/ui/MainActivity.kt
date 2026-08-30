@@ -5,8 +5,8 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
@@ -23,23 +23,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dagger.hilt.android.AndroidEntryPoint
 import my.passman.ui.screens.edit.EditRecordScreen
 import my.passman.ui.screens.edit.EditRecordViewModel
 import my.passman.ui.screens.list.RecordListScreen
 import my.passman.ui.screens.list.RecordListViewModel
-import my.passman.ui.screens.settings.SettingsScreen
 import my.passman.ui.screens.pin.PinMode
 import my.passman.ui.screens.pin.PinScreen
 import my.passman.ui.screens.pin.PinViewModel
+import my.passman.ui.screens.settings.SettingsScreen
 import my.passman.ui.screens.settings.SettingsViewModel
 import my.passman.ui.screens.tags.TagsScreen
 import my.passman.ui.screens.tags.TagsViewModel
 import my.passman.ui.theme.MyPassManTheme
-import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-
     @OptIn(ExperimentalSharedTransitionApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,7 +54,7 @@ class MainActivity : ComponentActivity() {
             MyPassManTheme(appTheme = appTheme) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+                    color = MaterialTheme.colorScheme.background,
                 ) {
                     if (isLoading) {
                         return@Surface
@@ -73,7 +72,7 @@ class MainActivity : ComponentActivity() {
                                         .togetherWith(slideOutHorizontally { it } + fadeOut())
                                 }
                             },
-                            label = "ScreenTransition"
+                            label = "ScreenTransition",
                         ) { targetScreen ->
                             val animatedVisibilityScope = this
                             val sharedTransitionScope = this@SharedTransitionLayout
@@ -89,49 +88,52 @@ class MainActivity : ComponentActivity() {
                                         onEditRecord = { id ->
                                             viewModel.navigateTo(Screen.Edit(id))
                                         },
-                                        onNavigateToSettings = { viewModel.navigateTo(Screen.Settings) }
+                                        onNavigateToSettings = { viewModel.navigateTo(Screen.Settings) },
                                     )
                                 }
 
                                 is Screen.Edit -> {
-                                    val editRecordViewModel: EditRecordViewModel = hiltViewModel(
-                                        key = "edit-${targetScreen.recordId}-${targetScreen.sessionKey}",
-                                        creationCallback = { factory: EditRecordViewModel.Factory ->
-                                            factory.create(targetScreen.recordId)
-                                        }
-                                    )
+                                    val editRecordViewModel: EditRecordViewModel =
+                                        hiltViewModel(
+                                            key = "edit-${targetScreen.recordId}-${targetScreen.sessionKey}",
+                                            creationCallback = { factory: EditRecordViewModel.Factory ->
+                                                factory.create(targetScreen.recordId)
+                                            },
+                                        )
                                     EditRecordScreen(
                                         viewModel = editRecordViewModel,
                                         sharedTransitionScope = sharedTransitionScope,
                                         animatedVisibilityScope = animatedVisibilityScope,
                                         onSave = { viewModel.navigateTo(Screen.List) },
                                         onDelete = { viewModel.navigateTo(Screen.List) },
-                                        onCancel = { viewModel.navigateTo(Screen.List) }
+                                        onCancel = { viewModel.navigateTo(Screen.List) },
                                     )
                                 }
 
                                 is Screen.Settings -> {
                                     val settingsViewModel: SettingsViewModel = hiltViewModel()
 
-                                    val createDocumentLauncher = rememberLauncherForActivityResult(
-                                        ActivityResultContracts.CreateDocument("application/octet-stream")
-                                    ) { uri ->
-                                        uri?.let {
-                                            context.contentResolver.openOutputStream(it)?.let { os ->
-                                                settingsViewModel.executeExport(os)
+                                    val createDocumentLauncher =
+                                        rememberLauncherForActivityResult(
+                                            ActivityResultContracts.CreateDocument("application/octet-stream"),
+                                        ) { uri ->
+                                            uri?.let {
+                                                context.contentResolver.openOutputStream(it)?.let { os ->
+                                                    settingsViewModel.executeExport(os)
+                                                }
                                             }
                                         }
-                                    }
 
-                                    val openDocumentLauncher = rememberLauncherForActivityResult(
-                                        ActivityResultContracts.OpenDocument()
-                                    ) { uri ->
-                                        uri?.let {
-                                            context.contentResolver.openInputStream(it)?.let { isStream ->
-                                                settingsViewModel.onImportFileSelected(isStream)
+                                    val openDocumentLauncher =
+                                        rememberLauncherForActivityResult(
+                                            ActivityResultContracts.OpenDocument(),
+                                        ) { uri ->
+                                            uri?.let {
+                                                context.contentResolver.openInputStream(it)?.let { isStream ->
+                                                    settingsViewModel.onImportFileSelected(isStream)
+                                                }
                                             }
                                         }
-                                    }
 
                                     LaunchedEffect(settingsViewModel) {
                                         for (event in settingsViewModel.events) {
@@ -167,16 +169,17 @@ class MainActivity : ComponentActivity() {
                                 }
 
                                 is Screen.Pin -> {
-                                    val pinViewModel: PinViewModel = hiltViewModel(
-                                        key = "pin-${targetScreen.mode}-${targetScreen.sessionKey}",
-                                        creationCallback = { factory: PinViewModel.Factory ->
-                                            factory.create(targetScreen.mode)
-                                        }
-                                    )
+                                    val pinViewModel: PinViewModel =
+                                        hiltViewModel(
+                                            key = "pin-${targetScreen.mode}-${targetScreen.sessionKey}",
+                                            creationCallback = { factory: PinViewModel.Factory ->
+                                                factory.create(targetScreen.mode)
+                                            },
+                                        )
                                     PinScreen(
                                         viewModel = pinViewModel,
                                         onBack = { viewModel.navigateTo(Screen.Settings) },
-                                        onSuccess = { viewModel.onPinSuccess(targetScreen.mode) }
+                                        onSuccess = { viewModel.onPinSuccess(targetScreen.mode) },
                                     )
                                 }
                             }

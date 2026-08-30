@@ -9,11 +9,17 @@ data class TagsScreenState(
 
 data class TagsDialogState(
     val activeDialog: TagsDialog? = null,
-    val tagName: String = ""
+    val tagName: String = "",
 )
 
 sealed interface TagsDialog {
     data object Add : TagsDialog
-    data class Edit(val tag: Tag) : TagsDialog
-    data class Delete(val tag: Tag) : TagsDialog
+
+    data class Edit(
+        val tag: Tag,
+    ) : TagsDialog
+
+    data class Delete(
+        val tag: Tag,
+    ) : TagsDialog
 }

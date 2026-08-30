@@ -8,19 +8,18 @@ import kotlinx.serialization.Serializable
 @Serializable
 @Entity(
     tableName = "tags",
-    indices = [Index(value = ["name"], unique = true)]
+    indices = [Index(value = ["name"], unique = true)],
 )
 data class Tag(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
-    val name: String
+    val name: String,
 ) {
     companion object {
         const val MAX_NAME_LENGTH = 25
 
-        fun isValidName(name: String): Boolean {
-            return name.length in 1..MAX_NAME_LENGTH && 
-                   name.all { it.isLetterOrDigit() || it == '.' || it == '-' }
-        }
+        fun isValidName(name: String): Boolean =
+            name.length in 1..MAX_NAME_LENGTH &&
+                name.all { it.isLetterOrDigit() || it == '.' || it == '-' }
     }
 }

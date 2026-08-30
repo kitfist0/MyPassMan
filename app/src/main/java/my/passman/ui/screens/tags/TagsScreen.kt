@@ -46,10 +46,10 @@ fun TagsScreen(
                                 if (dialogState.tagName.isNotEmpty() && !isValid) {
                                     Text(
                                         text = stringResource(R.string.tag_name_error, Tag.MAX_NAME_LENGTH),
-                                        color = MaterialTheme.colorScheme.error
+                                        color = MaterialTheme.colorScheme.error,
                                     )
                                 }
-                            }
+                            },
                         )
                     }
                 },
@@ -59,7 +59,7 @@ fun TagsScreen(
                         onClick = {
                             viewModel.onAddDialogConfirmButtonClick()
                             viewModel.dismissDialog()
-                        }
+                        },
                     ) {
                         Text(stringResource(R.string.add))
                     }
@@ -68,7 +68,7 @@ fun TagsScreen(
                     TextButton(onClick = { viewModel.dismissDialog() }) {
                         Text(stringResource(R.string.cancel))
                     }
-                }
+                },
             )
         }
 
@@ -90,10 +90,10 @@ fun TagsScreen(
                             if (dialogState.tagName.isNotEmpty() && !isValid) {
                                 Text(
                                     text = stringResource(R.string.tag_name_error, Tag.MAX_NAME_LENGTH),
-                                    color = MaterialTheme.colorScheme.error
+                                    color = MaterialTheme.colorScheme.error,
                                 )
                             }
-                        }
+                        },
                     )
                 },
                 confirmButton = {
@@ -102,7 +102,7 @@ fun TagsScreen(
                         onClick = {
                             viewModel.onEditDialogConfirmButtonClick()
                             viewModel.dismissDialog()
-                        }
+                        },
                     ) {
                         Text(stringResource(R.string.save))
                     }
@@ -111,7 +111,7 @@ fun TagsScreen(
                     TextButton(onClick = { viewModel.dismissDialog() }) {
                         Text(stringResource(R.string.cancel))
                     }
-                }
+                },
             )
         }
 
@@ -126,7 +126,7 @@ fun TagsScreen(
                             viewModel.onDeleteDialogConfirmButtonClick(dialog.tag)
                             viewModel.dismissDialog()
                         },
-                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
                     ) {
                         Text(stringResource(R.string.delete))
                     }
@@ -135,7 +135,7 @@ fun TagsScreen(
                     TextButton(onClick = { viewModel.dismissDialog() }) {
                         Text(stringResource(R.string.cancel))
                     }
-                }
+                },
             )
         }
 
@@ -150,41 +150,43 @@ fun TagsScreen(
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back_description))
                     }
-                }
+                },
             )
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { viewModel.showAddDialog() }) {
                 Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_tag_description))
             }
-        }
+        },
     ) { padding ->
         if (state.tags.isEmpty()) {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(padding),
+                contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text = stringResource(R.string.no_tags),
                     style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         } else {
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(padding),
                 contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 items(state.tags, key = { it.id }) { tag ->
                     TagItem(
                         tag = tag,
                         onDelete = { viewModel.showDeleteConfirmation(tag) },
-                        onClick = { viewModel.showEditDialog(tag) }
+                        onClick = { viewModel.showEditDialog(tag) },
                     )
                 }
             }
@@ -201,27 +203,29 @@ private fun TagItem(
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainer
-        )
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+            ),
     ) {
         Row(
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-                .fillMaxWidth(),
+            modifier =
+                Modifier
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
                 text = tag.name,
                 style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             )
             IconButton(onClick = onDelete) {
                 Icon(
                     imageVector = Icons.Default.Delete,
                     contentDescription = stringResource(R.string.delete_description),
-                    tint = MaterialTheme.colorScheme.error
+                    tint = MaterialTheme.colorScheme.error,
                 )
             }
         }

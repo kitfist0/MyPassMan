@@ -15,10 +15,10 @@ import kotlinx.serialization.Serializable
             entity = Tag::class,
             parentColumns = ["id"],
             childColumns = ["tag_id"],
-            onDelete = ForeignKey.SET_NULL
-        )
+            onDelete = ForeignKey.SET_NULL,
+        ),
     ],
-    indices = [Index(value = ["tag_id"])]
+    indices = [Index(value = ["tag_id"])],
 )
 data class Record(
     @PrimaryKey(autoGenerate = true)

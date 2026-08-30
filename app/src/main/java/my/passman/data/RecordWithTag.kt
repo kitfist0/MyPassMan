@@ -7,7 +7,7 @@ data class RecordWithTag(
     @Embedded val record: Record,
     @Relation(
         parentColumn = "tag_id",
-        entityColumn = "id"
+        entityColumn = "id",
     )
-    val tag: Tag?
+    val tag: Tag?,
 )

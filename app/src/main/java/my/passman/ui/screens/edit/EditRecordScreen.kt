@@ -4,8 +4,8 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
@@ -38,7 +38,7 @@ fun EditRecordScreen(
     animatedVisibilityScope: AnimatedVisibilityScope,
     onSave: () -> Unit,
     onDelete: () -> Unit,
-    onCancel: () -> Unit
+    onCancel: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -70,7 +70,7 @@ fun EditRecordScreen(
                     onClick = {
                         viewModel.save()
                         onSave()
-                    }
+                    },
                 ) {
                     Text(stringResource(R.string.yes))
                 }
@@ -82,7 +82,7 @@ fun EditRecordScreen(
                 }) {
                     Text(stringResource(R.string.no))
                 }
-            }
+            },
         )
     }
 
@@ -98,7 +98,7 @@ fun EditRecordScreen(
                         viewModel.delete()
                         onDelete()
                     },
-                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
                 ) {
                     Text(stringResource(R.string.delete))
                 }
@@ -107,7 +107,7 @@ fun EditRecordScreen(
                 TextButton(onClick = { viewModel.dismissDeleteDialog() }) {
                     Text(stringResource(R.string.cancel))
                 }
-            }
+            },
         )
     }
 
@@ -116,16 +116,20 @@ fun EditRecordScreen(
             TopAppBar(
                 title = {
                     Text(
-                        if (isNewRecord) stringResource(R.string.new_record) else stringResource(
-                            R.string.edit_record
-                        )
+                        if (isNewRecord) {
+                            stringResource(R.string.new_record)
+                        } else {
+                            stringResource(
+                                R.string.edit_record,
+                            )
+                        },
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = { viewModel.onBackPressed() }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.back_description)
+                            contentDescription = stringResource(R.string.back_description),
                         )
                     }
                 },
@@ -134,18 +138,18 @@ fun EditRecordScreen(
                         IconButton(onClick = { viewModel.showDeleteDialog() }) {
                             Icon(
                                 Icons.Default.Delete,
-                                contentDescription = stringResource(R.string.delete_description)
+                                contentDescription = stringResource(R.string.delete_description),
                             )
                         }
                     }
-                }
+                },
             )
         },
         floatingActionButton = {
             AnimatedVisibility(
                 visible = state.canSave,
                 enter = fadeIn(),
-                exit = fadeOut()
+                exit = fadeOut(),
             ) {
                 ExtendedFloatingActionButton(
                     modifier = Modifier.imePadding(),
@@ -154,44 +158,47 @@ fun EditRecordScreen(
                         onSave()
                     },
                     icon = { Icon(Icons.Default.Check, contentDescription = null) },
-                    text = { Text(stringResource(R.string.save)) }
+                    text = { Text(stringResource(R.string.save)) },
                 )
             }
         },
-        floatingActionButtonPosition = FabPosition.Center
+        floatingActionButtonPosition = FabPosition.Center,
     ) { padding ->
         if (state.isLoading) {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(padding),
+                contentAlignment = Alignment.Center,
             ) {
                 CircularProgressIndicator()
             }
         } else {
             Column(
-                modifier = Modifier
-                    .padding(padding)
-                    .consumeWindowInsets(padding)
-                    .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
-                    .padding(16.dp)
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                modifier =
+                    Modifier
+                        .padding(padding)
+                        .consumeWindowInsets(padding)
+                        .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
+                        .padding(16.dp)
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 with(sharedTransitionScope) {
                     OutlinedTextField(
                         value = state.name,
                         onValueChange = viewModel::onNameChange,
                         label = { Text(stringResource(R.string.label_name)) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .sharedElement(
-                                rememberSharedContentState(key = if (recordId != null) "name-$recordId" else "new-name"),
-                                animatedVisibilityScope = animatedVisibilityScope
-                            ),
-                        singleLine = true
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .sharedElement(
+                                    rememberSharedContentState(key = if (recordId != null) "name-$recordId" else "new-name"),
+                                    animatedVisibilityScope = animatedVisibilityScope,
+                                ),
+                        singleLine = true,
                     )
                 }
 
@@ -200,12 +207,13 @@ fun EditRecordScreen(
                         value = state.login,
                         onValueChange = viewModel::onLoginChange,
                         label = { Text(stringResource(R.string.label_login)) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .sharedElement(
-                                rememberSharedContentState(key = if (recordId != null) "login-$recordId" else "new-login"),
-                                animatedVisibilityScope = animatedVisibilityScope
-                            ),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .sharedElement(
+                                    rememberSharedContentState(key = if (recordId != null) "login-$recordId" else "new-login"),
+                                    animatedVisibilityScope = animatedVisibilityScope,
+                                ),
                         trailingIcon = {
                             if (!isNewRecord && state.login.isNotBlank()) {
                                 IconButton(
@@ -214,18 +222,18 @@ fun EditRecordScreen(
                                             context = context,
                                             text = state.login,
                                             label = loginLabel,
-                                            toastMessage = loginCopiedToast
+                                            toastMessage = loginCopiedToast,
                                         )
-                                    }
+                                    },
                                 ) {
                                     Icon(
                                         Icons.Default.ContentCopy,
-                                        contentDescription = stringResource(R.string.copy_login)
+                                        contentDescription = stringResource(R.string.copy_login),
                                     )
                                 }
                             }
                         },
-                        singleLine = true
+                        singleLine = true,
                     )
                 }
 
@@ -234,21 +242,27 @@ fun EditRecordScreen(
                         value = state.secret,
                         onValueChange = viewModel::onSecretChange,
                         label = { Text(stringResource(R.string.label_secret)) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .sharedElement(
-                                rememberSharedContentState(key = if (recordId != null) "secret-$recordId" else "new-secret"),
-                                animatedVisibilityScope = animatedVisibilityScope
-                            ),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .sharedElement(
+                                    rememberSharedContentState(key = if (recordId != null) "secret-$recordId" else "new-secret"),
+                                    animatedVisibilityScope = animatedVisibilityScope,
+                                ),
                         visualTransformation = if (state.secretVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         trailingIcon = {
                             Row {
                                 IconButton(onClick = viewModel::toggleSecretVisibility) {
                                     Icon(
                                         if (state.secretVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                                        contentDescription = if (state.secretVisible) stringResource(
-                                            R.string.hide_secret
-                                        ) else stringResource(R.string.show_secret)
+                                        contentDescription =
+                                            if (state.secretVisible) {
+                                                stringResource(
+                                                    R.string.hide_secret,
+                                                )
+                                            } else {
+                                                stringResource(R.string.show_secret)
+                                            },
                                     )
                                 }
                                 if (!isNewRecord && state.secret.isNotBlank()) {
@@ -259,19 +273,19 @@ fun EditRecordScreen(
                                                 text = state.secret,
                                                 label = passwordLabel,
                                                 isSensitive = true,
-                                                toastMessage = passwordCopiedToast
+                                                toastMessage = passwordCopiedToast,
                                             )
-                                        }
+                                        },
                                     ) {
                                         Icon(
                                             Icons.Default.ContentCopy,
-                                            contentDescription = stringResource(R.string.copy_secret)
+                                            contentDescription = stringResource(R.string.copy_secret),
                                         )
                                     }
                                 }
                             }
                         },
-                        singleLine = true
+                        singleLine = true,
                     )
                 }
 
@@ -280,14 +294,15 @@ fun EditRecordScreen(
                         value = state.comment,
                         onValueChange = viewModel::onCommentChange,
                         label = { Text(stringResource(R.string.label_comment)) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .sharedElement(
-                                rememberSharedContentState(key = if (recordId != null) "comment-$recordId" else "new-comment"),
-                                animatedVisibilityScope = animatedVisibilityScope
-                            ),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .sharedElement(
+                                    rememberSharedContentState(key = if (recordId != null) "comment-$recordId" else "new-comment"),
+                                    animatedVisibilityScope = animatedVisibilityScope,
+                                ),
                         minLines = 3,
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                     )
                 }
 
@@ -297,7 +312,7 @@ fun EditRecordScreen(
                 ExposedDropdownMenuBox(
                     expanded = expanded,
                     onExpandedChange = { expanded = !expanded },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     OutlinedTextField(
                         value = selectedTag?.name ?: stringResource(R.string.no_tag),
@@ -306,21 +321,22 @@ fun EditRecordScreen(
                         label = { Text(stringResource(R.string.label_tag)) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                         colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
-                        modifier = Modifier
-                            .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true)
-                            .fillMaxWidth()
+                        modifier =
+                            Modifier
+                                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true)
+                                .fillMaxWidth(),
                     )
 
                     ExposedDropdownMenu(
                         expanded = expanded,
-                        onDismissRequest = { expanded = false }
+                        onDismissRequest = { expanded = false },
                     ) {
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.no_tag)) },
                             onClick = {
                                 viewModel.onTagChange(null)
                                 expanded = false
-                            }
+                            },
                         )
                         state.allTags.forEach { tag ->
                             DropdownMenuItem(
@@ -328,38 +344,41 @@ fun EditRecordScreen(
                                 onClick = {
                                     viewModel.onTagChange(tag.id)
                                     expanded = false
-                                }
+                                },
                             )
                         }
                     }
                 }
 
                 if (recordId != null) {
-                    val dateFormat = remember {
-                        SimpleDateFormat("dd.MM.yyyy HH:mm:ss", Locale.getDefault())
-                    }
+                    val dateFormat =
+                        remember {
+                            SimpleDateFormat("dd.MM.yyyy HH:mm:ss", Locale.getDefault())
+                        }
 
                     Spacer(modifier = Modifier.height(8.dp))
 
                     state.created?.let {
                         Text(
-                            text = stringResource(
-                                R.string.created_format,
-                                dateFormat.format(Date(it))
-                            ),
+                            text =
+                                stringResource(
+                                    R.string.created_format,
+                                    dateFormat.format(Date(it)),
+                                ),
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
 
                     state.modified?.let {
                         Text(
-                            text = stringResource(
-                                R.string.modified_format,
-                                dateFormat.format(Date(it))
-                            ),
+                            text =
+                                stringResource(
+                                    R.string.modified_format,
+                                    dateFormat.format(Date(it)),
+                                ),
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }

@@ -13,15 +13,16 @@ object ClipboardUtils {
         text: String,
         label: String = "text",
         isSensitive: Boolean = false,
-        toastMessage: String? = null
+        toastMessage: String? = null,
     ) {
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val clip = ClipData.newPlainText(label, text)
 
         if (isSensitive) {
-            clip.description.extras = PersistableBundle().apply {
-                putBoolean("android.content.extra.IS_SENSITIVE", true)
-            }
+            clip.description.extras =
+                PersistableBundle().apply {
+                    putBoolean("android.content.extra.IS_SENSITIVE", true)
+                }
         }
 
         clipboard.setPrimaryClip(clip)

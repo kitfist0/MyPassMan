@@ -21,7 +21,7 @@ import my.passman.R
 fun PinScreen(
     viewModel: PinViewModel,
     onBack: () -> Unit,
-    onSuccess: () -> Unit
+    onSuccess: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -37,25 +37,27 @@ fun PinScreen(
 
     Scaffold { padding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(24.dp),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceBetween
+            verticalArrangement = Arrangement.SpaceBetween,
         ) {
             Spacer(modifier = Modifier.height(48.dp))
 
             // Title and Indicators
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = when (state.mode) {
-                        PinMode.SET -> stringResource(R.string.pin_title_set)
-                        PinMode.CONFIRM -> stringResource(R.string.pin_title_confirm)
-                        PinMode.UNLOCK -> stringResource(R.string.pin_title_unlock)
-                    },
+                    text =
+                        when (state.mode) {
+                            PinMode.SET -> stringResource(R.string.pin_title_set)
+                            PinMode.CONFIRM -> stringResource(R.string.pin_title_confirm)
+                            PinMode.UNLOCK -> stringResource(R.string.pin_title_unlock)
+                        },
                     style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
                 )
 
                 Spacer(modifier = Modifier.height(32.dp))
@@ -63,13 +65,14 @@ fun PinScreen(
                 // PIN Dots
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    val dotCount = when (state.mode) {
-                        PinMode.SET -> 6
-                        PinMode.CONFIRM -> state.expectedLength
-                        PinMode.UNLOCK -> state.pin.length
-                    }
+                    val dotCount =
+                        when (state.mode) {
+                            PinMode.SET -> 6
+                            PinMode.CONFIRM -> state.expectedLength
+                            PinMode.UNLOCK -> state.pin.length
+                        }
                     repeat(dotCount) { index ->
                         val isVisible = state.mode != PinMode.SET || index < state.pin.length.coerceAtLeast(4)
                         if (isVisible) {
@@ -84,17 +87,18 @@ fun PinScreen(
                 AnimatedVisibility(
                     visible = state.error != null,
                     enter = fadeIn() + expandVertically(),
-                    exit = fadeOut() + shrinkVertically()
+                    exit = fadeOut() + shrinkVertically(),
                 ) {
-                    val errorMessage = when (state.error) {
-                        "mismatch" -> stringResource(R.string.pin_error_mismatch)
-                        "invalid" -> stringResource(R.string.pin_error_invalid)
-                        else -> state.error ?: ""
-                    }
+                    val errorMessage =
+                        when (state.error) {
+                            "mismatch" -> stringResource(R.string.pin_error_mismatch)
+                            "invalid" -> stringResource(R.string.pin_error_invalid)
+                            else -> state.error ?: ""
+                        }
                     Text(
                         text = errorMessage,
                         color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodyMedium
+                        style = MaterialTheme.typography.bodyMedium,
                     )
                 }
             }
@@ -102,19 +106,20 @@ fun PinScreen(
             // Keypad
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                val digits = listOf(
-                    listOf("1", "2", "3"),
-                    listOf("4", "5", "6"),
-                    listOf("7", "8", "9"),
-                    listOf("", "0", "delete")
-                )
+                val digits =
+                    listOf(
+                        listOf("1", "2", "3"),
+                        listOf("4", "5", "6"),
+                        listOf("7", "8", "9"),
+                        listOf("", "0", "delete"),
+                    )
 
                 digits.forEach { row ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
+                        horizontalArrangement = Arrangement.SpaceEvenly,
                     ) {
                         row.forEach { item ->
                             when (item) {
@@ -122,13 +127,13 @@ fun PinScreen(
                                     if (state.mode == PinMode.SET && state.pin.length >= 4) {
                                         IconButton(
                                             onClick = viewModel::onConfirmClick,
-                                            modifier = Modifier.size(80.dp)
+                                            modifier = Modifier.size(80.dp),
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Default.Check,
                                                 contentDescription = stringResource(R.string.save),
                                                 modifier = Modifier.size(32.dp),
-                                                tint = MaterialTheme.colorScheme.primary
+                                                tint = MaterialTheme.colorScheme.primary,
                                             )
                                         }
                                     } else {
@@ -138,12 +143,12 @@ fun PinScreen(
                                 "delete" -> {
                                     IconButton(
                                         onClick = viewModel::onDeleteClick,
-                                        modifier = Modifier.size(80.dp)
+                                        modifier = Modifier.size(80.dp),
                                     ) {
                                         Icon(
                                             imageVector = Icons.AutoMirrored.Filled.Backspace,
                                             contentDescription = stringResource(R.string.delete),
-                                            modifier = Modifier.size(32.dp)
+                                            modifier = Modifier.size(32.dp),
                                         )
                                     }
                                 }
@@ -152,12 +157,12 @@ fun PinScreen(
                                         onClick = { viewModel.onDigitClick(item) },
                                         modifier = Modifier.size(80.dp),
                                         shape = MaterialTheme.shapes.extraLarge,
-                                        contentPadding = PaddingValues(0.dp)
+                                        contentPadding = PaddingValues(0.dp),
                                     ) {
                                         Text(
                                             text = item,
                                             fontSize = 28.sp,
-                                            fontWeight = FontWeight.Medium
+                                            fontWeight = FontWeight.Medium,
                                         )
                                     }
                                 }
@@ -171,14 +176,18 @@ fun PinScreen(
 }
 
 @Composable
-private fun PinDot(isFilled: Boolean, isError: Boolean) {
+private fun PinDot(
+    isFilled: Boolean,
+    isError: Boolean,
+) {
     Surface(
         modifier = Modifier.size(16.dp),
         shape = MaterialTheme.shapes.extraLarge,
-        color = when {
-            isError -> MaterialTheme.colorScheme.error
-            isFilled -> MaterialTheme.colorScheme.primary
-            else -> MaterialTheme.colorScheme.surfaceVariant
-        }
+        color =
+            when {
+                isError -> MaterialTheme.colorScheme.error
+                isFilled -> MaterialTheme.colorScheme.primary
+                else -> MaterialTheme.colorScheme.surfaceVariant
+            },
     ) {}
 }

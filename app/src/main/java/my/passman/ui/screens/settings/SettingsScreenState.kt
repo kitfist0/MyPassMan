@@ -15,5 +15,6 @@ data class SettingsScreenState(
 )
 
 enum class BackupMode {
-    EXPORT, IMPORT
+    EXPORT,
+    IMPORT,
 }

@@ -16,66 +16,73 @@ import javax.inject.Singleton
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
 @Singleton
-class SettingsRepository @Inject constructor(
-    @ApplicationContext private val context: Context
-) {
+class SettingsRepository
+    @Inject
+    constructor(
+        @ApplicationContext private val context: Context,
+    ) {
+        val sortOrder: Flow<SortOrder> =
+            context.dataStore.data
+                .map { preferences ->
+                    val sortOrderName = preferences[SORT_ORDER] ?: SortOrder.BY_NAME.name
+                    SortOrder.valueOf(sortOrderName)
+                }
 
-    val sortOrder: Flow<SortOrder> = context.dataStore.data
-        .map { preferences ->
-            val sortOrderName = preferences[SORT_ORDER] ?: SortOrder.BY_NAME.name
-            SortOrder.valueOf(sortOrderName)
+        val appTheme: Flow<AppTheme> =
+            context.dataStore.data
+                .map { preferences ->
+                    val themeName = preferences[APP_THEME] ?: AppTheme.SYSTEM.name
+                    AppTheme.valueOf(themeName)
+                }
+
+        val pinHash: Flow<String?> =
+            context.dataStore.data
+                .map { preferences -> preferences[PIN_HASH] }
+
+        val pinLength: Flow<Int> =
+            context.dataStore.data
+                .map { preferences -> preferences[PIN_LENGTH] ?: 4 }
+
+        suspend fun setSortOrder(sortOrder: SortOrder) {
+            context.dataStore.edit { preferences ->
+                preferences[SORT_ORDER] = sortOrder.name
+            }
         }
 
-    val appTheme: Flow<AppTheme> = context.dataStore.data
-        .map { preferences ->
-            val themeName = preferences[APP_THEME] ?: AppTheme.SYSTEM.name
-            AppTheme.valueOf(themeName)
+        suspend fun setAppTheme(theme: AppTheme) {
+            context.dataStore.edit { preferences ->
+                preferences[APP_THEME] = theme.name
+            }
         }
 
-    val pinHash: Flow<String?> = context.dataStore.data
-        .map { preferences -> preferences[PIN_HASH] }
+        suspend fun setPin(pin: String) {
+            val hash = hashPin(pin)
+            context.dataStore.edit { preferences ->
+                preferences[PIN_HASH] = hash
+                preferences[PIN_LENGTH] = pin.length
+            }
+        }
 
-    val pinLength: Flow<Int> = context.dataStore.data
-        .map { preferences -> preferences[PIN_LENGTH] ?: 4 }
+        suspend fun clearPin() {
+            context.dataStore.edit { preferences ->
+                preferences.remove(PIN_HASH)
+                preferences.remove(PIN_LENGTH)
+            }
+        }
 
-    suspend fun setSortOrder(sortOrder: SortOrder) {
-        context.dataStore.edit { preferences ->
-            preferences[SORT_ORDER] = sortOrder.name
+        fun hashPin(pin: String): String {
+            val bytes = pin.toByteArray()
+            val md = MessageDigest.getInstance("SHA-256")
+            val digest = md.digest(bytes)
+            return digest.joinToString("") { "%02x".format(it) }
+        }
+
+        private companion object {
+            val SORT_ORDER = stringPreferencesKey("sort_order")
+            val APP_THEME = stringPreferencesKey("app_theme")
+            val PIN_HASH = stringPreferencesKey("pin_hash")
+            val PIN_LENGTH =
+                androidx.datastore.preferences.core
+                    .intPreferencesKey("pin_length")
         }
     }
-
-    suspend fun setAppTheme(theme: AppTheme) {
-        context.dataStore.edit { preferences ->
-            preferences[APP_THEME] = theme.name
-        }
-    }
-
-    suspend fun setPin(pin: String) {
-        val hash = hashPin(pin)
-        context.dataStore.edit { preferences ->
-            preferences[PIN_HASH] = hash
-            preferences[PIN_LENGTH] = pin.length
-        }
-    }
-
-    suspend fun clearPin() {
-        context.dataStore.edit { preferences ->
-            preferences.remove(PIN_HASH)
-            preferences.remove(PIN_LENGTH)
-        }
-    }
-
-    fun hashPin(pin: String): String {
-        val bytes = pin.toByteArray()
-        val md = MessageDigest.getInstance("SHA-256")
-        val digest = md.digest(bytes)
-        return digest.joinToString("") { "%02x".format(it) }
-    }
-
-    private companion object {
-        val SORT_ORDER = stringPreferencesKey("sort_order")
-        val APP_THEME = stringPreferencesKey("app_theme")
-        val PIN_HASH = stringPreferencesKey("pin_hash")
-        val PIN_LENGTH = androidx.datastore.preferences.core.intPreferencesKey("pin_length")
-    }
-}

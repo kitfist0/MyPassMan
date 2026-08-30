@@ -4,14 +4,16 @@ plugins {
     alias(libs.plugins.google.devtools.ksp)
     alias(libs.plugins.jetbrains.kotlin.plugin.serialization)
     alias(libs.plugins.dagger.hilt.android)
+    alias(libs.plugins.jlleitschuh.ktlint)
 }
 
 android {
     namespace = "my.passman"
     compileSdk {
-        version = release(37) {
-            minorApiLevel = 1
-        }
+        version =
+            release(37) {
+                minorApiLevel = 1
+            }
     }
 
     defaultConfig {

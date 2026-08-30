@@ -18,6 +18,6 @@ object PasswordValidator {
     enum class PasswordRequirement {
         MIN_LENGTH,
         LETTERS_AND_DIGITS,
-        HAS_SYMBOL
+        HAS_SYMBOL,
     }
 }

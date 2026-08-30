@@ -15,26 +15,19 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
-    
     @Provides
     @Singleton
-    fun provideBackupManager(recordDao: RecordDao): BackupManager {
-        return BackupManager(recordDao)
-    }
+    fun provideBackupManager(recordDao: RecordDao): BackupManager = BackupManager(recordDao)
 
     @Provides
     @Singleton
-    fun provideDatabase(@ApplicationContext context: Context): AppDatabase {
-        return AppDatabase.getDatabase(context)
-    }
+    fun provideDatabase(
+        @ApplicationContext context: Context,
+    ): AppDatabase = AppDatabase.getDatabase(context)
 
     @Provides
-    fun provideRecordDao(database: AppDatabase): RecordDao {
-        return database.recordDao()
-    }
+    fun provideRecordDao(database: AppDatabase): RecordDao = database.recordDao()
 
     @Provides
-    fun provideTagDao(database: AppDatabase): TagDao {
-        return database.tagDao()
-    }
+    fun provideTagDao(database: AppDatabase): TagDao = database.tagDao()
 }
