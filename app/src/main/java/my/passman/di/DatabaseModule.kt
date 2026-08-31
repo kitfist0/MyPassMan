@@ -1,6 +1,7 @@
 package my.passman.di
 
 import android.content.Context
+import androidx.room.Room
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -23,7 +24,12 @@ object DatabaseModule {
     @Singleton
     fun provideDatabase(
         @ApplicationContext context: Context,
-    ): AppDatabase = AppDatabase.getDatabase(context)
+    ): AppDatabase = Room
+        .databaseBuilder(
+            context.applicationContext,
+            AppDatabase::class.java,
+            "pass_man_database",
+        ).build()
 
     @Provides
     fun provideRecordDao(database: AppDatabase): RecordDao = database.recordDao()
