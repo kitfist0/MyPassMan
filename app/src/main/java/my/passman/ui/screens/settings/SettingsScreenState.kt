@@ -11,6 +11,7 @@ data class SettingsScreenState(
     val showThemeDialog: Boolean = false,
     val showAboutDialog: Boolean = false,
     val showBackupPasswordDialog: Boolean = false,
+    val showDisablePinDialog: Boolean = false,
     val backupMode: BackupMode? = null,
 )
 

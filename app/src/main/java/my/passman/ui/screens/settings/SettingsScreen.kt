@@ -148,6 +148,27 @@ fun SettingsScreen(
         )
     }
 
+    if (state.showDisablePinDialog) {
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissDisablePinDialog() },
+            title = { Text(stringResource(R.string.disable_pin_title)) },
+            text = { Text(stringResource(R.string.disable_pin_text)) },
+            confirmButton = {
+                TextButton(
+                    onClick = { viewModel.confirmDisablePin() },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                ) {
+                    Text(stringResource(R.string.disable))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.dismissDisablePinDialog() }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
+        )
+    }
+
     if (state.showBackupPasswordDialog) {
         var password by remember { mutableStateOf("") }
         var passwordVisible by remember { mutableStateOf(false) }
@@ -262,11 +283,11 @@ fun SettingsScreen(
                         trailingContent = {
                             Switch(
                                 checked = state.isPinEnabled,
-                                onCheckedChange = { b ->
-                                    if (b) {
+                                onCheckedChange = { checked ->
+                                    if (checked) {
                                         onSetupNewPin()
                                     } else {
-                                        viewModel.clearPin()
+                                        viewModel.showDisablePinDialog()
                                     }
                                 },
                             )

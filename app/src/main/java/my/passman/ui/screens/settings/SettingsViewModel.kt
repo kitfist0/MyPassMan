@@ -42,6 +42,7 @@ class SettingsViewModel
                     showThemeDialog = dialogState.showThemeDialog,
                     showAboutDialog = dialogState.showAboutDialog,
                     showBackupPasswordDialog = dialogState.showBackupPasswordDialog,
+                    showDisablePinDialog = dialogState.showDisablePinDialog,
                     backupMode = dialogState.backupMode,
                 )
             }.stateIn(
@@ -55,6 +56,7 @@ class SettingsViewModel
             val showThemeDialog: Boolean = false,
             val showAboutDialog: Boolean = false,
             val showBackupPasswordDialog: Boolean = false,
+            val showDisablePinDialog: Boolean = false,
             val backupMode: BackupMode? = null,
         )
 
@@ -86,6 +88,19 @@ class SettingsViewModel
             viewModelScope.launch {
                 settingsRepository.clearPin()
             }
+        }
+
+        fun showDisablePinDialog() {
+            _dialogState.update { it.copy(showDisablePinDialog = true) }
+        }
+
+        fun dismissDisablePinDialog() {
+            _dialogState.update { it.copy(showDisablePinDialog = false) }
+        }
+
+        fun confirmDisablePin() {
+            _dialogState.update { it.copy(showDisablePinDialog = false) }
+            clearPin()
         }
 
         fun onImportFileSelected(inputStream: InputStream) {
