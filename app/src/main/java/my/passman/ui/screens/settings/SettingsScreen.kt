@@ -1,5 +1,6 @@
 package my.passman.ui.screens.settings
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -33,6 +34,10 @@ fun SettingsScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+
+    BackHandler {
+        onBack()
+    }
 
     val sortOrderLabel =
         when (state.sortOrder) {
