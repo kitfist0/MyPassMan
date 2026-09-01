@@ -84,7 +84,13 @@ class SettingsRepository
                 context.dataStore.data
                     .map { it[SYNC_PASSPHRASE] }
                     .first() ?: return null
-            return KeystoreCipher.decryptFromString(encrypted).toCharArray()
+            return try {
+                KeystoreCipher.decryptFromString(encrypted).toCharArray()
+            } catch (_: Exception) {
+                // The Keystore key is device-local and never backed up; if this value was
+                // restored from a backup onto a new device/install, the key won't exist.
+                null
+            }
         }
 
         suspend fun clearSyncState() {
