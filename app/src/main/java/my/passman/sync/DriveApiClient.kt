@@ -5,11 +5,11 @@ import com.google.api.client.http.ByteArrayContent
 import com.google.api.client.http.HttpTransport
 import com.google.api.client.json.JsonFactory
 import com.google.api.services.drive.Drive
-import com.google.api.services.drive.model.File as DriveFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import javax.inject.Inject
+import com.google.api.services.drive.model.File as DriveFile
 
 data class RemoteBackupFile(
     val id: String,
@@ -71,9 +71,17 @@ class DriveApiClient
                     if (existingFileId == null) {
                         metadata.name = FILE_NAME
                         metadata.parents = listOf("appDataFolder")
-                        drive.files().create(metadata, content).setFields("id,appProperties").execute()
+                        drive
+                            .files()
+                            .create(metadata, content)
+                            .setFields("id,appProperties")
+                            .execute()
                     } else {
-                        drive.files().update(existingFileId, metadata, content).setFields("id,appProperties").execute()
+                        drive
+                            .files()
+                            .update(existingFileId, metadata, content)
+                            .setFields("id,appProperties")
+                            .execute()
                     }
 
                 RemoteBackupFile(id = result.id, contentTimestamp = contentTimestamp)

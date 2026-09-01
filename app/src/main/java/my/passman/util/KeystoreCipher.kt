@@ -57,8 +57,9 @@ object KeystoreCipher {
         (keyStore.getKey(KEY_ALIAS, null) as? SecretKey)
             ?.let { return it }
 
-        val keyGenerator = KeyGenerator
-            .getInstance(KeyProperties.KEY_ALGORITHM_AES, ANDROID_KEYSTORE)
+        val keyGenerator =
+            KeyGenerator
+                .getInstance(KeyProperties.KEY_ALGORITHM_AES, ANDROID_KEYSTORE)
         val spec =
             KeyGenParameterSpec
                 .Builder(KEY_ALIAS, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
