@@ -231,12 +231,15 @@ class SettingsViewModel
             _dialogState.update { it.copy(showSyncPassphraseDialog = false) }
         }
 
+        private var isSettingUpSync = false
+
         fun enableDriveSync(passphrase: String) {
             _dialogState.update { it.copy(showSyncPassphraseDialog = false) }
             viewModelScope.launch {
                 settingsRepository.setSyncPassphrase(passphrase)
                 settingsRepository.setDriveSyncEnabled(true)
                 syncScheduler.enablePeriodicSync()
+                isSettingUpSync = true
                 runSync()
             }
         }
@@ -257,19 +260,40 @@ class SettingsViewModel
                 if (granted) {
                     runSync()
                 } else {
+                    abortSyncSetupIfPending()
                     _events.send(SettingsEvent.ShowToast("Google Drive access was not granted"))
                 }
             }
         }
 
+        private suspend fun abortSyncSetupIfPending() {
+            if (isSettingUpSync) {
+                syncScheduler.disablePeriodicSync()
+                settingsRepository.clearSyncState()
+            }
+            isSettingUpSync = false
+        }
+
         private suspend fun runSync() {
             when (val result = syncManager.sync()) {
                 is SyncResult.ConsentRequired -> _events.send(SettingsEvent.RequestDriveConsent(result.pendingIntent))
-                is SyncResult.Uploaded -> _events.send(SettingsEvent.ShowToast("Synced — uploaded to Drive"))
-                is SyncResult.Downloaded -> _events.send(SettingsEvent.ShowToast("Synced — downloaded from Drive"))
-                is SyncResult.UpToDate -> _events.send(SettingsEvent.ShowToast("Already up to date"))
-                is SyncResult.Disabled -> Unit
-                is SyncResult.Failed -> _events.send(SettingsEvent.ShowToast("Sync failed: ${result.message}"))
+                is SyncResult.Uploaded -> {
+                    isSettingUpSync = false
+                    _events.send(SettingsEvent.ShowToast("Synced — uploaded to Drive"))
+                }
+                is SyncResult.Downloaded -> {
+                    isSettingUpSync = false
+                    _events.send(SettingsEvent.ShowToast("Synced — downloaded from Drive"))
+                }
+                is SyncResult.UpToDate -> {
+                    isSettingUpSync = false
+                    _events.send(SettingsEvent.ShowToast("Already up to date"))
+                }
+                is SyncResult.Disabled -> isSettingUpSync = false
+                is SyncResult.Failed -> {
+                    abortSyncSetupIfPending()
+                    _events.send(SettingsEvent.ShowToast("Sync failed: ${result.message}"))
+                }
             }
         }
     }
