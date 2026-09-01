@@ -17,6 +17,15 @@ interface TagDao {
     @Query("SELECT * FROM tags")
     fun getAllTags(): Flow<List<Tag>>
 
+    @Query("SELECT * FROM tags")
+    suspend fun getTagsList(): List<Tag>
+
+    @Upsert
+    suspend fun upsertTags(tags: List<Tag>)
+
+    @Query("DELETE FROM tags")
+    suspend fun deleteAllTags()
+
     @Delete
     suspend fun deleteTag(tag: Tag)
 }
