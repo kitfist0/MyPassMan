@@ -90,4 +90,13 @@
     <string name="disable_pin_title">Disable PIN Protection?</string>
     <string name="disable_pin_text">Are you sure you want to disable PIN protection? You will no longer be asked for a PIN when opening the app.</string>
     <string name="disable">Disable</string>
+
+    <!-- Drive Sync -->
+    <string name="settings_drive_sync">Sync with Google Drive</string>
+    <string name="settings_drive_sync_never">Never synced</string>
+    <string name="settings_drive_sync_last_synced">Last synced: %1$s</string>
+    <string name="settings_drive_sync_now">Sync now</string>
+    <string name="sync_passphrase_title">Set Sync Passphrase</string>
+    <string name="sync_passphrase_message">This passphrase encrypts your data before it\'s uploaded to your Drive app folder. Enter the same passphrase on every device you sync.</string>
+    <string name="enable">Enable</string>
 </resources>

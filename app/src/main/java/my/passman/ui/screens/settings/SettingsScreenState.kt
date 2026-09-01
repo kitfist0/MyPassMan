@@ -12,7 +12,10 @@ data class SettingsScreenState(
     val showAboutDialog: Boolean = false,
     val showBackupPasswordDialog: Boolean = false,
     val showDisablePinDialog: Boolean = false,
+    val showSyncPassphraseDialog: Boolean = false,
     val backupMode: BackupMode? = null,
+    val driveSyncEnabled: Boolean = false,
+    val lastSyncedAt: Long? = null,
 )
 
 enum class BackupMode {

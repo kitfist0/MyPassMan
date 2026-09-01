@@ -1,11 +1,13 @@
 package my.passman.ui
 
+import android.app.Activity
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalSharedTransitionApi
@@ -135,6 +137,13 @@ class MainActivity : ComponentActivity() {
                                             }
                                         }
 
+                                    val driveConsentLauncher =
+                                        rememberLauncherForActivityResult(
+                                            ActivityResultContracts.StartIntentSenderForResult(),
+                                        ) { result ->
+                                            settingsViewModel.onDriveConsentResult(result.resultCode == Activity.RESULT_OK)
+                                        }
+
                                     LaunchedEffect(settingsViewModel) {
                                         for (event in settingsViewModel.events) {
                                             when (event) {
@@ -143,6 +152,11 @@ class MainActivity : ComponentActivity() {
                                                 }
                                                 SettingsViewModel.SettingsEvent.RequestImportFile -> {
                                                     openDocumentLauncher.launch(arrayOf("application/octet-stream", "*/*"))
+                                                }
+                                                is SettingsViewModel.SettingsEvent.RequestDriveConsent -> {
+                                                    driveConsentLauncher.launch(
+                                                        IntentSenderRequest.Builder(event.pendingIntent.intentSender).build(),
+                                                    )
                                                 }
                                                 is SettingsViewModel.SettingsEvent.ShowToast -> {
                                                     Toast.makeText(context, event.message, Toast.LENGTH_LONG).show()
