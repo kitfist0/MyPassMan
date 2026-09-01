@@ -85,6 +85,11 @@ dependencies {
     implementation(libs.androidx.hilt.work)
     ksp(libs.androidx.hilt.compiler)
     implementation(libs.play.services.auth)
+    implementation(libs.google.api.client) {
+        exclude(group = "org.apache.httpcomponents")
+    }
+    implementation(libs.google.api.services.drive)
+    implementation(libs.google.http.client.gson)
     implementation(libs.moshi.kotlin)
     implementation(libs.okhttp)
     implementation(libs.play.services.location)

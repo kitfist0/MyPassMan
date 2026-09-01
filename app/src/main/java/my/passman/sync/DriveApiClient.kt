@@ -1,15 +1,14 @@
 package my.passman.sync
 
+import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
+import com.google.api.client.http.ByteArrayContent
+import com.google.api.client.http.HttpTransport
+import com.google.api.client.json.JsonFactory
+import com.google.api.services.drive.Drive
+import com.google.api.services.drive.model.File as DriveFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import okhttp3.HttpUrl.Companion.toHttpUrl
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.MultipartBody
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import org.json.JSONObject
-import java.io.IOException
+import java.io.ByteArrayOutputStream
 import javax.inject.Inject
 
 data class RemoteBackupFile(
@@ -18,51 +17,43 @@ data class RemoteBackupFile(
 )
 
 /**
- * Minimal Drive REST v3 client scoped to a single fixed file in the app's
- * hidden `appDataFolder`. The file's own content recency is tracked via a
- * custom `appProperties.contentTimestamp` field (set by whichever device last
+ * Drive v3 client scoped to a single fixed file in the app's hidden
+ * `appDataFolder`. The file's own content recency is tracked via a custom
+ * `appProperties.contentTimestamp` field (set by whichever device last
  * uploaded) rather than Drive's `modifiedTime`, so sync conflict comparisons
  * reflect data recency, not upload wall-clock time.
  */
 class DriveApiClient
     @Inject
     constructor(
-        private val httpClient: OkHttpClient,
+        private val httpTransport: HttpTransport,
+        private val jsonFactory: JsonFactory,
     ) {
+        private fun driveService(accessToken: String): Drive {
+            val credential = GoogleCredential().setAccessToken(accessToken)
+            return Drive
+                .Builder(httpTransport, jsonFactory, credential)
+                .setApplicationName("MyPassMan")
+                .build()
+        }
+
         suspend fun findBackupFile(accessToken: String): RemoteBackupFile? =
             withContext(Dispatchers.IO) {
-                val url =
-                    "https://www.googleapis.com/drive/v3/files"
-                        .toHttpUrl()
-                        .newBuilder()
-                        .addQueryParameter("spaces", "appDataFolder")
-                        .addQueryParameter("q", "name = '$FILE_NAME' and trashed = false")
-                        .addQueryParameter("fields", "files(id,appProperties)")
-                        .addQueryParameter("pageSize", "1")
-                        .build()
+                val result =
+                    driveService(accessToken)
+                        .files()
+                        .list()
+                        .setSpaces("appDataFolder")
+                        .setQ("name = '$FILE_NAME' and trashed = false")
+                        .setFields("files(id,appProperties)")
+                        .setPageSize(1)
+                        .execute()
 
-                val request =
-                    Request
-                        .Builder()
-                        .url(url)
-                        .header("Authorization", "Bearer $accessToken")
-                        .get()
-                        .build()
-
-                httpClient.newCall(request).execute().use { response ->
-                    if (!response.isSuccessful) throw IOException("Drive list failed: ${response.code}")
-                    val files = JSONObject(response.body.string()).optJSONArray("files")
-                    if (files == null || files.length() == 0) return@withContext null
-                    val file = files.getJSONObject(0)
-                    RemoteBackupFile(
-                        id = file.getString("id"),
-                        contentTimestamp =
-                            file
-                                .optJSONObject("appProperties")
-                                ?.optString("contentTimestamp")
-                                ?.toLongOrNull() ?: 0L,
-                    )
-                }
+                val file = result.files?.firstOrNull() ?: return@withContext null
+                RemoteBackupFile(
+                    id = file.id,
+                    contentTimestamp = file.appProperties?.get("contentTimestamp")?.toLongOrNull() ?: 0L,
+                )
             }
 
         suspend fun uploadBackup(
@@ -72,52 +63,20 @@ class DriveApiClient
             contentTimestamp: Long,
         ): RemoteBackupFile =
             withContext(Dispatchers.IO) {
-                val metadata =
-                    JSONObject().apply {
-                        if (existingFileId == null) {
-                            put("name", FILE_NAME)
-                            put("parents", listOf("appDataFolder"))
-                        }
-                        put("appProperties", JSONObject().put("contentTimestamp", contentTimestamp.toString()))
-                    }
+                val drive = driveService(accessToken)
+                val content = ByteArrayContent("application/octet-stream", data)
+                val metadata = DriveFile().setAppProperties(mapOf("contentTimestamp" to contentTimestamp.toString()))
 
-                val body =
-                    MultipartBody
-                        .Builder()
-                        .setType("multipart/related".toMediaType())
-                        .addPart(
-                            okhttp3.Headers.headersOf("Content-Type", "application/json; charset=UTF-8"),
-                            metadata.toString().toRequestBody(),
-                        ).addPart(
-                            okhttp3.Headers.headersOf("Content-Type", "application/octet-stream"),
-                            data.toRequestBody("application/octet-stream".toMediaType()),
-                        ).build()
-
-                val urlBuilder =
+                val result =
                     if (existingFileId == null) {
-                        "https://www.googleapis.com/upload/drive/v3/files".toHttpUrl().newBuilder()
+                        metadata.name = FILE_NAME
+                        metadata.parents = listOf("appDataFolder")
+                        drive.files().create(metadata, content).setFields("id,appProperties").execute()
                     } else {
-                        "https://www.googleapis.com/upload/drive/v3/files/$existingFileId".toHttpUrl().newBuilder()
+                        drive.files().update(existingFileId, metadata, content).setFields("id,appProperties").execute()
                     }
-                val url =
-                    urlBuilder
-                        .addQueryParameter("uploadType", "multipart")
-                        .addQueryParameter("fields", "id,appProperties")
-                        .build()
 
-                val request =
-                    Request
-                        .Builder()
-                        .url(url)
-                        .header("Authorization", "Bearer $accessToken")
-                        .let { if (existingFileId == null) it.post(body) else it.patch(body) }
-                        .build()
-
-                httpClient.newCall(request).execute().use { response ->
-                    if (!response.isSuccessful) throw IOException("Drive upload failed: ${response.code}")
-                    val file = JSONObject(response.body.string())
-                    RemoteBackupFile(id = file.getString("id"), contentTimestamp = contentTimestamp)
-                }
+                RemoteBackupFile(id = result.id, contentTimestamp = contentTimestamp)
             }
 
         suspend fun downloadBackup(
@@ -125,25 +84,9 @@ class DriveApiClient
             fileId: String,
         ): ByteArray =
             withContext(Dispatchers.IO) {
-                val url =
-                    "https://www.googleapis.com/drive/v3/files/$fileId"
-                        .toHttpUrl()
-                        .newBuilder()
-                        .addQueryParameter("alt", "media")
-                        .build()
-
-                val request =
-                    Request
-                        .Builder()
-                        .url(url)
-                        .header("Authorization", "Bearer $accessToken")
-                        .get()
-                        .build()
-
-                httpClient.newCall(request).execute().use { response ->
-                    if (!response.isSuccessful) throw IOException("Drive download failed: ${response.code}")
-                    response.body.bytes()
-                }
+                val outputStream = ByteArrayOutputStream()
+                driveService(accessToken).files().get(fileId).executeMediaAndDownloadTo(outputStream)
+                outputStream.toByteArray()
             }
 
         private companion object {
