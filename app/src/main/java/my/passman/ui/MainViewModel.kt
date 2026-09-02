@@ -13,56 +13,54 @@ import my.passman.ui.screens.pin.PinMode
 import javax.inject.Inject
 
 @HiltViewModel
-class MainViewModel
-    @Inject
-    constructor(
-        private val settingsRepository: SettingsRepository,
-        private val syncManager: SyncManager,
-        private val syncScheduler: SyncScheduler,
-    ) : ViewModel() {
-        private val _currentScreen = MutableStateFlow<Screen>(Screen.List)
-        val currentScreen = _currentScreen.asStateFlow()
+class MainViewModel @Inject constructor(
+    private val settingsRepository: SettingsRepository,
+    private val syncManager: SyncManager,
+    private val syncScheduler: SyncScheduler,
+) : ViewModel() {
+    private val _currentScreen = MutableStateFlow<Screen>(Screen.List)
+    val currentScreen = _currentScreen.asStateFlow()
 
-        private var isAuthorized = false
+    private var isAuthorized = false
 
-        val appTheme: StateFlow<AppTheme> =
-            settingsRepository.appTheme
-                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AppTheme.SYSTEM)
+    val appTheme: StateFlow<AppTheme> =
+        settingsRepository.appTheme
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AppTheme.SYSTEM)
 
-        private val _isLoading = MutableStateFlow(value = true)
-        val isLoading = _isLoading.asStateFlow()
+    private val _isLoading = MutableStateFlow(value = true)
+    val isLoading = _isLoading.asStateFlow()
 
-        init {
-            viewModelScope.launch {
-                settingsRepository.pinHash.collect { hash ->
-                    if (hash != null && (!isAuthorized)) {
-                        _currentScreen.value = Screen.Pin(PinMode.UNLOCK)
-                    } else {
-                        isAuthorized = true
-                    }
-                    _isLoading.value = false
-                }
-            }
-
-            viewModelScope.launch {
-                if (settingsRepository.driveSyncEnabled.first()) {
-                    syncScheduler.enablePeriodicSync()
-                    syncManager.sync()
-                }
-            }
-        }
-
-        fun navigateTo(screen: Screen) {
-            _currentScreen.value = screen
-        }
-
-        fun onPinSuccess(mode: PinMode) {
-            isAuthorized = true
-            _currentScreen.value =
-                if (mode == PinMode.SET || mode == PinMode.CONFIRM) {
-                    Screen.Settings
+    init {
+        viewModelScope.launch {
+            settingsRepository.pinHash.collect { hash ->
+                if (hash != null && (!isAuthorized)) {
+                    _currentScreen.value = Screen.Pin(PinMode.UNLOCK)
                 } else {
-                    Screen.List
+                    isAuthorized = true
                 }
+                _isLoading.value = false
+            }
+        }
+
+        viewModelScope.launch {
+            if (settingsRepository.driveSyncEnabled.first()) {
+                syncScheduler.enablePeriodicSync()
+                syncManager.sync()
+            }
         }
     }
+
+    fun navigateTo(screen: Screen) {
+        _currentScreen.value = screen
+    }
+
+    fun onPinSuccess(mode: PinMode) {
+        isAuthorized = true
+        _currentScreen.value =
+            if (mode == PinMode.SET || mode == PinMode.CONFIRM) {
+                Screen.Settings
+            } else {
+                Screen.List
+            }
+    }
+}

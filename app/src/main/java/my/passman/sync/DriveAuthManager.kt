@@ -35,40 +35,43 @@ sealed class DriveAuthResult {
  * a fresh token silently as long as the grant is still valid.
  */
 @Singleton
-class DriveAuthManager
-    @Inject
-    constructor(
-        @ApplicationContext private val context: Context,
-    ) {
-        private val authorizationClient = Identity.getAuthorizationClient(context)
+class DriveAuthManager @Inject constructor(
+    @ApplicationContext private val context: Context,
+) {
+    private val authorizationClient = Identity.getAuthorizationClient(context)
 
-        suspend fun authorize(): DriveAuthResult {
-            val request =
-                AuthorizationRequest
-                    .builder()
-                    .setRequestedScopes(listOf(Scope(DRIVE_APPDATA_SCOPE)))
-                    .build()
-            return try {
-                val result = authorizationClient.authorize(request).await()
-                val pendingIntent = result.pendingIntent
-                when {
-                    result.hasResolution() && pendingIntent != null -> DriveAuthResult.ConsentRequired(pendingIntent)
-                    result.accessToken != null -> DriveAuthResult.Authorized(result.accessToken!!)
-                    else -> DriveAuthResult.Failed("No access token returned")
-                }
-            } catch (e: Exception) {
-                DriveAuthResult.Failed(e.message)
+    suspend fun authorize(): DriveAuthResult {
+        val request =
+            AuthorizationRequest
+                .builder()
+                .setRequestedScopes(listOf(Scope(DRIVE_APPDATA_SCOPE)))
+                .build()
+        return try {
+            val result = authorizationClient.authorize(request).await()
+            val pendingIntent = result.pendingIntent
+            when {
+                result.hasResolution() && pendingIntent != null ->
+                    DriveAuthResult.ConsentRequired(pendingIntent)
+
+                result.accessToken != null ->
+                    DriveAuthResult.Authorized(result.accessToken!!)
+
+                else ->
+                    DriveAuthResult.Failed("No access token returned")
             }
-        }
-
-        private suspend fun <T> com.google.android.gms.tasks.Task<T>.await(): T =
-            suspendCancellableCoroutine { continuation ->
-                addOnSuccessListener { continuation.resumeWith(Result.success(it)) }
-                addOnFailureListener { continuation.resumeWith(Result.failure(it)) }
-                addOnCanceledListener { continuation.cancel() }
-            }
-
-        companion object {
-            const val DRIVE_APPDATA_SCOPE = "https://www.googleapis.com/auth/drive.appdata"
+        } catch (e: Exception) {
+            DriveAuthResult.Failed(e.message)
         }
     }
+
+    private suspend fun <T> com.google.android.gms.tasks.Task<T>.await(): T =
+        suspendCancellableCoroutine { continuation ->
+            addOnSuccessListener { continuation.resumeWith(Result.success(it)) }
+            addOnFailureListener { continuation.resumeWith(Result.failure(it)) }
+            addOnCanceledListener { continuation.cancel() }
+        }
+
+    companion object {
+        const val DRIVE_APPDATA_SCOPE = "https://www.googleapis.com/auth/drive.appdata"
+    }
+}

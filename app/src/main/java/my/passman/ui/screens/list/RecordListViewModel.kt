@@ -12,52 +12,50 @@ import my.passman.data.SortOrder
 import javax.inject.Inject
 
 @HiltViewModel
-class RecordListViewModel
-    @Inject
-    constructor(
-        private val dao: RecordDao,
-        settingsRepository: SettingsRepository,
-    ) : ViewModel() {
-        private val _searchQuery = MutableStateFlow("")
+class RecordListViewModel @Inject constructor(
+    private val dao: RecordDao,
+    settingsRepository: SettingsRepository,
+) : ViewModel() {
+    private val _searchQuery = MutableStateFlow("")
 
-        private val sortOrder =
-            settingsRepository.sortOrder
-                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SortOrder.BY_NAME)
+    private val sortOrder =
+        settingsRepository.sortOrder
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SortOrder.BY_NAME)
 
-        @OptIn(ExperimentalCoroutinesApi::class)
-        private val records: StateFlow<List<RecordWithTag>> =
-            combine(
-                _searchQuery,
-                sortOrder,
-            ) { query, sort ->
-                query to sort
-            }.flatMapLatest { (query, sort) ->
-                val flow =
-                    if (query.isBlank()) {
-                        dao.getAllRecords()
-                    } else {
-                        dao.searchRecords(query)
-                    }
-                flow.map { list ->
-                    when (sort) {
-                        SortOrder.BY_NAME -> list.sortedBy { it.record.name.lowercase() }
-                        SortOrder.BY_CREATED -> list.sortedByDescending { it.record.created }
-                    }
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val records: StateFlow<List<RecordWithTag>> =
+        combine(
+            _searchQuery,
+            sortOrder,
+        ) { query, sort ->
+            query to sort
+        }.flatMapLatest { (query, sort) ->
+            val flow =
+                if (query.isBlank()) {
+                    dao.getAllRecords()
+                } else {
+                    dao.searchRecords(query)
                 }
-            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+            flow.map { list ->
+                when (sort) {
+                    SortOrder.BY_NAME -> list.sortedBy { it.record.name.lowercase() }
+                    SortOrder.BY_CREATED -> list.sortedByDescending { it.record.created }
+                }
+            }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-        val uiState: StateFlow<RecordListScreenState> =
-            combine(
-                records,
-                _searchQuery,
-            ) { recordsList, query ->
-                RecordListScreenState(
-                    records = recordsList,
-                    searchQuery = query,
-                )
-            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), RecordListScreenState())
+    val uiState: StateFlow<RecordListScreenState> =
+        combine(
+            records,
+            _searchQuery,
+        ) { recordsList, query ->
+            RecordListScreenState(
+                records = recordsList,
+                searchQuery = query,
+            )
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), RecordListScreenState())
 
-        fun updateSearchQuery(query: String) {
-            _searchQuery.value = query
-        }
+    fun updateSearchQuery(query: String) {
+        _searchQuery.value = query
     }
+}
