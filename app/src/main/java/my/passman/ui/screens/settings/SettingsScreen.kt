@@ -181,6 +181,7 @@ fun SettingsScreen(
     if (state.showSyncPassphraseDialog) {
         var passphrase by remember { mutableStateOf("") }
         var passphraseVisible by remember { mutableStateOf(false) }
+        val missingRequirements = remember(passphrase) { PasswordValidator.validate(passphrase) }
 
         AlertDialog(
             onDismissRequest = { viewModel.dismissSyncPassphraseDialog() },
@@ -188,6 +189,8 @@ fun SettingsScreen(
             text = {
                 Column {
                     Text(stringResource(R.string.sync_passphrase_message))
+                    Spacer(modifier = Modifier.height(16.dp))
+                    PasswordRequirementsList(missingRequirements)
                     Spacer(modifier = Modifier.height(16.dp))
                     OutlinedTextField(
                         value = passphrase,
@@ -208,12 +211,13 @@ fun SettingsScreen(
                         },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
+                        isError = passphrase.isNotEmpty() && missingRequirements.isNotEmpty(),
                     )
                 }
             },
             confirmButton = {
                 TextButton(
-                    enabled = passphrase.isNotBlank(),
+                    enabled = missingRequirements.isEmpty(),
                     onClick = { viewModel.enableDriveSync(passphrase) },
                 ) {
                     Text(stringResource(R.string.enable))
@@ -242,18 +246,7 @@ fun SettingsScreen(
                     Text(stringResource(R.string.backup_password_message))
                     if (isExport) {
                         Spacer(modifier = Modifier.height(16.dp))
-                        RequirementItem(
-                            label = stringResource(R.string.password_requirement_min_length),
-                            isMet = PasswordValidator.PasswordRequirement.MIN_LENGTH !in missingRequirements,
-                        )
-                        RequirementItem(
-                            label = stringResource(R.string.password_requirement_letters_digits),
-                            isMet = PasswordValidator.PasswordRequirement.LETTERS_AND_DIGITS !in missingRequirements,
-                        )
-                        RequirementItem(
-                            label = stringResource(R.string.password_requirement_symbol),
-                            isMet = PasswordValidator.PasswordRequirement.HAS_SYMBOL !in missingRequirements,
-                        )
+                        PasswordRequirementsList(missingRequirements)
                     }
                     Spacer(modifier = Modifier.height(16.dp))
                     OutlinedTextField(
@@ -414,6 +407,22 @@ fun SettingsScreen(
             }
         }
     }
+}
+
+@Composable
+private fun PasswordRequirementsList(missingRequirements: List<PasswordValidator.PasswordRequirement>) {
+    RequirementItem(
+        label = stringResource(R.string.password_requirement_min_length),
+        isMet = PasswordValidator.PasswordRequirement.MIN_LENGTH !in missingRequirements,
+    )
+    RequirementItem(
+        label = stringResource(R.string.password_requirement_letters_digits),
+        isMet = PasswordValidator.PasswordRequirement.LETTERS_AND_DIGITS !in missingRequirements,
+    )
+    RequirementItem(
+        label = stringResource(R.string.password_requirement_symbol),
+        isMet = PasswordValidator.PasswordRequirement.HAS_SYMBOL !in missingRequirements,
+    )
 }
 
 @Composable
