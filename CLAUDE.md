@@ -5,13 +5,11 @@
 - MVVM with unidirectional data flow (UI State + Events)
 - Jetpack Compose for all new UI — no XML layouts
 - Hilt for dependency injection
-- Room for local persistence, Retrofit + Moshi for network
 
 ## Conventions
 
 - ViewModels expose StateFlow<UiState>, never mutable state directly
 - Repositories return Flow<Result<T>>, never throw
-- Use sealed interfaces for UI state, not booleans/nullable flags
 - All Composables are stateless where possible — hoist state to the caller
 
 ## Testing
