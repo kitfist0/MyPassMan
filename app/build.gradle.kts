@@ -40,6 +40,17 @@ android {
     buildFeatures {
         compose = true
     }
+    packaging {
+        resources {
+            excludes +=
+                setOf(
+                    "META-INF/INDEX.LIST",
+                    "META-INF/DEPENDENCIES",
+                    "META-INF/LICENSE.md",
+                    "META-INF/LICENSE-notice.md",
+                )
+        }
+    }
 }
 
 dependencies {
@@ -81,6 +92,15 @@ dependencies {
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
+    implementation(libs.androidx.work.runtime)
+    implementation(libs.androidx.hilt.work)
+    ksp(libs.androidx.hilt.compiler)
+    implementation(libs.play.services.auth)
+    implementation(libs.google.api.client) {
+        exclude(group = "org.apache.httpcomponents")
+    }
+    implementation(libs.google.api.services.drive)
+    implementation(libs.google.http.client.gson)
     implementation(libs.moshi.kotlin)
     implementation(libs.okhttp)
     implementation(libs.play.services.location)

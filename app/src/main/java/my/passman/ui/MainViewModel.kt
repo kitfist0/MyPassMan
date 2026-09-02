@@ -7,6 +7,8 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import my.passman.data.AppTheme
 import my.passman.data.SettingsRepository
+import my.passman.sync.SyncManager
+import my.passman.sync.SyncScheduler
 import my.passman.ui.screens.pin.PinMode
 import javax.inject.Inject
 
@@ -15,6 +17,8 @@ class MainViewModel
     @Inject
     constructor(
         private val settingsRepository: SettingsRepository,
+        private val syncManager: SyncManager,
+        private val syncScheduler: SyncScheduler,
     ) : ViewModel() {
         private val _currentScreen = MutableStateFlow<Screen>(Screen.List)
         val currentScreen = _currentScreen.asStateFlow()
@@ -37,6 +41,13 @@ class MainViewModel
                         isAuthorized = true
                     }
                     _isLoading.value = false
+                }
+            }
+
+            viewModelScope.launch {
+                if (settingsRepository.driveSyncEnabled.first()) {
+                    syncScheduler.enablePeriodicSync()
+                    syncManager.sync()
                 }
             }
         }

@@ -1,5 +1,6 @@
 package my.passman.ui.screens.settings
 
+import android.app.PendingIntent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -10,6 +11,9 @@ import kotlinx.coroutines.launch
 import my.passman.data.AppTheme
 import my.passman.data.SettingsRepository
 import my.passman.data.SortOrder
+import my.passman.sync.SyncManager
+import my.passman.sync.SyncResult
+import my.passman.sync.SyncScheduler
 import my.passman.util.BackupManager
 import java.io.InputStream
 import java.io.OutputStream
@@ -21,11 +25,24 @@ class SettingsViewModel
     constructor(
         private val settingsRepository: SettingsRepository,
         private val backupManager: BackupManager,
+        private val syncManager: SyncManager,
+        private val syncScheduler: SyncScheduler,
     ) : ViewModel() {
         private val _dialogState = MutableStateFlow(DialogState())
 
         private val _events = Channel<SettingsEvent>(Channel.BUFFERED)
         val events: ReceiveChannel<SettingsEvent> = _events
+
+        private data class SyncSettings(
+            val enabled: Boolean,
+            val lastSyncedAt: Long?,
+        )
+
+        private val syncSettings: Flow<SyncSettings> =
+            combine(
+                settingsRepository.driveSyncEnabled,
+                settingsRepository.lastSyncedAt,
+            ) { enabled, lastSyncedAt -> SyncSettings(enabled, lastSyncedAt) }
 
         val uiState: StateFlow<SettingsScreenState> =
             combine(
@@ -33,7 +50,8 @@ class SettingsViewModel
                 settingsRepository.appTheme,
                 settingsRepository.pinHash,
                 _dialogState,
-            ) { sortOrder, theme, pinHash, dialogState ->
+                syncSettings,
+            ) { sortOrder, theme, pinHash, dialogState, sync ->
                 SettingsScreenState(
                     sortOrder = sortOrder,
                     theme = theme,
@@ -43,7 +61,10 @@ class SettingsViewModel
                     showAboutDialog = dialogState.showAboutDialog,
                     showBackupPasswordDialog = dialogState.showBackupPasswordDialog,
                     showDisablePinDialog = dialogState.showDisablePinDialog,
+                    showSyncPassphraseDialog = dialogState.showSyncPassphraseDialog,
                     backupMode = dialogState.backupMode,
+                    driveSyncEnabled = sync.enabled,
+                    lastSyncedAt = sync.lastSyncedAt,
                 )
             }.stateIn(
                 viewModelScope,
@@ -57,6 +78,7 @@ class SettingsViewModel
             val showAboutDialog: Boolean = false,
             val showBackupPasswordDialog: Boolean = false,
             val showDisablePinDialog: Boolean = false,
+            val showSyncPassphraseDialog: Boolean = false,
             val backupMode: BackupMode? = null,
         )
 
@@ -64,6 +86,10 @@ class SettingsViewModel
             data object RequestExportFile : SettingsEvent()
 
             data object RequestImportFile : SettingsEvent()
+
+            data class RequestDriveConsent(
+                val pendingIntent: PendingIntent,
+            ) : SettingsEvent()
 
             data class ShowToast(
                 val message: String,
@@ -195,5 +221,79 @@ class SettingsViewModel
         fun dismissBackupPasswordDialog() {
             _dialogState.update { it.copy(showBackupPasswordDialog = false, backupMode = null) }
             pendingPassword = charArrayOf()
+        }
+
+        fun showSyncPassphraseDialog() {
+            _dialogState.update { it.copy(showSyncPassphraseDialog = true) }
+        }
+
+        fun dismissSyncPassphraseDialog() {
+            _dialogState.update { it.copy(showSyncPassphraseDialog = false) }
+        }
+
+        private var isSettingUpSync = false
+
+        fun enableDriveSync(passphrase: String) {
+            _dialogState.update { it.copy(showSyncPassphraseDialog = false) }
+            viewModelScope.launch {
+                settingsRepository.setSyncPassphrase(passphrase)
+                settingsRepository.setDriveSyncEnabled(true)
+                syncScheduler.enablePeriodicSync()
+                isSettingUpSync = true
+                runSync()
+            }
+        }
+
+        fun disableDriveSync() {
+            viewModelScope.launch {
+                syncScheduler.disablePeriodicSync()
+                settingsRepository.clearSyncState()
+            }
+        }
+
+        fun syncNow() {
+            viewModelScope.launch { runSync() }
+        }
+
+        fun onDriveConsentResult(granted: Boolean) {
+            viewModelScope.launch {
+                if (granted) {
+                    runSync()
+                } else {
+                    abortSyncSetupIfPending()
+                    _events.send(SettingsEvent.ShowToast("Google Drive access was not granted"))
+                }
+            }
+        }
+
+        private suspend fun abortSyncSetupIfPending() {
+            if (isSettingUpSync) {
+                syncScheduler.disablePeriodicSync()
+                settingsRepository.clearSyncState()
+            }
+            isSettingUpSync = false
+        }
+
+        private suspend fun runSync() {
+            when (val result = syncManager.sync()) {
+                is SyncResult.ConsentRequired -> _events.send(SettingsEvent.RequestDriveConsent(result.pendingIntent))
+                is SyncResult.Uploaded -> {
+                    isSettingUpSync = false
+                    _events.send(SettingsEvent.ShowToast("Synced — uploaded to Drive"))
+                }
+                is SyncResult.Downloaded -> {
+                    isSettingUpSync = false
+                    _events.send(SettingsEvent.ShowToast("Synced — downloaded from Drive"))
+                }
+                is SyncResult.UpToDate -> {
+                    isSettingUpSync = false
+                    _events.send(SettingsEvent.ShowToast("Already up to date"))
+                }
+                is SyncResult.Disabled -> isSettingUpSync = false
+                is SyncResult.Failed -> {
+                    abortSyncSetupIfPending()
+                    _events.send(SettingsEvent.ShowToast("Sync failed: ${result.message}"))
+                }
+            }
         }
     }

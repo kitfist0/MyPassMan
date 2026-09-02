@@ -7,6 +7,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
@@ -23,6 +24,9 @@ import my.passman.R
 import my.passman.data.AppTheme
 import my.passman.data.SortOrder
 import my.passman.util.PasswordValidator
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -174,6 +178,55 @@ fun SettingsScreen(
         )
     }
 
+    if (state.showSyncPassphraseDialog) {
+        var passphrase by remember { mutableStateOf("") }
+        var passphraseVisible by remember { mutableStateOf(false) }
+
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissSyncPassphraseDialog() },
+            title = { Text(stringResource(R.string.sync_passphrase_title)) },
+            text = {
+                Column {
+                    Text(stringResource(R.string.sync_passphrase_message))
+                    Spacer(modifier = Modifier.height(16.dp))
+                    OutlinedTextField(
+                        value = passphrase,
+                        onValueChange = { passphrase = it },
+                        label = { Text(stringResource(R.string.label_secret)) },
+                        visualTransformation = if (passphraseVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon = {
+                            val image = if (passphraseVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
+                            val description =
+                                if (passphraseVisible) {
+                                    stringResource(R.string.hide_secret)
+                                } else {
+                                    stringResource(R.string.show_secret)
+                                }
+                            IconButton(onClick = { passphraseVisible = !passphraseVisible }) {
+                                Icon(imageVector = image, contentDescription = description)
+                            }
+                        },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = passphrase.isNotBlank(),
+                    onClick = { viewModel.enableDriveSync(passphrase) },
+                ) {
+                    Text(stringResource(R.string.enable))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.dismissSyncPassphraseDialog() }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
+        )
+    }
+
     if (state.showBackupPasswordDialog) {
         var password by remember { mutableStateOf("") }
         var passwordVisible by remember { mutableStateOf(false) }
@@ -304,6 +357,44 @@ fun SettingsScreen(
                     ListItem(
                         headlineContent = { Text(stringResource(R.string.settings_manage_tags)) },
                         modifier = Modifier.clickable { onManageTags() },
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                    ListItem(
+                        headlineContent = { Text(stringResource(R.string.settings_drive_sync)) },
+                        supportingContent = {
+                            if (state.driveSyncEnabled) {
+                                val lastSyncedLabel =
+                                    state.lastSyncedAt?.let {
+                                        stringResource(
+                                            R.string.settings_drive_sync_last_synced,
+                                            SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()).format(Date(it)),
+                                        )
+                                    } ?: stringResource(R.string.settings_drive_sync_never)
+                                Text(lastSyncedLabel)
+                            }
+                        },
+                        trailingContent = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (state.driveSyncEnabled) {
+                                    IconButton(onClick = { viewModel.syncNow() }) {
+                                        Icon(
+                                            imageVector = Icons.Default.Sync,
+                                            contentDescription = stringResource(R.string.settings_drive_sync_now),
+                                        )
+                                    }
+                                }
+                                Switch(
+                                    checked = state.driveSyncEnabled,
+                                    onCheckedChange = { checked ->
+                                        if (checked) {
+                                            viewModel.showSyncPassphraseDialog()
+                                        } else {
+                                            viewModel.disableDriveSync()
+                                        }
+                                    },
+                                )
+                            }
+                        },
                     )
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                     ListItem(

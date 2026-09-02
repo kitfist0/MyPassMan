@@ -1,0 +1,20 @@
+# Keep rules for the Google APIs used by Drive sync (my.passman.sync):
+# com.google.api-client, com.google.apis:google-api-services-drive,
+# com.google.http-client:google-http-client-gson, com.google.android.gms:play-services-auth.
+#
+# google-api-client's GenericJson/GenericData model classes (e.g.
+# com.google.api.services.drive.model.File) are populated by reflecting on
+# fields annotated with @Key at runtime, bypassing normal method calls that R8
+# can see statically — without these rules, R8 renames or strips those fields
+# and Drive API JSON (de)serialization breaks silently.
+# Source: https://github.com/google/google-api-java-client-samples/blob/master/tasks-android-sample/proguard-google-api-client.txt
+
+-keepattributes Signature,RuntimeVisibleAnnotations,AnnotationDefault
+
+-keepclassmembers class * {
+  @com.google.api.client.util.Key <fields>;
+}
+
+-dontwarn com.google.api.client.googleapis.extensions.android.**
+-dontwarn com.google.api.client.extensions.android.**
+-dontwarn com.google.android.gms.**

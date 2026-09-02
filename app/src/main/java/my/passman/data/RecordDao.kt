@@ -25,6 +25,15 @@ interface RecordDao {
     @Query("SELECT * FROM records")
     suspend fun getRecordsList(): List<Record>
 
+    @Query("SELECT MAX(modified) FROM records")
+    suspend fun getMaxModified(): Long?
+
+    @Query("DELETE FROM records")
+    suspend fun deleteAllRecords()
+
+    @Upsert
+    suspend fun upsertRecords(records: List<Record>)
+
     @Transaction
     suspend fun importRecords(records: List<Record>) {
         records.forEach { record ->
