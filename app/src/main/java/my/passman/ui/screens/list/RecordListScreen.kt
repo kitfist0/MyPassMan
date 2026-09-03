@@ -73,7 +73,6 @@ fun RecordListScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                modifier = Modifier.imePadding(),
                 onClick = onAddRecord,
             ) {
                 Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_description))
