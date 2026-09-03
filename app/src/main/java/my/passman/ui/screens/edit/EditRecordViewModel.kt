@@ -155,10 +155,10 @@ class EditRecordViewModel @AssistedInject constructor(
                 id = state.recordId ?: 0,
                 created = if (state.recordId == null) now else originalCreated,
                 modified = now,
-                name = state.name,
-                login = state.login,
+                name = state.name.trim(),
+                login = state.login.trim(),
                 secret = state.secret,
-                comment = state.comment,
+                comment = state.comment.trim(),
                 tagId = state.selectedTagId,
             )
         viewModelScope.launch { recordDao.upsertRecord(record) }
