@@ -329,29 +329,35 @@ fun SettingsScreen(
                         supportingContent = { Text(themeLabel) },
                         modifier = Modifier.clickable { viewModel.showThemeDialog() },
                     )
+                    val onPinToggle: (Boolean) -> Unit = { checked ->
+                        if (checked) {
+                            onSetupNewPin()
+                        } else {
+                            viewModel.showDisablePinDialog()
+                        }
+                    }
                     ListItem(
                         headlineContent = { Text(stringResource(R.string.settings_pin)) },
                         trailingContent = {
                             Switch(
                                 checked = state.isPinEnabled,
-                                onCheckedChange = { checked ->
-                                    if (checked) {
-                                        onSetupNewPin()
-                                    } else {
-                                        viewModel.showDisablePinDialog()
-                                    }
-                                },
+                                onCheckedChange = onPinToggle,
                             )
                         },
-                        modifier =
-                            Modifier.clickable {
-                            },
+                        modifier = Modifier.clickable { onPinToggle(!state.isPinEnabled) },
                     )
                     ListItem(
                         headlineContent = { Text(stringResource(R.string.settings_manage_tags)) },
                         modifier = Modifier.clickable { onManageTags() },
                     )
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+                    val onDriveSyncToggle: (Boolean) -> Unit = { checked ->
+                        if (checked) {
+                            viewModel.showSyncPassphraseDialog()
+                        } else {
+                            viewModel.disableDriveSync()
+                        }
+                    }
                     ListItem(
                         headlineContent = { Text(stringResource(R.string.settings_drive_sync)) },
                         supportingContent = {
@@ -378,16 +384,11 @@ fun SettingsScreen(
                                 }
                                 Switch(
                                     checked = state.driveSyncEnabled,
-                                    onCheckedChange = { checked ->
-                                        if (checked) {
-                                            viewModel.showSyncPassphraseDialog()
-                                        } else {
-                                            viewModel.disableDriveSync()
-                                        }
-                                    },
+                                    onCheckedChange = onDriveSyncToggle,
                                 )
                             }
                         },
+                        modifier = Modifier.clickable { onDriveSyncToggle(!state.driveSyncEnabled) },
                     )
                     HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
                     ListItem(
