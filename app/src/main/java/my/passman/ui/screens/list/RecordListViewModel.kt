@@ -13,10 +13,11 @@ import javax.inject.Inject
 
 @HiltViewModel
 class RecordListViewModel @Inject constructor(
-    private val dao: RecordDao,
+    private val recordDao: RecordDao,
     settingsRepository: SettingsRepository,
 ) : ViewModel() {
     private val _searchQuery = MutableStateFlow("")
+    private val _isSearchActive = MutableStateFlow(false)
 
     private val sortOrder =
         settingsRepository.sortOrder
@@ -32,9 +33,9 @@ class RecordListViewModel @Inject constructor(
         }.flatMapLatest { (query, sort) ->
             val flow =
                 if (query.isBlank()) {
-                    dao.getAllRecords()
+                    recordDao.getAllRecords()
                 } else {
-                    dao.searchRecords(query)
+                    recordDao.searchRecords(query)
                 }
             flow.map { list ->
                 when (sort) {
@@ -49,14 +50,25 @@ class RecordListViewModel @Inject constructor(
         combine(
             records,
             _searchQuery,
-        ) { recordsList, query ->
+            _isSearchActive,
+        ) { recordsList, query, isSearchActive ->
             RecordListScreenState(
                 records = recordsList,
                 searchQuery = query,
+                isSearchActive = isSearchActive,
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), RecordListScreenState())
 
     fun updateSearchQuery(query: String) {
         _searchQuery.value = query
+    }
+
+    fun onSearchClick() {
+        _isSearchActive.value = true
+    }
+
+    fun onCloseSearch() {
+        _isSearchActive.value = false
+        _searchQuery.value = ""
     }
 }

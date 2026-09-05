@@ -21,6 +21,7 @@
 
     <!-- Record List Screen -->
     <string name="search_placeholder">Search…</string>
+    <string name="search_description">Search</string>
     <string name="settings_description">Settings</string>
     <string name="add_description">Add</string>
     <string name="no_records">No records yet</string>
