@@ -39,36 +39,24 @@ fun RecordListScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
     Scaffold(
-        topBar = {
-            Surface(
-                color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 3.dp,
+        bottomBar = {
+            BottomAppBar(
+                modifier = Modifier.imePadding(),
             ) {
-                Row(
+                IconButton(onClick = onNavigateToSettings) {
+                    Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.settings_description))
+                }
+                OutlinedTextField(
+                    value = state.searchQuery,
+                    onValueChange = { viewModel.updateSearchQuery(it) },
                     modifier =
                         Modifier
-                            .fillMaxWidth()
-                            .statusBarsPadding(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    OutlinedTextField(
-                        value = state.searchQuery,
-                        onValueChange = { viewModel.updateSearchQuery(it) },
-                        modifier =
-                            Modifier
-                                .weight(1f)
-                                .padding(16.dp),
-                        placeholder = { Text(stringResource(R.string.search_placeholder)) },
-                        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                        singleLine = true,
-                    )
-                    IconButton(
-                        onClick = onNavigateToSettings,
-                        modifier = Modifier.padding(end = 8.dp),
-                    ) {
-                        Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.settings_description))
-                    }
-                }
+                            .weight(1f)
+                            .padding(horizontal = 8.dp),
+                    placeholder = { Text(stringResource(R.string.search_placeholder)) },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                    singleLine = true,
+                )
             }
         },
         floatingActionButton = {
