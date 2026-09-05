@@ -47,6 +47,7 @@ fun SettingsScreen(
         when (state.sortOrder) {
             SortOrder.BY_NAME -> stringResource(R.string.sort_alphabetical)
             SortOrder.BY_CREATED -> stringResource(R.string.sort_creation_time)
+            SortOrder.BY_MODIFIED -> stringResource(R.string.sort_modified_time)
         }
 
     val themeLabel =
@@ -115,6 +116,14 @@ fun SettingsScreen(
                         selected = state.sortOrder == SortOrder.BY_CREATED,
                         onClick = {
                             viewModel.onSortOrderChange(SortOrder.BY_CREATED)
+                            viewModel.dismissSortDialog()
+                        },
+                    )
+                    SortOptionRow(
+                        label = stringResource(R.string.sort_modified_time),
+                        selected = state.sortOrder == SortOrder.BY_MODIFIED,
+                        onClick = {
+                            viewModel.onSortOrderChange(SortOrder.BY_MODIFIED)
                             viewModel.dismissSortDialog()
                         },
                     )

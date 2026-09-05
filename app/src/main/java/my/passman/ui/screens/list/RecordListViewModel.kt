@@ -40,6 +40,7 @@ class RecordListViewModel @Inject constructor(
                 when (sort) {
                     SortOrder.BY_NAME -> list.sortedBy { it.record.name.lowercase() }
                     SortOrder.BY_CREATED -> list.sortedByDescending { it.record.created }
+                    SortOrder.BY_MODIFIED -> list.sortedByDescending { it.record.modified }
                 }
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
