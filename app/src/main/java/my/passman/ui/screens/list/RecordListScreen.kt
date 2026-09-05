@@ -1,5 +1,6 @@
 package my.passman.ui.screens.list
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
@@ -48,6 +49,10 @@ fun RecordListScreen(
     fun closeSearch() {
         focusManager.clearFocus()
         viewModel.onCloseSearch()
+    }
+
+    BackHandler(enabled = state.isSearchActive) {
+        closeSearch()
     }
 
     Scaffold(
