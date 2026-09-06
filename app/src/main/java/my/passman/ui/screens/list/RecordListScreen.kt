@@ -3,6 +3,7 @@ package my.passman.ui.screens.list
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
@@ -99,7 +100,10 @@ fun RecordListScreen(
                 }
             }
         },
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
     ) { padding ->
+        val systemBarsPadding = WindowInsets.systemBars.asPaddingValues()
+
         Box(modifier = Modifier.fillMaxSize()) {
             if (state.records.isEmpty()) {
                 Box(
@@ -138,9 +142,16 @@ fun RecordListScreen(
                         Modifier
                             .fillMaxSize()
                             .padding(padding)
-                            .consumeWindowInsets(padding)
                             .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)),
-                    contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 96.dp),
+                    contentPadding =
+                        PaddingValues(
+                            start = 16.dp,
+                            end = 16.dp,
+                            // When the search bar is visible, Scaffold's own padding already
+                            // reserves its full height (which includes the status bar inset).
+                            top = (if (state.isSearchActive) 0.dp else systemBarsPadding.calculateTopPadding()) + 16.dp,
+                            bottom = systemBarsPadding.calculateBottomPadding() + 96.dp,
+                        ),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
@@ -155,6 +166,25 @@ fun RecordListScreen(
                     }
                 }
             }
+
+            if (!state.isSearchActive) {
+                Box(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .align(Alignment.TopCenter)
+                            .windowInsetsTopHeight(WindowInsets.statusBars)
+                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.85f)),
+                )
+            }
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.BottomCenter)
+                        .windowInsetsBottomHeight(WindowInsets.navigationBars)
+                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.85f)),
+            )
 
             Row(
                 modifier =
