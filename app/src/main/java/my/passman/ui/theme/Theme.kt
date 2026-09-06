@@ -35,18 +35,21 @@ private val LightColorScheme =
     )
 
 @Composable
+fun resolveDarkTheme(appTheme: AppTheme): Boolean =
+    when (appTheme) {
+        AppTheme.LIGHT -> false
+        AppTheme.DARK -> true
+        AppTheme.SYSTEM -> isSystemInDarkTheme()
+    }
+
+@Composable
 fun MyPassManTheme(
     appTheme: AppTheme = AppTheme.SYSTEM,
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit,
 ) {
-    val darkTheme =
-        when (appTheme) {
-            AppTheme.LIGHT -> false
-            AppTheme.DARK -> true
-            AppTheme.SYSTEM -> isSystemInDarkTheme()
-        }
+    val darkTheme = resolveDarkTheme(appTheme)
 
     val colorScheme =
         when {

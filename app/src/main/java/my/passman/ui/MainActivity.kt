@@ -23,6 +23,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dagger.hilt.android.AndroidEntryPoint
@@ -38,6 +40,7 @@ import my.passman.ui.screens.settings.SettingsViewModel
 import my.passman.ui.screens.tags.TagsScreen
 import my.passman.ui.screens.tags.TagsViewModel
 import my.passman.ui.theme.MyPassManTheme
+import my.passman.ui.theme.resolveDarkTheme
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -52,6 +55,16 @@ class MainActivity : ComponentActivity() {
             val appTheme by viewModel.appTheme.collectAsStateWithLifecycle()
             val currentScreen by viewModel.currentScreen.collectAsStateWithLifecycle()
             val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+
+            val darkTheme = resolveDarkTheme(appTheme)
+            val view = LocalView.current
+            SideEffect {
+                val window = (view.context as Activity).window
+                WindowCompat.getInsetsController(window, view).apply {
+                    isAppearanceLightStatusBars = !darkTheme
+                    isAppearanceLightNavigationBars = !darkTheme
+                }
+            }
 
             MyPassManTheme(appTheme = appTheme) {
                 Surface(
