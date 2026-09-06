@@ -16,6 +16,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -314,6 +315,8 @@ fun SettingsScreen(
             )
         },
     ) { padding ->
+        val useTwoColumns = LocalConfiguration.current.screenWidthDp >= 600
+
         Column(
             modifier =
                 Modifier
@@ -322,102 +325,161 @@ fun SettingsScreen(
                     .verticalScroll(rememberScrollState())
                     .padding(16.dp),
         ) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors =
-                    CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                    ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-            ) {
-                Column {
-                    ListItem(
-                        headlineContent = { Text(stringResource(R.string.settings_sorting)) },
-                        supportingContent = { Text(sortOrderLabel) },
-                        modifier = Modifier.clickable { viewModel.showSortDialog() },
+            if (useTwoColumns) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    GeneralSettingsCard(
+                        modifier = Modifier.weight(1f),
+                        viewModel = viewModel,
+                        state = state,
+                        sortOrderLabel = sortOrderLabel,
+                        themeLabel = themeLabel,
+                        onManageTags = onManageTags,
+                        onSetupNewPin = onSetupNewPin,
                     )
-                    ListItem(
-                        headlineContent = { Text(stringResource(R.string.settings_theme)) },
-                        supportingContent = { Text(themeLabel) },
-                        modifier = Modifier.clickable { viewModel.showThemeDialog() },
-                    )
-                    val onPinToggle: (Boolean) -> Unit = { checked ->
-                        if (checked) {
-                            onSetupNewPin()
-                        } else {
-                            viewModel.showDisablePinDialog()
-                        }
-                    }
-                    ListItem(
-                        headlineContent = { Text(stringResource(R.string.settings_pin)) },
-                        trailingContent = {
-                            Switch(
-                                checked = state.isPinEnabled,
-                                onCheckedChange = onPinToggle,
-                            )
-                        },
-                        modifier = Modifier.clickable { onPinToggle(!state.isPinEnabled) },
-                    )
-                    ListItem(
-                        headlineContent = { Text(stringResource(R.string.settings_manage_tags)) },
-                        modifier = Modifier.clickable { onManageTags() },
-                    )
-                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                    val onDriveSyncToggle: (Boolean) -> Unit = { checked ->
-                        if (checked) {
-                            viewModel.showSyncPassphraseDialog()
-                        } else {
-                            viewModel.disableDriveSync()
-                        }
-                    }
-                    ListItem(
-                        headlineContent = { Text(stringResource(R.string.settings_drive_sync)) },
-                        supportingContent = {
-                            if (state.driveSyncEnabled) {
-                                val lastSyncedLabel =
-                                    state.lastSyncedAt?.let {
-                                        stringResource(
-                                            R.string.settings_drive_sync_last_synced,
-                                            SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()).format(Date(it)),
-                                        )
-                                    } ?: stringResource(R.string.settings_drive_sync_never)
-                                Text(lastSyncedLabel)
-                            }
-                        },
-                        trailingContent = {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                if (state.driveSyncEnabled) {
-                                    IconButton(onClick = { viewModel.syncNow() }) {
-                                        Icon(
-                                            imageVector = Icons.Default.Sync,
-                                            contentDescription = stringResource(R.string.settings_drive_sync_now),
-                                        )
-                                    }
-                                }
-                                Switch(
-                                    checked = state.driveSyncEnabled,
-                                    onCheckedChange = onDriveSyncToggle,
-                                )
-                            }
-                        },
-                        modifier = Modifier.clickable { onDriveSyncToggle(!state.driveSyncEnabled) },
-                    )
-                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                    ListItem(
-                        headlineContent = { Text(stringResource(R.string.settings_export)) },
-                        modifier = Modifier.clickable { viewModel.onExportClick() },
-                    )
-                    ListItem(
-                        headlineContent = { Text(stringResource(R.string.settings_import)) },
-                        modifier = Modifier.clickable { viewModel.onImportClick() },
-                    )
-                    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-                    ListItem(
-                        headlineContent = { Text(stringResource(R.string.settings_about)) },
-                        modifier = Modifier.clickable { viewModel.showAboutDialog() },
-                    )
+                    BackupSettingsCard(modifier = Modifier.weight(1f), viewModel = viewModel, state = state)
+                }
+            } else {
+                GeneralSettingsCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    viewModel = viewModel,
+                    state = state,
+                    sortOrderLabel = sortOrderLabel,
+                    themeLabel = themeLabel,
+                    onManageTags = onManageTags,
+                    onSetupNewPin = onSetupNewPin,
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                BackupSettingsCard(modifier = Modifier.fillMaxWidth(), viewModel = viewModel, state = state)
+            }
+        }
+    }
+}
+
+@Composable
+private fun GeneralSettingsCard(
+    modifier: Modifier,
+    viewModel: SettingsViewModel,
+    state: SettingsScreenState,
+    sortOrderLabel: String,
+    themeLabel: String,
+    onManageTags: () -> Unit,
+    onSetupNewPin: () -> Unit,
+) {
+    Card(
+        modifier = modifier,
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+            ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+    ) {
+        Column {
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_sorting)) },
+                supportingContent = { Text(sortOrderLabel) },
+                modifier = Modifier.clickable { viewModel.showSortDialog() },
+            )
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_theme)) },
+                supportingContent = { Text(themeLabel) },
+                modifier = Modifier.clickable { viewModel.showThemeDialog() },
+            )
+            val onPinToggle: (Boolean) -> Unit = { checked ->
+                if (checked) {
+                    onSetupNewPin()
+                } else {
+                    viewModel.showDisablePinDialog()
                 }
             }
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_pin)) },
+                trailingContent = {
+                    Switch(
+                        checked = state.isPinEnabled,
+                        onCheckedChange = onPinToggle,
+                    )
+                },
+                modifier = Modifier.clickable { onPinToggle(!state.isPinEnabled) },
+            )
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_manage_tags)) },
+                modifier = Modifier.clickable { onManageTags() },
+            )
+        }
+    }
+}
+
+@Composable
+private fun BackupSettingsCard(
+    modifier: Modifier,
+    viewModel: SettingsViewModel,
+    state: SettingsScreenState,
+) {
+    Card(
+        modifier = modifier,
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+            ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+    ) {
+        Column {
+            val onDriveSyncToggle: (Boolean) -> Unit = { checked ->
+                if (checked) {
+                    viewModel.showSyncPassphraseDialog()
+                } else {
+                    viewModel.disableDriveSync()
+                }
+            }
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_drive_sync)) },
+                supportingContent = {
+                    if (state.driveSyncEnabled) {
+                        val lastSyncedLabel =
+                            state.lastSyncedAt?.let {
+                                stringResource(
+                                    R.string.settings_drive_sync_last_synced,
+                                    SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()).format(Date(it)),
+                                )
+                            } ?: stringResource(R.string.settings_drive_sync_never)
+                        Text(lastSyncedLabel)
+                    }
+                },
+                trailingContent = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (state.driveSyncEnabled) {
+                            IconButton(onClick = { viewModel.syncNow() }) {
+                                Icon(
+                                    imageVector = Icons.Default.Sync,
+                                    contentDescription = stringResource(R.string.settings_drive_sync_now),
+                                )
+                            }
+                        }
+                        Switch(
+                            checked = state.driveSyncEnabled,
+                            onCheckedChange = onDriveSyncToggle,
+                        )
+                    }
+                },
+                modifier = Modifier.clickable { onDriveSyncToggle(!state.driveSyncEnabled) },
+            )
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_export)) },
+                modifier = Modifier.clickable { viewModel.onExportClick() },
+            )
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_import)) },
+                modifier = Modifier.clickable { viewModel.onImportClick() },
+            )
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_about)) },
+                modifier = Modifier.clickable { viewModel.showAboutDialog() },
+            )
         }
     }
 }
