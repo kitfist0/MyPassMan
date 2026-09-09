@@ -186,40 +186,46 @@ fun RecordListScreen(
                         .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.85f)),
             )
 
-            Row(
-                modifier =
-                    Modifier
-                        .align(Alignment.BottomCenter)
-                        .navigationBarsPadding()
-                        .padding(bottom = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically,
+            AnimatedVisibility(
+                visible = !state.isSearchActive,
+                modifier = Modifier.align(Alignment.BottomCenter),
+                enter = fadeIn(),
+                exit = fadeOut(),
             ) {
-                Surface(
-                    shape = RoundedCornerShape(50),
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    tonalElevation = 3.dp,
-                    shadowElevation = 3.dp,
+                Row(
+                    modifier =
+                        Modifier
+                            .navigationBarsPadding()
+                            .padding(bottom = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(
-                            onClick = onNavigateToSettings,
-                            modifier = Modifier.size(56.dp),
-                        ) {
-                            Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.settings_description))
-                        }
-                        IconButton(
-                            onClick = { viewModel.onSearchClick() },
-                            modifier = Modifier.size(56.dp),
-                        ) {
-                            Icon(Icons.Default.Search, contentDescription = stringResource(R.string.search_description))
+                    Surface(
+                        shape = RoundedCornerShape(50),
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        tonalElevation = 3.dp,
+                        shadowElevation = 3.dp,
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(
+                                onClick = onNavigateToSettings,
+                                modifier = Modifier.size(56.dp),
+                            ) {
+                                Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.settings_description))
+                            }
+                            IconButton(
+                                onClick = { viewModel.onSearchClick() },
+                                modifier = Modifier.size(56.dp),
+                            ) {
+                                Icon(Icons.Default.Search, contentDescription = stringResource(R.string.search_description))
+                            }
                         }
                     }
-                }
-                FloatingActionButton(
-                    onClick = onAddRecord,
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_description))
+                    FloatingActionButton(
+                        onClick = onAddRecord,
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_description))
+                    }
                 }
             }
         }
