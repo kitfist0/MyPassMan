@@ -15,6 +15,7 @@ import my.passman.sync.SyncManager
 import my.passman.sync.SyncResult
 import my.passman.sync.SyncScheduler
 import my.passman.util.BackupManager
+import my.passman.util.BiometricAvailability
 import java.io.InputStream
 import java.io.OutputStream
 import javax.inject.Inject
@@ -25,15 +26,23 @@ class SettingsViewModel @Inject constructor(
     private val backupManager: BackupManager,
     private val syncManager: SyncManager,
     private val syncScheduler: SyncScheduler,
+    private val biometricAvailability: BiometricAvailability,
 ) : ViewModel() {
     private val _dialogState = MutableStateFlow(DialogState())
 
     private val _events = Channel<SettingsEvent>(Channel.BUFFERED)
     val events: ReceiveChannel<SettingsEvent> = _events
 
+    val isFingerprintAvailable: Boolean = biometricAvailability.isAvailable()
+
     private data class SyncSettings(
         val enabled: Boolean,
         val lastSyncedAt: Long?,
+    )
+
+    private data class PinSettings(
+        val isPinEnabled: Boolean,
+        val isFingerprintEnabled: Boolean,
     )
 
     private val syncSettings: Flow<SyncSettings> =
@@ -42,18 +51,25 @@ class SettingsViewModel @Inject constructor(
             settingsRepository.lastSyncedAt,
         ) { enabled, lastSyncedAt -> SyncSettings(enabled, lastSyncedAt) }
 
+    private val pinSettings: Flow<PinSettings> =
+        combine(
+            settingsRepository.pinHash,
+            settingsRepository.fingerprintEnabled,
+        ) { pinHash, fingerprintEnabled -> PinSettings(pinHash != null, fingerprintEnabled) }
+
     val uiState: StateFlow<SettingsScreenState> =
         combine(
             settingsRepository.sortOrder,
             settingsRepository.appTheme,
-            settingsRepository.pinHash,
+            pinSettings,
             _dialogState,
             syncSettings,
-        ) { sortOrder, theme, pinHash, dialogState, sync ->
+        ) { sortOrder, theme, pin, dialogState, sync ->
             SettingsScreenState(
                 sortOrder = sortOrder,
                 theme = theme,
-                isPinEnabled = pinHash != null,
+                isPinEnabled = pin.isPinEnabled,
+                isFingerprintEnabled = pin.isFingerprintEnabled,
                 showSortDialog = dialogState.showSortDialog,
                 showThemeDialog = dialogState.showThemeDialog,
                 showAboutDialog = dialogState.showAboutDialog,
@@ -130,6 +146,12 @@ class SettingsViewModel @Inject constructor(
     fun confirmDisablePin() {
         _dialogState.update { it.copy(showDisablePinDialog = false) }
         clearPin()
+    }
+
+    fun setFingerprintEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setFingerprintEnabled(enabled)
+        }
     }
 
     fun onImportFileSelected(inputStream: InputStream) {

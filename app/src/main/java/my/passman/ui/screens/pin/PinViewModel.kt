@@ -8,21 +8,31 @@ import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import my.passman.data.SettingsRepository
+import my.passman.util.BiometricAvailability
 import kotlin.time.Duration.Companion.milliseconds
 
 @HiltViewModel(assistedFactory = PinViewModel.Factory::class)
 class PinViewModel @AssistedInject constructor(
     private val settingsRepository: SettingsRepository,
+    private val biometricAvailability: BiometricAvailability,
     @Assisted private val mode: PinMode,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(PinScreenState(mode = mode))
     val uiState: StateFlow<PinScreenState> = _uiState.asStateFlow()
+
+    val fingerprintEnabled: StateFlow<Boolean> =
+        settingsRepository.fingerprintEnabled
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val isFingerprintAvailable: Boolean = biometricAvailability.isAvailable()
 
     private var firstEnteredPin: String = ""
 
@@ -33,6 +43,16 @@ class PinViewModel @AssistedInject constructor(
                     _uiState.update { it.copy(expectedLength = length) }
                 }
             }
+        }
+    }
+
+    fun onFingerprintUnlockSuccess() {
+        _uiState.update { it.copy(isSuccess = true) }
+    }
+
+    fun onFingerprintEnabled() {
+        viewModelScope.launch {
+            settingsRepository.setFingerprintEnabled(true)
         }
     }
 

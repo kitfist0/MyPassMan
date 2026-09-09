@@ -7,18 +7,22 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Backspace
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import my.passman.R
+import my.passman.util.BiometricAuthenticator
 
 @Composable
 fun PinScreen(
@@ -27,14 +31,52 @@ fun PinScreen(
     onSuccess: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val fingerprintEnabled by viewModel.fingerprintEnabled.collectAsStateWithLifecycle()
+    val activity = LocalContext.current as FragmentActivity
+
+    fun triggerFingerprintUnlock() {
+        BiometricAuthenticator.authenticate(
+            activity = activity,
+            title = activity.getString(R.string.fingerprint_prompt_title),
+            negativeButtonText = activity.getString(R.string.cancel),
+            onSuccess = { viewModel.onFingerprintUnlockSuccess() },
+            onError = {},
+            onFailed = {},
+        )
+    }
+
+    fun offerFingerprintEnroll() {
+        BiometricAuthenticator.authenticate(
+            activity = activity,
+            title = activity.getString(R.string.fingerprint_enable_title),
+            subtitle = activity.getString(R.string.fingerprint_enable_message),
+            negativeButtonText = activity.getString(R.string.skip),
+            onSuccess = {
+                viewModel.onFingerprintEnabled()
+                onSuccess()
+            },
+            onError = { onSuccess() },
+            onFailed = {},
+        )
+    }
 
     BackHandler(enabled = state.mode == PinMode.SET || state.mode == PinMode.CONFIRM) {
         onBack()
     }
 
+    LaunchedEffect(state.mode, fingerprintEnabled) {
+        if (state.mode == PinMode.UNLOCK && fingerprintEnabled && viewModel.isFingerprintAvailable) {
+            triggerFingerprintUnlock()
+        }
+    }
+
     LaunchedEffect(state.isSuccess) {
         if (state.isSuccess) {
-            onSuccess()
+            if (state.mode == PinMode.CONFIRM && !fingerprintEnabled && viewModel.isFingerprintAvailable) {
+                offerFingerprintEnroll()
+            } else {
+                onSuccess()
+            }
         }
     }
 
@@ -51,7 +93,11 @@ fun PinScreen(
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                PinHeader(state = state)
+                PinHeader(
+                    state = state,
+                    fingerprintEnabled = fingerprintEnabled,
+                    onFingerprintClick = ::triggerFingerprintUnlock,
+                )
                 PinKeypad(state = state, viewModel = viewModel, buttonSize = 64.dp)
             }
         } else {
@@ -65,7 +111,11 @@ fun PinScreen(
                 verticalArrangement = Arrangement.SpaceBetween,
             ) {
                 Spacer(modifier = Modifier.height(48.dp))
-                PinHeader(state = state)
+                PinHeader(
+                    state = state,
+                    fingerprintEnabled = fingerprintEnabled,
+                    onFingerprintClick = ::triggerFingerprintUnlock,
+                )
                 PinKeypad(state = state, viewModel = viewModel, buttonSize = 80.dp)
             }
         }
@@ -73,7 +123,11 @@ fun PinScreen(
 }
 
 @Composable
-private fun PinHeader(state: PinScreenState) {
+private fun PinHeader(
+    state: PinScreenState,
+    fingerprintEnabled: Boolean = false,
+    onFingerprintClick: () -> Unit = {},
+) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             text =
@@ -126,6 +180,18 @@ private fun PinHeader(state: PinScreenState) {
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodyMedium,
             )
+        }
+
+        if (state.mode == PinMode.UNLOCK && fingerprintEnabled) {
+            Spacer(modifier = Modifier.height(16.dp))
+            IconButton(onClick = onFingerprintClick) {
+                Icon(
+                    imageVector = Icons.Default.Fingerprint,
+                    contentDescription = stringResource(R.string.fingerprint_prompt_title),
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(32.dp),
+                )
+            }
         }
     }
 }

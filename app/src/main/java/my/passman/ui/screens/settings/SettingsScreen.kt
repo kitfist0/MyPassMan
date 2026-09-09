@@ -22,10 +22,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import my.passman.R
 import my.passman.data.AppTheme
 import my.passman.data.SortOrder
+import my.passman.util.BiometricAuthenticator
 import my.passman.util.PasswordValidator
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -40,7 +42,7 @@ fun SettingsScreen(
     onBack: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val context = LocalContext.current
+    val activity = LocalContext.current as FragmentActivity
 
     BackHandler {
         onBack()
@@ -144,7 +146,7 @@ fun SettingsScreen(
         val packageInfo =
             remember {
                 try {
-                    context.packageManager.getPackageInfo(context.packageName, 0)
+                    activity.packageManager.getPackageInfo(activity.packageName, 0)
                 } catch (_: Exception) {
                     null
                 }
@@ -338,6 +340,8 @@ fun SettingsScreen(
                         themeLabel = themeLabel,
                         onManageTags = onManageTags,
                         onSetupNewPin = onSetupNewPin,
+                        isFingerprintAvailable = viewModel.isFingerprintAvailable,
+                        activity = activity,
                     )
                     BackupSettingsCard(modifier = Modifier.weight(1f), viewModel = viewModel, state = state)
                 }
@@ -350,6 +354,8 @@ fun SettingsScreen(
                     themeLabel = themeLabel,
                     onManageTags = onManageTags,
                     onSetupNewPin = onSetupNewPin,
+                    isFingerprintAvailable = viewModel.isFingerprintAvailable,
+                    activity = activity,
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 BackupSettingsCard(modifier = Modifier.fillMaxWidth(), viewModel = viewModel, state = state)
@@ -367,6 +373,8 @@ private fun GeneralSettingsCard(
     themeLabel: String,
     onManageTags: () -> Unit,
     onSetupNewPin: () -> Unit,
+    isFingerprintAvailable: Boolean,
+    activity: FragmentActivity,
 ) {
     Card(
         modifier = modifier,
@@ -404,6 +412,36 @@ private fun GeneralSettingsCard(
                 },
                 modifier = Modifier.clickable { onPinToggle(!state.isPinEnabled) },
             )
+            if (state.isPinEnabled && isFingerprintAvailable) {
+                val enableTitle = stringResource(R.string.fingerprint_enable_title)
+                val enableMessage = stringResource(R.string.fingerprint_enable_message)
+                val skipText = stringResource(R.string.skip)
+                val onFingerprintToggle: (Boolean) -> Unit = { checked ->
+                    if (checked) {
+                        BiometricAuthenticator.authenticate(
+                            activity = activity,
+                            title = enableTitle,
+                            subtitle = enableMessage,
+                            negativeButtonText = skipText,
+                            onSuccess = { viewModel.setFingerprintEnabled(true) },
+                            onError = {},
+                            onFailed = {},
+                        )
+                    } else {
+                        viewModel.setFingerprintEnabled(false)
+                    }
+                }
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.settings_fingerprint)) },
+                    trailingContent = {
+                        Switch(
+                            checked = state.isFingerprintEnabled,
+                            onCheckedChange = onFingerprintToggle,
+                        )
+                    },
+                    modifier = Modifier.clickable { onFingerprintToggle(!state.isFingerprintEnabled) },
+                )
+            }
             ListItem(
                 headlineContent = { Text(stringResource(R.string.settings_manage_tags)) },
                 modifier = Modifier.clickable { onManageTags() },
