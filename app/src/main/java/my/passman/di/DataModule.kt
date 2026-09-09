@@ -1,6 +1,9 @@
 package my.passman.di
 
 import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.preferencesDataStore
 import androidx.room.Room
 import dagger.Module
 import dagger.Provides
@@ -13,9 +16,11 @@ import my.passman.data.TagDao
 import my.passman.util.BackupManager
 import javax.inject.Singleton
 
+private val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
+
 @Module
 @InstallIn(SingletonComponent::class)
-object DatabaseModule {
+object DataModule {
     @Provides
     @Singleton
     fun provideBackupManager(
@@ -40,4 +45,10 @@ object DatabaseModule {
 
     @Provides
     fun provideTagDao(database: AppDatabase): TagDao = database.tagDao()
+
+    @Provides
+    @Singleton
+    fun provideSettingsDataStore(
+        @ApplicationContext context: Context,
+    ): DataStore<Preferences> = context.settingsDataStore
 }
