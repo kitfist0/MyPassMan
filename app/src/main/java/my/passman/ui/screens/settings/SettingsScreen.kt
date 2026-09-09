@@ -305,6 +305,27 @@ fun SettingsScreen(
         )
     }
 
+    if (state.showResetBackupDialog) {
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissResetBackupDialog() },
+            title = { Text(stringResource(R.string.reset_backup_title)) },
+            text = { Text(stringResource(R.string.reset_backup_text)) },
+            confirmButton = {
+                TextButton(
+                    onClick = { viewModel.confirmResetBackup() },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                ) {
+                    Text(stringResource(R.string.reset_backup_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.dismissResetBackupDialog() }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(

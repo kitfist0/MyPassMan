@@ -96,6 +96,15 @@ class DriveApiClient @Inject constructor(
             outputStream.toByteArray()
         }
 
+    suspend fun deleteBackup(
+        accessToken: String,
+        fileId: String,
+    ) {
+        withContext(Dispatchers.IO) {
+            driveService(accessToken).files().delete(fileId).execute()
+        }
+    }
+
     private companion object {
         const val FILE_NAME = "backup.pman"
     }

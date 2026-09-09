@@ -14,6 +14,7 @@ data class SettingsScreenState(
     val showBackupPasswordDialog: Boolean = false,
     val showDisablePinDialog: Boolean = false,
     val showSyncPassphraseDialog: Boolean = false,
+    val showResetBackupDialog: Boolean = false,
     val backupMode: BackupMode? = null,
     val driveSyncEnabled: Boolean = false,
     val lastSyncedAt: Long? = null,

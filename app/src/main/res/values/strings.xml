@@ -106,4 +106,7 @@
     <string name="sync_passphrase_title">Set Sync Passphrase</string>
     <string name="sync_passphrase_message">This passphrase encrypts your data before it\'s uploaded to your Drive app folder. Enter the same passphrase on every device you sync.</string>
     <string name="enable">Enable</string>
+    <string name="reset_backup_title">Forgot the backup password?</string>
+    <string name="reset_backup_text">The backup in Google Drive was encrypted with a different password. You can delete it and upload a fresh copy from this device, or cancel and try a different password.</string>
+    <string name="reset_backup_confirm">Delete &amp; Start Over</string>
 </resources>

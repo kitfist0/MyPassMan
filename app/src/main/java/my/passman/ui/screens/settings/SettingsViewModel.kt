@@ -77,6 +77,7 @@ class SettingsViewModel @Inject constructor(
                 showBackupPasswordDialog = dialogState.showBackupPasswordDialog,
                 showDisablePinDialog = dialogState.showDisablePinDialog,
                 showSyncPassphraseDialog = dialogState.showSyncPassphraseDialog,
+                showResetBackupDialog = dialogState.showResetBackupDialog,
                 backupMode = dialogState.backupMode,
                 driveSyncEnabled = sync.enabled,
                 lastSyncedAt = sync.lastSyncedAt,
@@ -94,6 +95,7 @@ class SettingsViewModel @Inject constructor(
         val showBackupPasswordDialog: Boolean = false,
         val showDisablePinDialog: Boolean = false,
         val showSyncPassphraseDialog: Boolean = false,
+        val showResetBackupDialog: Boolean = false,
         val backupMode: BackupMode? = null,
     )
 
@@ -288,6 +290,33 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { runSync() }
     }
 
+    fun dismissResetBackupDialog() {
+        _dialogState.update { it.copy(showResetBackupDialog = false) }
+        viewModelScope.launch { abortSyncSetupIfPending() }
+    }
+
+    fun confirmResetBackup() {
+        _dialogState.update { it.copy(showResetBackupDialog = false) }
+        viewModelScope.launch {
+            when (val result = syncManager.resetRemoteBackup()) {
+                is SyncResult.ConsentRequired ->
+                    _events.send(SettingsEvent.RequestDriveConsent(result.pendingIntent))
+
+                is SyncResult.Uploaded -> {
+                    isSettingUpSync = false
+                    _events.send(SettingsEvent.ShowToast("Old backup deleted — uploaded a fresh copy"))
+                }
+
+                is SyncResult.Failed -> {
+                    abortSyncSetupIfPending()
+                    _events.send(SettingsEvent.ShowToast("Reset failed: ${result.message}"))
+                }
+
+                else -> Unit
+            }
+        }
+    }
+
     fun onDriveConsentResult(granted: Boolean) {
         viewModelScope.launch {
             if (granted) {
@@ -330,8 +359,7 @@ class SettingsViewModel @Inject constructor(
             is SyncResult.Disabled -> isSettingUpSync = false
 
             is SyncResult.InvalidPassphrase -> {
-                abortSyncSetupIfPending()
-                _events.send(SettingsEvent.ShowToast("Incorrect backup password"))
+                _dialogState.update { it.copy(showResetBackupDialog = true) }
             }
 
             is SyncResult.Failed -> {
