@@ -18,6 +18,7 @@ import my.passman.util.BackupManager
 import my.passman.util.BiometricAvailability
 import java.io.InputStream
 import java.io.OutputStream
+import javax.crypto.BadPaddingException
 import javax.inject.Inject
 
 @HiltViewModel
@@ -203,6 +204,8 @@ class SettingsViewModel @Inject constructor(
             try {
                 backupManager.importDatabase(data, pendingPassword)
                 _events.send(SettingsEvent.ShowToast("Import successful"))
+            } catch (_: BadPaddingException) {
+                _events.send(SettingsEvent.ShowToast("Import failed: incorrect password"))
             } catch (e: Exception) {
                 _events.send(SettingsEvent.ShowToast("Import failed: ${e.message}"))
             } finally {
@@ -306,7 +309,9 @@ class SettingsViewModel @Inject constructor(
 
     private suspend fun runSync() {
         when (val result = syncManager.sync()) {
-            is SyncResult.ConsentRequired -> _events.send(SettingsEvent.RequestDriveConsent(result.pendingIntent))
+            is SyncResult.ConsentRequired ->
+                _events.send(SettingsEvent.RequestDriveConsent(result.pendingIntent))
+
             is SyncResult.Uploaded -> {
                 isSettingUpSync = false
                 _events.send(SettingsEvent.ShowToast("Synced — uploaded to Drive"))
@@ -323,6 +328,12 @@ class SettingsViewModel @Inject constructor(
             }
 
             is SyncResult.Disabled -> isSettingUpSync = false
+
+            is SyncResult.InvalidPassphrase -> {
+                abortSyncSetupIfPending()
+                _events.send(SettingsEvent.ShowToast("Incorrect backup password"))
+            }
+
             is SyncResult.Failed -> {
                 abortSyncSetupIfPending()
                 _events.send(SettingsEvent.ShowToast("Sync failed: ${result.message}"))
