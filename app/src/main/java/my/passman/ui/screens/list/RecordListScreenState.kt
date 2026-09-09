@@ -6,4 +6,5 @@ data class RecordListScreenState(
     val records: List<RecordWithTag> = emptyList(),
     val searchQuery: String = "",
     val isSearchActive: Boolean = false,
+    val isLoading: Boolean = true,
 )

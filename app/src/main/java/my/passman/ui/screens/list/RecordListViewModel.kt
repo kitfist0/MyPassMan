@@ -23,8 +23,9 @@ class RecordListViewModel @Inject constructor(
         settingsRepository.sortOrder
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SortOrder.BY_NAME)
 
+    // null means the initial load from the database hasn't completed yet.
     @OptIn(ExperimentalCoroutinesApi::class)
-    private val records: StateFlow<List<RecordWithTag>> =
+    private val records: StateFlow<List<RecordWithTag>?> =
         combine(
             _searchQuery,
             sortOrder,
@@ -44,7 +45,7 @@ class RecordListViewModel @Inject constructor(
                     SortOrder.BY_MODIFIED -> list.sortedByDescending { it.record.modified }
                 }
             }
-        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     val uiState: StateFlow<RecordListScreenState> =
         combine(
@@ -53,9 +54,10 @@ class RecordListViewModel @Inject constructor(
             _isSearchActive,
         ) { recordsList, query, isSearchActive ->
             RecordListScreenState(
-                records = recordsList,
+                records = recordsList ?: emptyList(),
                 searchQuery = query,
                 isSearchActive = isSearchActive,
+                isLoading = recordsList == null,
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), RecordListScreenState())
 

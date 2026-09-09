@@ -105,7 +105,17 @@ fun RecordListScreen(
         val systemBarsPadding = WindowInsets.systemBars.asPaddingValues()
 
         Box(modifier = Modifier.fillMaxSize()) {
-            if (state.records.isEmpty()) {
+            if (state.isLoading) {
+                Box(
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .padding(padding),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator()
+                }
+            } else if (state.records.isEmpty()) {
                 Box(
                     modifier =
                         Modifier
