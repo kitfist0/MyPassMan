@@ -2,6 +2,7 @@ package my.passman.ui.screens.pin
 
 import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -32,7 +33,7 @@ fun PinScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val fingerprintEnabled by viewModel.fingerprintEnabled.collectAsStateWithLifecycle()
-    val activity = LocalContext.current as FragmentActivity
+    val activity = LocalActivity.current as FragmentActivity
 
     fun triggerFingerprintUnlock() {
         BiometricAuthenticator.authenticate(
