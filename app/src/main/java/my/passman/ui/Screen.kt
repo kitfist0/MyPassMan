@@ -11,7 +11,9 @@ sealed class Screen {
         val sessionKey: String = UUID.randomUUID().toString(),
     ) : Screen()
 
-    data object Settings : Screen()
+    data class Settings(
+        val autoImport: Boolean = false,
+    ) : Screen()
 
     data object Tags : Screen()
 

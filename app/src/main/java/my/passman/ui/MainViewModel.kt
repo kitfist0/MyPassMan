@@ -58,7 +58,7 @@ class MainViewModel @Inject constructor(
         isAuthorized = true
         _currentScreen.value =
             if (mode == PinMode.SET || mode == PinMode.CONFIRM) {
-                Screen.Settings
+                Screen.Settings()
             } else {
                 Screen.List
             }

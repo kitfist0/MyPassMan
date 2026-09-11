@@ -43,6 +43,7 @@ fun RecordListScreen(
     onAddRecord: () -> Unit,
     onEditRecord: (Long) -> Unit,
     onNavigateToSettings: () -> Unit,
+    onImportDatabase: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val searchFocusRequester = remember { FocusRequester() }
@@ -123,6 +124,7 @@ fun RecordListScreen(
                             .padding(padding),
                     contentAlignment = Alignment.Center,
                 ) {
+                    val searchQueryIsEmpty = state.searchQuery.isEmpty()
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(
                             imageVector = Icons.Default.Inbox,
@@ -133,7 +135,7 @@ fun RecordListScreen(
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
                             text =
-                                if (state.searchQuery.isEmpty()) {
+                                if (searchQueryIsEmpty) {
                                     stringResource(
                                         R.string.no_records,
                                     )
@@ -143,6 +145,12 @@ fun RecordListScreen(
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+                        if (searchQueryIsEmpty) {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Button(onClick = onImportDatabase) {
+                                Text(stringResource(R.string.settings_import))
+                            }
+                        }
                     }
                 }
             } else {

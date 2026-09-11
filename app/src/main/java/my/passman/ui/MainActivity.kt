@@ -103,7 +103,8 @@ class MainActivity : FragmentActivity() {
                                         onEditRecord = { id ->
                                             viewModel.navigateTo(Screen.Edit(id))
                                         },
-                                        onNavigateToSettings = { viewModel.navigateTo(Screen.Settings) },
+                                        onNavigateToSettings = { viewModel.navigateTo(Screen.Settings()) },
+                                        onImportDatabase = { viewModel.navigateTo(Screen.Settings(autoImport = true)) },
                                     )
                                 }
 
@@ -127,6 +128,12 @@ class MainActivity : FragmentActivity() {
 
                                 is Screen.Settings -> {
                                     val settingsViewModel: SettingsViewModel = hiltViewModel()
+
+                                    LaunchedEffect(targetScreen) {
+                                        if (targetScreen.autoImport) {
+                                            settingsViewModel.onImportClick()
+                                        }
+                                    }
 
                                     val createDocumentLauncher =
                                         rememberLauncherForActivityResult(
@@ -191,7 +198,7 @@ class MainActivity : FragmentActivity() {
                                     val tagsViewModel: TagsViewModel = hiltViewModel()
                                     TagsScreen(
                                         viewModel = tagsViewModel,
-                                        onBack = { viewModel.navigateTo(Screen.Settings) },
+                                        onBack = { viewModel.navigateTo(Screen.Settings()) },
                                     )
                                 }
 
@@ -205,7 +212,7 @@ class MainActivity : FragmentActivity() {
                                         )
                                     PinScreen(
                                         viewModel = pinViewModel,
-                                        onBack = { viewModel.navigateTo(Screen.Settings) },
+                                        onBack = { viewModel.navigateTo(Screen.Settings()) },
                                         onSuccess = { viewModel.onPinSuccess(targetScreen.mode) },
                                     )
                                 }
