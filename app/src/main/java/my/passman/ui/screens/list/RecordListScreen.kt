@@ -1,6 +1,7 @@
 package my.passman.ui.screens.list
 
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.*
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -48,6 +49,7 @@ fun RecordListScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val searchFocusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
+    val activity = LocalActivity.current
 
     fun closeSearch() {
         focusManager.clearFocus()
@@ -56,6 +58,13 @@ fun RecordListScreen(
 
     BackHandler(enabled = state.isSearchActive) {
         closeSearch()
+    }
+
+    // Exiting here (rather than just navigating in-app) means the app's
+    // ViewModelStore is cleared, so the next launch naturally re-checks the PIN
+    // via MainViewModel's init block — no separate "lock" state to manage.
+    BackHandler(enabled = state.isPinEnabled && !state.isSearchActive) {
+        activity?.finish()
     }
 
     Scaffold(

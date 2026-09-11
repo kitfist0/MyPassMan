@@ -52,12 +52,14 @@ class RecordListViewModel @Inject constructor(
             records,
             _searchQuery,
             _isSearchActive,
-        ) { recordsList, query, isSearchActive ->
+            settingsRepository.pinHash,
+        ) { recordsList, query, isSearchActive, pinHash ->
             RecordListScreenState(
                 records = recordsList ?: emptyList(),
                 searchQuery = query,
                 isSearchActive = isSearchActive,
                 isLoading = recordsList == null,
+                isPinEnabled = pinHash != null,
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), RecordListScreenState())
 

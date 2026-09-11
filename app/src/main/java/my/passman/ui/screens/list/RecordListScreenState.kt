@@ -7,4 +7,5 @@ data class RecordListScreenState(
     val searchQuery: String = "",
     val isSearchActive: Boolean = false,
     val isLoading: Boolean = true,
+    val isPinEnabled: Boolean = false,
 )
