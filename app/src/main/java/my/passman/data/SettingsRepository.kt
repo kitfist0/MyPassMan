@@ -45,9 +45,13 @@ class SettingsRepository @Inject constructor(
         dataStore.data
             .map { preferences -> preferences[FINGERPRINT_ENABLED] ?: false }
 
-    val driveSyncEnabled: Flow<Boolean> =
+    val syncProvider: Flow<SyncProvider> =
         dataStore.data
-            .map { preferences -> preferences[DRIVE_SYNC_ENABLED] ?: false }
+            .map { preferences ->
+                preferences[SYNC_PROVIDER]?.let { name ->
+                    runCatching { SyncProvider.valueOf(name) }.getOrNull()
+                } ?: SyncProvider.NONE
+            }
 
     val hasSyncPassphrase: Flow<Boolean> =
         dataStore.data
@@ -65,9 +69,27 @@ class SettingsRepository @Inject constructor(
         dataStore.data
             .map { preferences -> preferences[LAST_SYNCED_CONTENT_TIMESTAMP] }
 
-    suspend fun setDriveSyncEnabled(enabled: Boolean) {
+    suspend fun setSyncProvider(provider: SyncProvider) {
         dataStore.edit { preferences ->
-            preferences[DRIVE_SYNC_ENABLED] = enabled
+            preferences[SYNC_PROVIDER] = provider.name
+        }
+    }
+
+    suspend fun setYandexAccessToken(token: String) {
+        dataStore.edit { preferences ->
+            preferences[YANDEX_ACCESS_TOKEN] = KeystoreCipher.encryptToString(token)
+        }
+    }
+
+    suspend fun getYandexAccessToken(): String? {
+        val encrypted =
+            dataStore.data
+                .map { it[YANDEX_ACCESS_TOKEN] }
+                .first() ?: return null
+        return try {
+            KeystoreCipher.decryptFromString(encrypted)
+        } catch (_: Exception) {
+            null
         }
     }
 
@@ -94,8 +116,9 @@ class SettingsRepository @Inject constructor(
     suspend fun clearSyncState() {
         KeystoreCipher.clearKey()
         dataStore.edit { preferences ->
-            preferences.remove(DRIVE_SYNC_ENABLED)
+            preferences.remove(SYNC_PROVIDER)
             preferences.remove(SYNC_PASSPHRASE)
+            preferences.remove(YANDEX_ACCESS_TOKEN)
             preferences.remove(LAST_SYNCED_AT)
             preferences.remove(LAST_SYNCED_LOCAL_CHANGED_AT)
             preferences.remove(LAST_SYNCED_CONTENT_TIMESTAMP)
@@ -160,8 +183,9 @@ class SettingsRepository @Inject constructor(
         val PIN_HASH = stringPreferencesKey("pin_hash")
         val PIN_LENGTH = intPreferencesKey("pin_length")
         val FINGERPRINT_ENABLED = booleanPreferencesKey("fingerprint_enabled")
-        val DRIVE_SYNC_ENABLED = booleanPreferencesKey("drive_sync_enabled")
+        val SYNC_PROVIDER = stringPreferencesKey("sync_provider")
         val SYNC_PASSPHRASE = stringPreferencesKey("sync_passphrase")
+        val YANDEX_ACCESS_TOKEN = stringPreferencesKey("yandex_access_token")
         val LAST_SYNCED_AT = longPreferencesKey("last_synced_at")
         val LAST_SYNCED_LOCAL_CHANGED_AT = longPreferencesKey("last_synced_local_changed_at")
         val LAST_SYNCED_CONTENT_TIMESTAMP = longPreferencesKey("last_synced_content_timestamp")
