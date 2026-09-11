@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.first
 import my.passman.data.AppDatabase
 import my.passman.data.RecordDao
 import my.passman.data.SettingsRepository
+import my.passman.data.SyncProvider
 import my.passman.data.TagDao
 import my.passman.util.BackupManager
 import javax.crypto.BadPaddingException
@@ -27,6 +28,10 @@ sealed class SyncResult {
     // The remote backup couldn't be decrypted — the stored sync passphrase doesn't
     // match the one it was encrypted with (e.g. it was set up from another device).
     data object InvalidPassphrase : SyncResult()
+
+    // No cached provider credential — the caller must show its own interactive login
+    // (e.g. Yandex's WebView OAuth flow) before a sync can proceed.
+    data object LoginRequired : SyncResult()
 
     data class Failed(
         val message: String?,
@@ -57,7 +62,7 @@ class SyncManager @Inject constructor(
     private val driveApiClient: DriveApiClient,
 ) {
     suspend fun sync(): SyncResult {
-        if (!settingsRepository.driveSyncEnabled.first()) return SyncResult.Disabled
+        if (settingsRepository.syncProvider.first() != SyncProvider.GOOGLE_DRIVE) return SyncResult.Disabled
         val passphrase = settingsRepository.getSyncPassphrase() ?: return SyncResult.Disabled
 
         return try {
@@ -81,7 +86,7 @@ class SyncManager @Inject constructor(
      * remember the passphrase the remote backup was originally encrypted with.
      */
     suspend fun resetRemoteBackup(): SyncResult {
-        if (!settingsRepository.driveSyncEnabled.first()) return SyncResult.Disabled
+        if (settingsRepository.syncProvider.first() != SyncProvider.GOOGLE_DRIVE) return SyncResult.Disabled
         val passphrase = settingsRepository.getSyncPassphrase() ?: return SyncResult.Disabled
 
         return try {
