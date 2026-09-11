@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -6,6 +8,17 @@ plugins {
     alias(libs.plugins.dagger.hilt.android)
     alias(libs.plugins.jlleitschuh.ktlint)
 }
+
+// Read via the Provider API (not a plain File/InputStream read) so the Configuration
+// Cache tracks local.properties as an input and correctly invalidates when it changes.
+val localProperties =
+    Properties().apply {
+        providers
+            .fileContents(rootProject.layout.projectDirectory.file("local.properties"))
+            .asText
+            .orNull
+            ?.let { load(it.byteInputStream()) }
+    }
 
 android {
     namespace = "my.passman"
@@ -24,6 +37,17 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField(
+            "String",
+            "YANDEX_CLIENT_ID",
+            "\"${localProperties.getProperty("YANDEX_CLIENT_ID", "")}\"",
+        )
+        buildConfigField(
+            "String",
+            "YANDEX_REDIRECT_URI",
+            "\"${localProperties.getProperty("YANDEX_REDIRECT_URI", "")}\"",
+        )
     }
 
     buildTypes {
@@ -39,6 +63,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     packaging {
         resources {
@@ -94,6 +119,9 @@ dependencies {
     }
     implementation(libs.google.api.services.drive)
     implementation(libs.google.http.client.gson)
+    implementation(libs.okhttp)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.converter.gson)
     testImplementation(libs.androidx.core)
     testImplementation(libs.androidx.junit)
     testImplementation(libs.junit)
