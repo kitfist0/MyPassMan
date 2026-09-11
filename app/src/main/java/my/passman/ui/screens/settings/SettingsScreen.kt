@@ -27,6 +27,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import my.passman.R
 import my.passman.data.AppTheme
 import my.passman.data.SortOrder
+import my.passman.data.SyncProvider
 import my.passman.util.BiometricAuthenticator
 import my.passman.util.PasswordValidator
 import java.text.SimpleDateFormat
@@ -232,7 +233,7 @@ fun SettingsScreen(
             confirmButton = {
                 TextButton(
                     enabled = missingRequirements.isEmpty(),
-                    onClick = { viewModel.enableDriveSync(passphrase) },
+                    onClick = { viewModel.enableSync(passphrase) },
                 ) {
                     Text(stringResource(R.string.enable))
                 }
@@ -242,6 +243,46 @@ fun SettingsScreen(
                     Text(stringResource(R.string.cancel))
                 }
             },
+        )
+    }
+
+    if (state.showSyncProviderDialog) {
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissSyncProviderDialog() },
+            title = { Text(stringResource(R.string.select_sync_provider)) },
+            text = {
+                Column {
+                    SyncProviderOptionRow(
+                        label = stringResource(R.string.sync_provider_none),
+                        selected = state.syncProvider == SyncProvider.NONE,
+                        onClick = { viewModel.onSyncProviderSelected(SyncProvider.NONE) },
+                    )
+                    SyncProviderOptionRow(
+                        label = stringResource(R.string.sync_provider_google_drive),
+                        selected = state.syncProvider == SyncProvider.GOOGLE_DRIVE,
+                        onClick = { viewModel.onSyncProviderSelected(SyncProvider.GOOGLE_DRIVE) },
+                    )
+                    SyncProviderOptionRow(
+                        label = stringResource(R.string.sync_provider_yandex_disk),
+                        selected = state.syncProvider == SyncProvider.YANDEX_DISK,
+                        onClick = { viewModel.onSyncProviderSelected(SyncProvider.YANDEX_DISK) },
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { viewModel.dismissSyncProviderDialog() }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
+        )
+    }
+
+    if (state.showYandexLoginDialog) {
+        YandexLoginDialog(
+            authorizeUrl = viewModel.yandexAuthorizeUrl,
+            redirectUri = viewModel.yandexRedirectUri,
+            onToken = { token -> viewModel.onYandexTokenReceived(token) },
+            onDismiss = { viewModel.dismissYandexLoginDialog() },
         )
     }
 
@@ -486,44 +527,40 @@ private fun BackupSettingsCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Column {
-            val onDriveSyncToggle: (Boolean) -> Unit = { checked ->
-                if (checked) {
-                    viewModel.showSyncPassphraseDialog()
-                } else {
-                    viewModel.disableDriveSync()
+            val isSyncEnabled = state.syncProvider != SyncProvider.NONE
+            val providerLabel =
+                when (state.syncProvider) {
+                    SyncProvider.NONE -> stringResource(R.string.sync_provider_none)
+                    SyncProvider.GOOGLE_DRIVE -> stringResource(R.string.sync_provider_google_drive)
+                    SyncProvider.YANDEX_DISK -> stringResource(R.string.sync_provider_yandex_disk)
                 }
-            }
             ListItem(
-                headlineContent = { Text(stringResource(R.string.settings_drive_sync)) },
+                headlineContent = { Text(stringResource(R.string.settings_cloud_sync)) },
                 supportingContent = {
-                    if (state.driveSyncEnabled) {
-                        val lastSyncedLabel =
+                    val lastSyncedLabel =
+                        if (isSyncEnabled) {
                             state.lastSyncedAt?.let {
                                 stringResource(
                                     R.string.settings_drive_sync_last_synced,
                                     SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()).format(Date(it)),
                                 )
                             } ?: stringResource(R.string.settings_drive_sync_never)
-                        Text(lastSyncedLabel)
-                    }
+                        } else {
+                            null
+                        }
+                    Text(lastSyncedLabel?.let { "$providerLabel — $it" } ?: providerLabel)
                 },
                 trailingContent = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (state.driveSyncEnabled) {
-                            IconButton(onClick = { viewModel.syncNow() }) {
-                                Icon(
-                                    imageVector = Icons.Default.Sync,
-                                    contentDescription = stringResource(R.string.settings_drive_sync_now),
-                                )
-                            }
+                    if (isSyncEnabled) {
+                        IconButton(onClick = { viewModel.syncNow() }) {
+                            Icon(
+                                imageVector = Icons.Default.Sync,
+                                contentDescription = stringResource(R.string.settings_drive_sync_now),
+                            )
                         }
-                        Switch(
-                            checked = state.driveSyncEnabled,
-                            onCheckedChange = onDriveSyncToggle,
-                        )
                     }
                 },
-                modifier = Modifier.clickable { onDriveSyncToggle(!state.driveSyncEnabled) },
+                modifier = Modifier.clickable { viewModel.showSyncProviderDialog() },
             )
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
             ListItem(
@@ -604,6 +641,25 @@ private fun ThemeOptionRow(
 
 @Composable
 private fun SortOptionRow(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+                .padding(vertical = 8.dp),
+    ) {
+        RadioButton(selected = selected, onClick = onClick)
+        Text(text = label, modifier = Modifier.padding(start = 8.dp))
+    }
+}
+
+@Composable
+private fun SyncProviderOptionRow(
     label: String,
     selected: Boolean,
     onClick: () -> Unit,

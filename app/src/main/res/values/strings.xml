@@ -98,15 +98,20 @@
     <string name="fingerprint_enable_message">Use your fingerprint to unlock MyPassMan faster next time.</string>
     <string name="skip">Skip</string>
 
-    <!-- Drive Sync -->
-    <string name="settings_drive_sync">Sync with Google Drive</string>
+    <!-- Cloud Sync -->
+    <string name="settings_cloud_sync">Cloud Sync</string>
     <string name="settings_drive_sync_never">Never synced</string>
     <string name="settings_drive_sync_last_synced">Last synced: %1$s</string>
     <string name="settings_drive_sync_now">Sync now</string>
+    <string name="select_sync_provider">Select Cloud Provider</string>
+    <string name="sync_provider_none">Off</string>
+    <string name="sync_provider_google_drive">Google Drive</string>
+    <string name="sync_provider_yandex_disk">Yandex Disk</string>
     <string name="sync_passphrase_title">Set Sync Passphrase</string>
-    <string name="sync_passphrase_message">This passphrase encrypts your data before it\'s uploaded to your Drive app folder. Enter the same passphrase on every device you sync.</string>
+    <string name="sync_passphrase_message">This passphrase encrypts your data before it\'s uploaded to the cloud. Enter the same passphrase on every device you sync.</string>
     <string name="enable">Enable</string>
     <string name="reset_backup_title">Forgot the backup password?</string>
-    <string name="reset_backup_text">The backup in Google Drive was encrypted with a different password. You can delete it and upload a fresh copy from this device, or cancel and try a different password.</string>
+    <string name="reset_backup_text">The backup in the cloud was encrypted with a different password. You can delete it and upload a fresh copy from this device, or cancel and try a different password.</string>
     <string name="reset_backup_confirm">Delete &amp; Start Over</string>
+    <string name="yandex_login_title">Sign in to Yandex</string>
 </resources>
