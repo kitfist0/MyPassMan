@@ -144,6 +144,7 @@ private fun PinHeader(
 
         // PIN Dots
         Row(
+            modifier = Modifier.height(16.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
