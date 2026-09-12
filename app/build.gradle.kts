@@ -20,6 +20,15 @@ val localProperties =
             ?.let { load(it.byteInputStream()) }
     }
 
+val releaseProperties =
+    Properties().apply {
+        providers
+            .fileContents(rootProject.layout.projectDirectory.file("cert/release.properties"))
+            .asText
+            .orNull
+            ?.let { load(it.byteInputStream()) }
+    }
+
 android {
     namespace = "my.passman"
     compileSdk {
@@ -50,11 +59,24 @@ android {
         )
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = rootProject.file("cert/release.keystore")
+            storePassword = releaseProperties.getProperty("store_password")
+            keyAlias = releaseProperties.getProperty("alias")
+            keyPassword = releaseProperties.getProperty("key_password")
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig = signingConfigs.getByName("release")
             optimization {
                 enable = false
             }
+        }
+        debug {
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {
