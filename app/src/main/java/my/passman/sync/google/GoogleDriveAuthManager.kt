@@ -1,4 +1,4 @@
-package my.passman.sync
+package my.passman.sync.google
 
 import android.app.PendingIntent
 import android.content.Context
@@ -10,18 +10,18 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import javax.inject.Inject
 import javax.inject.Singleton
 
-sealed class DriveAuthResult {
+sealed class GoogleDriveAuthResult {
     data class Authorized(
         val accessToken: String,
-    ) : DriveAuthResult()
+    ) : GoogleDriveAuthResult()
 
     data class ConsentRequired(
         val pendingIntent: PendingIntent,
-    ) : DriveAuthResult()
+    ) : GoogleDriveAuthResult()
 
     data class Failed(
         val message: String?,
-    ) : DriveAuthResult()
+    ) : GoogleDriveAuthResult()
 }
 
 /**
@@ -29,18 +29,18 @@ sealed class DriveAuthResult {
  * API (not full Google Sign-In). Play Services matches the app's registered
  * OAuth client by package name + signing certificate, so no client ID needs
  * to be embedded here. A first-time (or scope-change) grant requires
- * launching [DriveAuthResult.ConsentRequired.pendingIntent] via
+ * launching [GoogleDriveAuthResult.ConsentRequired.pendingIntent] via
  * `ActivityResultContracts.StartIntentSenderForResult`; subsequent calls from
  * anywhere, including a background [android.app.Application] context, return
  * a fresh token silently as long as the grant is still valid.
  */
 @Singleton
-class DriveAuthManager @Inject constructor(
+class GoogleDriveAuthManager @Inject constructor(
     @ApplicationContext private val context: Context,
 ) {
     private val authorizationClient = Identity.getAuthorizationClient(context)
 
-    suspend fun authorize(): DriveAuthResult {
+    suspend fun authorize(): GoogleDriveAuthResult {
         val request =
             AuthorizationRequest
                 .builder()
@@ -51,16 +51,16 @@ class DriveAuthManager @Inject constructor(
             val pendingIntent = result.pendingIntent
             when {
                 result.hasResolution() && pendingIntent != null ->
-                    DriveAuthResult.ConsentRequired(pendingIntent)
+                    GoogleDriveAuthResult.ConsentRequired(pendingIntent)
 
                 result.accessToken != null ->
-                    DriveAuthResult.Authorized(result.accessToken!!)
+                    GoogleDriveAuthResult.Authorized(result.accessToken!!)
 
                 else ->
-                    DriveAuthResult.Failed("No access token returned")
+                    GoogleDriveAuthResult.Failed("No access token returned")
             }
         } catch (e: Exception) {
-            DriveAuthResult.Failed(e.message)
+            GoogleDriveAuthResult.Failed(e.message)
         }
     }
 

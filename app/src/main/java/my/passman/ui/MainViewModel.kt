@@ -7,15 +7,18 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import my.passman.data.AppTheme
 import my.passman.data.SettingsRepository
-import my.passman.sync.SyncManager
+import my.passman.data.SyncProvider
 import my.passman.sync.SyncScheduler
+import my.passman.sync.google.GoogleSyncManager
+import my.passman.sync.yandex.YandexSyncManager
 import my.passman.ui.screens.pin.PinMode
 import javax.inject.Inject
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
-    private val syncManager: SyncManager,
+    private val googleSyncManager: GoogleSyncManager,
+    private val yandexSyncManager: YandexSyncManager,
     private val syncScheduler: SyncScheduler,
 ) : ViewModel() {
     private val _currentScreen = MutableStateFlow<Screen>(Screen.List)
@@ -43,9 +46,16 @@ class MainViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            if (settingsRepository.driveSyncEnabled.first()) {
-                syncScheduler.enablePeriodicSync()
-                syncManager.sync()
+            when (settingsRepository.syncProvider.first()) {
+                SyncProvider.GOOGLE_DRIVE -> {
+                    syncScheduler.enablePeriodicSync()
+                    googleSyncManager.sync()
+                }
+                SyncProvider.YANDEX_DISK -> {
+                    syncScheduler.enablePeriodicSync()
+                    yandexSyncManager.sync()
+                }
+                SyncProvider.NONE -> Unit
             }
         }
     }

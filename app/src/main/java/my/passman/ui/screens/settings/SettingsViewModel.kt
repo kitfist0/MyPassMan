@@ -11,9 +11,12 @@ import kotlinx.coroutines.launch
 import my.passman.data.AppTheme
 import my.passman.data.SettingsRepository
 import my.passman.data.SortOrder
-import my.passman.sync.SyncManager
+import my.passman.data.SyncProvider
 import my.passman.sync.SyncResult
 import my.passman.sync.SyncScheduler
+import my.passman.sync.google.GoogleSyncManager
+import my.passman.sync.yandex.YandexAuthManager
+import my.passman.sync.yandex.YandexSyncManager
 import my.passman.util.BackupManager
 import my.passman.util.BiometricAvailability
 import java.io.InputStream
@@ -25,7 +28,9 @@ import javax.inject.Inject
 class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val backupManager: BackupManager,
-    private val syncManager: SyncManager,
+    private val googleSyncManager: GoogleSyncManager,
+    private val yandexSyncManager: YandexSyncManager,
+    private val yandexAuthManager: YandexAuthManager,
     private val syncScheduler: SyncScheduler,
     private val biometricAvailability: BiometricAvailability,
 ) : ViewModel() {
@@ -36,8 +41,11 @@ class SettingsViewModel @Inject constructor(
 
     val isFingerprintAvailable: Boolean = biometricAvailability.isAvailable()
 
+    val yandexAuthorizeUrl: String get() = yandexAuthManager.authorizeUrl
+    val yandexRedirectUri: String get() = yandexAuthManager.redirectUri
+
     private data class SyncSettings(
-        val enabled: Boolean,
+        val provider: SyncProvider,
         val lastSyncedAt: Long?,
     )
 
@@ -48,9 +56,9 @@ class SettingsViewModel @Inject constructor(
 
     private val syncSettings: Flow<SyncSettings> =
         combine(
-            settingsRepository.driveSyncEnabled,
+            settingsRepository.syncProvider,
             settingsRepository.lastSyncedAt,
-        ) { enabled, lastSyncedAt -> SyncSettings(enabled, lastSyncedAt) }
+        ) { provider, lastSyncedAt -> SyncSettings(provider, lastSyncedAt) }
 
     private val pinSettings: Flow<PinSettings> =
         combine(
@@ -76,10 +84,12 @@ class SettingsViewModel @Inject constructor(
                 showAboutDialog = dialogState.showAboutDialog,
                 showBackupPasswordDialog = dialogState.showBackupPasswordDialog,
                 showDisablePinDialog = dialogState.showDisablePinDialog,
+                showSyncProviderDialog = dialogState.showSyncProviderDialog,
                 showSyncPassphraseDialog = dialogState.showSyncPassphraseDialog,
+                showYandexLoginDialog = dialogState.showYandexLoginDialog,
                 showResetBackupDialog = dialogState.showResetBackupDialog,
                 backupMode = dialogState.backupMode,
-                driveSyncEnabled = sync.enabled,
+                syncProvider = sync.provider,
                 lastSyncedAt = sync.lastSyncedAt,
             )
         }.stateIn(
@@ -94,7 +104,9 @@ class SettingsViewModel @Inject constructor(
         val showAboutDialog: Boolean = false,
         val showBackupPasswordDialog: Boolean = false,
         val showDisablePinDialog: Boolean = false,
+        val showSyncProviderDialog: Boolean = false,
         val showSyncPassphraseDialog: Boolean = false,
+        val showYandexLoginDialog: Boolean = false,
         val showResetBackupDialog: Boolean = false,
         val backupMode: BackupMode? = null,
     )
@@ -258,28 +270,52 @@ class SettingsViewModel @Inject constructor(
         pendingPassword = charArrayOf()
     }
 
-    fun showSyncPassphraseDialog() {
-        _dialogState.update { it.copy(showSyncPassphraseDialog = true) }
+    fun showSyncProviderDialog() {
+        _dialogState.update { it.copy(showSyncProviderDialog = true) }
+    }
+
+    fun dismissSyncProviderDialog() {
+        _dialogState.update { it.copy(showSyncProviderDialog = false) }
     }
 
     fun dismissSyncPassphraseDialog() {
         _dialogState.update { it.copy(showSyncPassphraseDialog = false) }
+        pendingSyncProvider = SyncProvider.NONE
+    }
+
+    fun dismissYandexLoginDialog() {
+        _dialogState.update { it.copy(showYandexLoginDialog = false) }
+        viewModelScope.launch { abortSyncSetupIfPending() }
     }
 
     private var isSettingUpSync = false
+    private var pendingSyncProvider: SyncProvider = SyncProvider.NONE
 
-    fun enableDriveSync(passphrase: String) {
+    /** Called after the user picks a provider from the sync provider dialog. */
+    fun onSyncProviderSelected(provider: SyncProvider) {
+        _dialogState.update { it.copy(showSyncProviderDialog = false) }
+        if (provider == SyncProvider.NONE) {
+            disableSync()
+        } else {
+            pendingSyncProvider = provider
+            _dialogState.update { it.copy(showSyncPassphraseDialog = true) }
+        }
+    }
+
+    /** Called once the local backup encryption passphrase has been entered. */
+    fun enableSync(passphrase: String) {
+        val provider = pendingSyncProvider
         _dialogState.update { it.copy(showSyncPassphraseDialog = false) }
         viewModelScope.launch {
             settingsRepository.setSyncPassphrase(passphrase)
-            settingsRepository.setDriveSyncEnabled(true)
+            settingsRepository.setSyncProvider(provider)
             syncScheduler.enablePeriodicSync()
             isSettingUpSync = true
             runSync()
         }
     }
 
-    fun disableDriveSync() {
+    fun disableSync() {
         viewModelScope.launch {
             syncScheduler.disablePeriodicSync()
             settingsRepository.clearSyncState()
@@ -290,6 +326,15 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { runSync() }
     }
 
+    /** Called once the Yandex OAuth WebView captures an access token from the redirect. */
+    fun onYandexTokenReceived(accessToken: String) {
+        _dialogState.update { it.copy(showYandexLoginDialog = false) }
+        viewModelScope.launch {
+            yandexAuthManager.saveToken(accessToken)
+            runSync()
+        }
+    }
+
     fun dismissResetBackupDialog() {
         _dialogState.update { it.copy(showResetBackupDialog = false) }
         viewModelScope.launch { abortSyncSetupIfPending() }
@@ -298,9 +343,18 @@ class SettingsViewModel @Inject constructor(
     fun confirmResetBackup() {
         _dialogState.update { it.copy(showResetBackupDialog = false) }
         viewModelScope.launch {
-            when (val result = syncManager.resetRemoteBackup()) {
+            val result =
+                when (settingsRepository.syncProvider.first()) {
+                    SyncProvider.GOOGLE_DRIVE -> googleSyncManager.resetRemoteBackup()
+                    SyncProvider.YANDEX_DISK -> yandexSyncManager.resetRemoteBackup()
+                    SyncProvider.NONE -> SyncResult.Disabled
+                }
+            when (result) {
                 is SyncResult.ConsentRequired ->
                     _events.send(SettingsEvent.RequestDriveConsent(result.pendingIntent))
+
+                SyncResult.LoginRequired ->
+                    _dialogState.update { it.copy(showYandexLoginDialog = true) }
 
                 is SyncResult.Uploaded -> {
                     isSettingUpSync = false
@@ -337,18 +391,27 @@ class SettingsViewModel @Inject constructor(
     }
 
     private suspend fun runSync() {
-        when (val result = syncManager.sync()) {
+        val result =
+            when (settingsRepository.syncProvider.first()) {
+                SyncProvider.GOOGLE_DRIVE -> googleSyncManager.sync()
+                SyncProvider.YANDEX_DISK -> yandexSyncManager.sync()
+                SyncProvider.NONE -> SyncResult.Disabled
+            }
+        when (result) {
             is SyncResult.ConsentRequired ->
                 _events.send(SettingsEvent.RequestDriveConsent(result.pendingIntent))
 
+            SyncResult.LoginRequired ->
+                _dialogState.update { it.copy(showYandexLoginDialog = true) }
+
             is SyncResult.Uploaded -> {
                 isSettingUpSync = false
-                _events.send(SettingsEvent.ShowToast("Synced — uploaded to Drive"))
+                _events.send(SettingsEvent.ShowToast("Synced — uploaded to the cloud"))
             }
 
             is SyncResult.Downloaded -> {
                 isSettingUpSync = false
-                _events.send(SettingsEvent.ShowToast("Synced — downloaded from Drive"))
+                _events.send(SettingsEvent.ShowToast("Synced — downloaded from the cloud"))
             }
 
             is SyncResult.UpToDate -> {

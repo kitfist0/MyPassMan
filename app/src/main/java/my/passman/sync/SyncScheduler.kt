@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/** Manages the background periodic sync work. Interactive "sync now" calls go through [SyncManager] directly. */
+/** Manages the background periodic sync work. Interactive "sync now" calls go through [my.passman.sync.google.GoogleSyncManager] directly. */
 @Singleton
 class SyncScheduler @Inject constructor(
     private val workManager: WorkManager,
