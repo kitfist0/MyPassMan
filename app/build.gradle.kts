@@ -29,6 +29,13 @@ val releaseProperties =
             ?.let { load(it.byteInputStream()) }
     }
 
+/** Shared output name for both the per-variant APK and its AAB counterpart, e.g. "MyPassMan-1.0-release.apk". */
+fun artifactFileName(
+    versionName: String?,
+    variantName: String,
+    extension: String,
+): String = "MyPassMan-$versionName-$variantName.$extension"
+
 android {
     namespace = "my.passman"
     compileSdk {
@@ -96,6 +103,46 @@ android {
                     "META-INF/LICENSE.md",
                     "META-INF/LICENSE-notice.md",
                 )
+        }
+    }
+}
+
+androidComponents {
+    onVariants { variant ->
+        variant.outputs.forEach { output ->
+            output.outputFileName.set(artifactFileName(android.defaultConfig.versionName, variant.name, "apk"))
+        }
+    }
+}
+
+// variant.outputs (above) only renames APKs — bundleXxx's .aab has no equivalent
+// "outputFileName" hook. AGP tasks further down the graph (e.g. the IDE bundle model
+// listing) depend on that .aab staying at its original fixed path, so this adds a
+// same-named copy alongside it rather than renaming/deleting the original.
+// Runs in afterEvaluate: bundleDebug/bundleRelease aren't registered yet while
+// androidComponents.onVariants above is still executing.
+afterEvaluate {
+    // Both captured into plain, config-cache-safe values before entering doLast below:
+    // referencing `android` or the bare `layout` extension from inside a task action would
+    // drag the whole Project into the task's captured state, which the Configuration Cache
+    // refuses to serialize.
+    val versionName = android.defaultConfig.versionName
+    val buildDir = layout.buildDirectory
+    listOf("debug", "release").forEach { variantName ->
+        val capitalizedName = variantName.replaceFirstChar { it.uppercase() }
+        val bundleDirProvider = buildDir.dir("outputs/bundle/$variantName")
+        // Resolved to a plain String here, outside doLast: calling a script-level function
+        // (like artifactFileName) from inside a task action captures the whole script object,
+        // which the Configuration Cache refuses to serialize.
+        val targetFileName = artifactFileName(versionName, variantName, "aab")
+        tasks.named("bundle$capitalizedName").configure {
+            doLast {
+                val bundleDir = bundleDirProvider.get().asFile
+                bundleDir
+                    .listFiles { file -> file.extension == "aab" && !file.name.startsWith("MyPassMan-") }
+                    ?.firstOrNull()
+                    ?.copyTo(File(bundleDir, targetFileName), overwrite = true)
+            }
         }
     }
 }
