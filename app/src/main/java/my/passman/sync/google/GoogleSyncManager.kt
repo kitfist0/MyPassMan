@@ -1,6 +1,5 @@
-package my.passman.sync
+package my.passman.sync.google
 
-import android.app.PendingIntent
 import androidx.room.withTransaction
 import kotlinx.coroutines.flow.first
 import my.passman.data.AppDatabase
@@ -8,35 +7,10 @@ import my.passman.data.RecordDao
 import my.passman.data.SettingsRepository
 import my.passman.data.SyncProvider
 import my.passman.data.TagDao
+import my.passman.sync.SyncResult
 import my.passman.util.BackupManager
 import javax.crypto.BadPaddingException
 import javax.inject.Inject
-
-sealed class SyncResult {
-    data object UpToDate : SyncResult()
-
-    data object Uploaded : SyncResult()
-
-    data object Downloaded : SyncResult()
-
-    data object Disabled : SyncResult()
-
-    data class ConsentRequired(
-        val pendingIntent: PendingIntent,
-    ) : SyncResult()
-
-    // The remote backup couldn't be decrypted — the stored sync passphrase doesn't
-    // match the one it was encrypted with (e.g. it was set up from another device).
-    data object InvalidPassphrase : SyncResult()
-
-    // No cached provider credential — the caller must show its own interactive login
-    // (e.g. Yandex's WebView OAuth flow) before a sync can proceed.
-    data object LoginRequired : SyncResult()
-
-    data class Failed(
-        val message: String?,
-    ) : SyncResult()
-}
 
 /**
  * Orchestrates one sync pass against the app's Drive `appDataFolder` backup
@@ -52,14 +26,14 @@ sealed class SyncResult {
  * local recency signal, since [my.passman.data.Tag] has no modified column;
  * such changes sync on the next pass that also touches a record.
  */
-class SyncManager @Inject constructor(
+class GoogleSyncManager @Inject constructor(
     private val appDatabase: AppDatabase,
     private val recordDao: RecordDao,
     private val tagDao: TagDao,
     private val backupManager: BackupManager,
     private val settingsRepository: SettingsRepository,
-    private val driveAuthManager: DriveAuthManager,
-    private val driveApiClient: DriveApiClient,
+    private val driveAuthManager: GoogleDriveAuthManager,
+    private val driveApiClient: GoogleDriveApiClient,
 ) {
     suspend fun sync(): SyncResult {
         if (settingsRepository.syncProvider.first() != SyncProvider.GOOGLE_DRIVE) return SyncResult.Disabled
@@ -67,9 +41,9 @@ class SyncManager @Inject constructor(
 
         return try {
             when (val authResult = driveAuthManager.authorize()) {
-                is DriveAuthResult.Authorized -> performSync(authResult.accessToken, passphrase)
-                is DriveAuthResult.ConsentRequired -> SyncResult.ConsentRequired(authResult.pendingIntent)
-                is DriveAuthResult.Failed -> SyncResult.Failed(authResult.message)
+                is GoogleDriveAuthResult.Authorized -> performSync(authResult.accessToken, passphrase)
+                is GoogleDriveAuthResult.ConsentRequired -> SyncResult.ConsentRequired(authResult.pendingIntent)
+                is GoogleDriveAuthResult.Failed -> SyncResult.Failed(authResult.message)
             }
         } catch (_: BadPaddingException) {
             SyncResult.InvalidPassphrase
@@ -91,7 +65,7 @@ class SyncManager @Inject constructor(
 
         return try {
             when (val authResult = driveAuthManager.authorize()) {
-                is DriveAuthResult.Authorized -> {
+                is GoogleDriveAuthResult.Authorized -> {
                     val accessToken = authResult.accessToken
                     driveApiClient.findBackupFile(accessToken)?.let { remoteFile ->
                         driveApiClient.deleteBackup(accessToken, remoteFile.id)
@@ -100,8 +74,8 @@ class SyncManager @Inject constructor(
                     uploadLocal(accessToken, null, localChangedAt, passphrase)
                     SyncResult.Uploaded
                 }
-                is DriveAuthResult.ConsentRequired -> SyncResult.ConsentRequired(authResult.pendingIntent)
-                is DriveAuthResult.Failed -> SyncResult.Failed(authResult.message)
+                is GoogleDriveAuthResult.ConsentRequired -> SyncResult.ConsentRequired(authResult.pendingIntent)
+                is GoogleDriveAuthResult.Failed -> SyncResult.Failed(authResult.message)
             }
         } catch (e: Exception) {
             SyncResult.Failed(e.message)

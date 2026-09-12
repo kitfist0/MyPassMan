@@ -1,4 +1,4 @@
-package my.passman.sync
+package my.passman.sync.google
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
 import com.google.api.client.http.ByteArrayContent
@@ -23,7 +23,7 @@ data class RemoteBackupFile(
  * uploaded) rather than Drive's `modifiedTime`, so sync conflict comparisons
  * reflect data recency, not upload wall-clock time.
  */
-class DriveApiClient @Inject constructor(
+class GoogleDriveApiClient @Inject constructor(
     private val httpTransport: HttpTransport,
     private val jsonFactory: JsonFactory,
 ) {

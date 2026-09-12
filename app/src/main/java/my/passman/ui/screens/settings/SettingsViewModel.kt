@@ -12,9 +12,9 @@ import my.passman.data.AppTheme
 import my.passman.data.SettingsRepository
 import my.passman.data.SortOrder
 import my.passman.data.SyncProvider
-import my.passman.sync.SyncManager
 import my.passman.sync.SyncResult
 import my.passman.sync.SyncScheduler
+import my.passman.sync.google.GoogleSyncManager
 import my.passman.sync.yandex.YandexAuthManager
 import my.passman.sync.yandex.YandexSyncManager
 import my.passman.util.BackupManager
@@ -28,7 +28,7 @@ import javax.inject.Inject
 class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val backupManager: BackupManager,
-    private val syncManager: SyncManager,
+    private val googleSyncManager: GoogleSyncManager,
     private val yandexSyncManager: YandexSyncManager,
     private val yandexAuthManager: YandexAuthManager,
     private val syncScheduler: SyncScheduler,
@@ -345,7 +345,7 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             val result =
                 when (settingsRepository.syncProvider.first()) {
-                    SyncProvider.GOOGLE_DRIVE -> syncManager.resetRemoteBackup()
+                    SyncProvider.GOOGLE_DRIVE -> googleSyncManager.resetRemoteBackup()
                     SyncProvider.YANDEX_DISK -> yandexSyncManager.resetRemoteBackup()
                     SyncProvider.NONE -> SyncResult.Disabled
                 }
@@ -393,7 +393,7 @@ class SettingsViewModel @Inject constructor(
     private suspend fun runSync() {
         val result =
             when (settingsRepository.syncProvider.first()) {
-                SyncProvider.GOOGLE_DRIVE -> syncManager.sync()
+                SyncProvider.GOOGLE_DRIVE -> googleSyncManager.sync()
                 SyncProvider.YANDEX_DISK -> yandexSyncManager.sync()
                 SyncProvider.NONE -> SyncResult.Disabled
             }

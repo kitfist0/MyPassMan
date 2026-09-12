@@ -9,6 +9,7 @@ import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.first
 import my.passman.data.SettingsRepository
 import my.passman.data.SyncProvider
+import my.passman.sync.google.GoogleSyncManager
 import my.passman.sync.yandex.YandexSyncManager
 
 @HiltWorker
@@ -16,13 +17,13 @@ class SyncWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted params: WorkerParameters,
     private val settingsRepository: SettingsRepository,
-    private val syncManager: SyncManager,
+    private val googleSyncManager: GoogleSyncManager,
     private val yandexSyncManager: YandexSyncManager,
 ) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
         val result =
             when (settingsRepository.syncProvider.first()) {
-                SyncProvider.GOOGLE_DRIVE -> syncManager.sync()
+                SyncProvider.GOOGLE_DRIVE -> googleSyncManager.sync()
                 SyncProvider.YANDEX_DISK -> yandexSyncManager.sync()
                 SyncProvider.NONE -> SyncResult.Disabled
             }

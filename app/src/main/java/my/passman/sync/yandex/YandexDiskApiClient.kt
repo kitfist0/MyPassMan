@@ -13,7 +13,7 @@ data class RemoteYandexFile(
 
 /**
  * Wraps [YandexDiskRestApi] around a single fixed backup file kept in the app's
- * private "App Folder" (`app:/...`), mirroring how [my.passman.sync.DriveApiClient]
+ * private "App Folder" (`app:/...`), mirroring how [my.passman.sync.google.GoogleDriveApiClient]
  * uses Drive's hidden `appDataFolder`. Requires the Yandex OAuth app to be
  * registered with the `cloud_api:disk.app_folder` scope.
  *
