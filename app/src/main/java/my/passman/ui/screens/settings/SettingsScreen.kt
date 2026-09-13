@@ -542,13 +542,13 @@ private fun BackupSettingsCard(
                             state.lastSyncedAt?.let {
                                 stringResource(
                                     R.string.settings_drive_sync_last_synced,
-                                    SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()).format(Date(it)),
+                                    SimpleDateFormat("dd.MMM.yyyy HH:mm", Locale.getDefault()).format(Date(it)),
                                 )
                             } ?: stringResource(R.string.settings_drive_sync_never)
                         } else {
                             null
                         }
-                    Text(lastSyncedLabel?.let { "$providerLabel — $it" } ?: providerLabel)
+                    Text(lastSyncedLabel ?: providerLabel)
                 },
                 trailingContent = {
                     if (isSyncEnabled) {
