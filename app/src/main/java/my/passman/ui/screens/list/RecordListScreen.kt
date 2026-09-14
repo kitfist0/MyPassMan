@@ -156,7 +156,7 @@ fun RecordListScreen(
                         )
                         if (searchQueryIsEmpty) {
                             Spacer(modifier = Modifier.height(16.dp))
-                            Button(onClick = onImportDatabase) {
+                            TextButton(onClick = onImportDatabase) {
                                 Text(stringResource(R.string.settings_import))
                             }
                         }
