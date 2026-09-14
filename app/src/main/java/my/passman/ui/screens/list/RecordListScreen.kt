@@ -1,5 +1,6 @@
 package my.passman.ui.screens.list
 
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.*
@@ -50,6 +51,17 @@ fun RecordListScreen(
     val searchFocusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
     val activity = LocalActivity.current
+    val searchEmptyDatabaseMessage = stringResource(R.string.search_empty_database)
+
+    LaunchedEffect(viewModel) {
+        for (event in viewModel.events) {
+            when (event) {
+                RecordListViewModel.RecordListEvent.ShowEmptyDatabaseSearchToast -> {
+                    Toast.makeText(activity, searchEmptyDatabaseMessage, Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
 
     fun closeSearch() {
         focusManager.clearFocus()
