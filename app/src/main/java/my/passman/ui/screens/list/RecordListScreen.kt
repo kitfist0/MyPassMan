@@ -1,6 +1,5 @@
 package my.passman.ui.screens.list
 
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.*
@@ -51,17 +50,6 @@ fun RecordListScreen(
     val searchFocusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
     val activity = LocalActivity.current
-    val searchEmptyDatabaseMessage = stringResource(R.string.search_empty_database)
-
-    LaunchedEffect(viewModel) {
-        for (event in viewModel.events) {
-            when (event) {
-                RecordListViewModel.RecordListEvent.ShowEmptyDatabaseSearchToast -> {
-                    Toast.makeText(activity, searchEmptyDatabaseMessage, Toast.LENGTH_SHORT).show()
-                }
-            }
-        }
-    }
 
     fun closeSearch() {
         focusManager.clearFocus()
@@ -89,6 +77,7 @@ fun RecordListScreen(
                 LaunchedEffect(Unit) {
                     searchFocusRequester.requestFocus()
                 }
+
                 Surface(
                     color = MaterialTheme.colorScheme.surface,
                     tonalElevation = 3.dp,
@@ -108,7 +97,15 @@ fun RecordListScreen(
                                     .weight(1f)
                                     .padding(16.dp)
                                     .focusRequester(searchFocusRequester),
-                            placeholder = { Text(stringResource(R.string.search_placeholder)) },
+                            placeholder = {
+                                val hint =
+                                    if (state.records.isEmpty()) {
+                                        R.string.search_empty_database
+                                    } else {
+                                        R.string.search_placeholder
+                                    }
+                                Text(stringResource(hint))
+                            },
                             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                             singleLine = true,
                         )

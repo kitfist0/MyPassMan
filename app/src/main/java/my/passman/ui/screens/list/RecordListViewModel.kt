@@ -4,10 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import my.passman.data.RecordDao
 import my.passman.data.RecordWithTag
 import my.passman.data.SettingsRepository
@@ -21,13 +18,6 @@ class RecordListViewModel @Inject constructor(
 ) : ViewModel() {
     private val _searchQuery = MutableStateFlow("")
     private val _isSearchActive = MutableStateFlow(false)
-
-    private val _events = Channel<RecordListEvent>(Channel.BUFFERED)
-    val events: ReceiveChannel<RecordListEvent> = _events
-
-    sealed class RecordListEvent {
-        data object ShowEmptyDatabaseSearchToast : RecordListEvent()
-    }
 
     private val sortOrder =
         settingsRepository.sortOrder
@@ -78,11 +68,7 @@ class RecordListViewModel @Inject constructor(
     }
 
     fun onSearchClick() {
-        if (uiState.value.records.isEmpty()) {
-            viewModelScope.launch { _events.send(RecordListEvent.ShowEmptyDatabaseSearchToast) }
-        } else {
-            _isSearchActive.value = true
-        }
+        _isSearchActive.value = true
     }
 
     fun onCloseSearch() {
