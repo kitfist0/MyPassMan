@@ -41,9 +41,13 @@ import my.passman.ui.screens.tags.TagsScreen
 import my.passman.ui.screens.tags.TagsViewModel
 import my.passman.ui.theme.MyPassManTheme
 import my.passman.ui.theme.resolveDarkTheme
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : FragmentActivity() {
+    @Inject
+    lateinit var eventBus: AppEventBus
+
     @OptIn(ExperimentalSharedTransitionApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,6 +59,63 @@ class MainActivity : FragmentActivity() {
             val appTheme by viewModel.appTheme.collectAsStateWithLifecycle()
             val currentScreen by viewModel.currentScreen.collectAsStateWithLifecycle()
             val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+
+            // Hoisted above the per-screen `when` below (rather than only inside the
+            // Screen.Settings branch) so this ViewModel, its file-picker launchers, and its
+            // event stream stay alive regardless of which screen is showing — e.g. the
+            // "Import Database" shortcut on RecordListScreen can trigger the same import
+            // flow directly, with no need to navigate to Settings first.
+            val settingsViewModel: SettingsViewModel = hiltViewModel()
+
+            val createDocumentLauncher =
+                rememberLauncherForActivityResult(
+                    ActivityResultContracts.CreateDocument("application/octet-stream"),
+                ) { uri ->
+                    uri?.let {
+                        context.contentResolver.openOutputStream(it)?.let { os ->
+                            settingsViewModel.executeExport(os)
+                        }
+                    }
+                }
+
+            val openDocumentLauncher =
+                rememberLauncherForActivityResult(
+                    ActivityResultContracts.OpenDocument(),
+                ) { uri ->
+                    uri?.let {
+                        context.contentResolver.openInputStream(it)?.let { isStream ->
+                            settingsViewModel.onImportFileSelected(isStream)
+                        }
+                    }
+                }
+
+            val driveConsentLauncher =
+                rememberLauncherForActivityResult(
+                    ActivityResultContracts.StartIntentSenderForResult(),
+                ) { result ->
+                    settingsViewModel.onDriveConsentResult(result.resultCode == Activity.RESULT_OK)
+                }
+
+            LaunchedEffect(eventBus) {
+                for (event in eventBus.events) {
+                    when (event) {
+                        AppEvent.RequestExportFile -> {
+                            createDocumentLauncher.launch("mypassman_backup.pman")
+                        }
+                        AppEvent.RequestImportFile -> {
+                            openDocumentLauncher.launch(arrayOf("application/octet-stream", "*/*"))
+                        }
+                        is AppEvent.RequestDriveConsent -> {
+                            driveConsentLauncher.launch(
+                                IntentSenderRequest.Builder(event.pendingIntent.intentSender).build(),
+                            )
+                        }
+                        is AppEvent.ShowToast -> {
+                            Toast.makeText(context, event.message, Toast.LENGTH_LONG).show()
+                        }
+                    }
+                }
+            }
 
             val darkTheme = resolveDarkTheme(appTheme)
             val view = LocalView.current
@@ -103,8 +164,8 @@ class MainActivity : FragmentActivity() {
                                         onEditRecord = { id ->
                                             viewModel.navigateTo(Screen.Edit(id))
                                         },
-                                        onNavigateToSettings = { viewModel.navigateTo(Screen.Settings()) },
-                                        onImportDatabase = { viewModel.navigateTo(Screen.Settings(autoImport = true)) },
+                                        onNavigateToSettings = { viewModel.navigateTo(Screen.Settings) },
+                                        onImportDatabase = { settingsViewModel.onImportClick() },
                                     )
                                 }
 
@@ -127,64 +188,6 @@ class MainActivity : FragmentActivity() {
                                 }
 
                                 is Screen.Settings -> {
-                                    val settingsViewModel: SettingsViewModel = hiltViewModel()
-
-                                    LaunchedEffect(targetScreen) {
-                                        if (targetScreen.autoImport) {
-                                            settingsViewModel.onImportClick()
-                                        }
-                                    }
-
-                                    val createDocumentLauncher =
-                                        rememberLauncherForActivityResult(
-                                            ActivityResultContracts.CreateDocument("application/octet-stream"),
-                                        ) { uri ->
-                                            uri?.let {
-                                                context.contentResolver.openOutputStream(it)?.let { os ->
-                                                    settingsViewModel.executeExport(os)
-                                                }
-                                            }
-                                        }
-
-                                    val openDocumentLauncher =
-                                        rememberLauncherForActivityResult(
-                                            ActivityResultContracts.OpenDocument(),
-                                        ) { uri ->
-                                            uri?.let {
-                                                context.contentResolver.openInputStream(it)?.let { isStream ->
-                                                    settingsViewModel.onImportFileSelected(isStream)
-                                                }
-                                            }
-                                        }
-
-                                    val driveConsentLauncher =
-                                        rememberLauncherForActivityResult(
-                                            ActivityResultContracts.StartIntentSenderForResult(),
-                                        ) { result ->
-                                            settingsViewModel.onDriveConsentResult(result.resultCode == Activity.RESULT_OK)
-                                        }
-
-                                    LaunchedEffect(settingsViewModel) {
-                                        for (event in settingsViewModel.events) {
-                                            when (event) {
-                                                SettingsViewModel.SettingsEvent.RequestExportFile -> {
-                                                    createDocumentLauncher.launch("mypassman_backup.pman")
-                                                }
-                                                SettingsViewModel.SettingsEvent.RequestImportFile -> {
-                                                    openDocumentLauncher.launch(arrayOf("application/octet-stream", "*/*"))
-                                                }
-                                                is SettingsViewModel.SettingsEvent.RequestDriveConsent -> {
-                                                    driveConsentLauncher.launch(
-                                                        IntentSenderRequest.Builder(event.pendingIntent.intentSender).build(),
-                                                    )
-                                                }
-                                                is SettingsViewModel.SettingsEvent.ShowToast -> {
-                                                    Toast.makeText(context, event.message, Toast.LENGTH_LONG).show()
-                                                }
-                                            }
-                                        }
-                                    }
-
                                     SettingsScreen(
                                         viewModel = settingsViewModel,
                                         onManageTags = { viewModel.navigateTo(Screen.Tags) },
@@ -198,7 +201,7 @@ class MainActivity : FragmentActivity() {
                                     val tagsViewModel: TagsViewModel = hiltViewModel()
                                     TagsScreen(
                                         viewModel = tagsViewModel,
-                                        onBack = { viewModel.navigateTo(Screen.Settings()) },
+                                        onBack = { viewModel.navigateTo(Screen.Settings) },
                                     )
                                 }
 
@@ -212,7 +215,7 @@ class MainActivity : FragmentActivity() {
                                         )
                                     PinScreen(
                                         viewModel = pinViewModel,
-                                        onBack = { viewModel.navigateTo(Screen.Settings()) },
+                                        onBack = { viewModel.navigateTo(Screen.Settings) },
                                         onSuccess = { viewModel.onPinSuccess(targetScreen.mode) },
                                     )
                                 }

@@ -1,11 +1,8 @@
 package my.passman.ui.screens.settings
 
-import android.app.PendingIntent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import my.passman.data.AppTheme
@@ -17,6 +14,8 @@ import my.passman.sync.SyncScheduler
 import my.passman.sync.google.GoogleSyncManager
 import my.passman.sync.yandex.YandexAuthManager
 import my.passman.sync.yandex.YandexSyncManager
+import my.passman.ui.AppEvent
+import my.passman.ui.AppEventBus
 import my.passman.util.BackupManager
 import my.passman.util.BiometricAvailability
 import java.io.InputStream
@@ -33,11 +32,9 @@ class SettingsViewModel @Inject constructor(
     private val yandexAuthManager: YandexAuthManager,
     private val syncScheduler: SyncScheduler,
     private val biometricAvailability: BiometricAvailability,
+    private val eventBus: AppEventBus,
 ) : ViewModel() {
     private val _dialogState = MutableStateFlow(DialogState())
-
-    private val _events = Channel<SettingsEvent>(Channel.BUFFERED)
-    val events: ReceiveChannel<SettingsEvent> = _events
 
     val isFingerprintAvailable: Boolean = biometricAvailability.isAvailable()
 
@@ -111,20 +108,6 @@ class SettingsViewModel @Inject constructor(
         val backupMode: BackupMode? = null,
     )
 
-    sealed class SettingsEvent {
-        data object RequestExportFile : SettingsEvent()
-
-        data object RequestImportFile : SettingsEvent()
-
-        data class RequestDriveConsent(
-            val pendingIntent: PendingIntent,
-        ) : SettingsEvent()
-
-        data class ShowToast(
-            val message: String,
-        ) : SettingsEvent()
-    }
-
     private var pendingPassword = charArrayOf()
 
     fun onExportClick() {
@@ -138,7 +121,7 @@ class SettingsViewModel @Inject constructor(
 
     fun onImportClick() {
         viewModelScope.launch {
-            _events.send(SettingsEvent.RequestImportFile)
+            eventBus.send(AppEvent.RequestImportFile)
         }
     }
 
@@ -180,7 +163,7 @@ class SettingsViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
-                _events.send(SettingsEvent.ShowToast("Failed to read file: ${e.message}"))
+                eventBus.send(AppEvent.ShowToast("Failed to read file: ${e.message}"))
             }
         }
     }
@@ -192,7 +175,7 @@ class SettingsViewModel @Inject constructor(
 
         viewModelScope.launch {
             if (mode == BackupMode.EXPORT) {
-                _events.send(SettingsEvent.RequestExportFile)
+                eventBus.send(AppEvent.RequestExportFile)
             } else if (mode == BackupMode.IMPORT) {
                 executeImport()
             }
@@ -203,9 +186,9 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 backupManager.exportDatabase(outputStream, pendingPassword)
-                _events.send(SettingsEvent.ShowToast("Export successful"))
+                eventBus.send(AppEvent.ShowToast("Export successful"))
             } catch (e: Exception) {
-                _events.send(SettingsEvent.ShowToast("Export failed: ${e.message}"))
+                eventBus.send(AppEvent.ShowToast("Export failed: ${e.message}"))
             } finally {
                 pendingPassword = charArrayOf()
             }
@@ -217,11 +200,11 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 backupManager.importDatabase(data, pendingPassword)
-                _events.send(SettingsEvent.ShowToast("Import successful"))
+                eventBus.send(AppEvent.ShowToast("Import successful"))
             } catch (_: BadPaddingException) {
-                _events.send(SettingsEvent.ShowToast("Import failed: incorrect password"))
+                eventBus.send(AppEvent.ShowToast("Import failed: incorrect password"))
             } catch (e: Exception) {
-                _events.send(SettingsEvent.ShowToast("Import failed: ${e.message}"))
+                eventBus.send(AppEvent.ShowToast("Import failed: ${e.message}"))
             } finally {
                 pendingPassword = charArrayOf()
                 pendingImportData = null
@@ -351,19 +334,19 @@ class SettingsViewModel @Inject constructor(
                 }
             when (result) {
                 is SyncResult.ConsentRequired ->
-                    _events.send(SettingsEvent.RequestDriveConsent(result.pendingIntent))
+                    eventBus.send(AppEvent.RequestDriveConsent(result.pendingIntent))
 
                 SyncResult.LoginRequired ->
                     _dialogState.update { it.copy(showYandexLoginDialog = true) }
 
                 is SyncResult.Uploaded -> {
                     isSettingUpSync = false
-                    _events.send(SettingsEvent.ShowToast("Old backup deleted — uploaded a fresh copy"))
+                    eventBus.send(AppEvent.ShowToast("Old backup deleted — uploaded a fresh copy"))
                 }
 
                 is SyncResult.Failed -> {
                     abortSyncSetupIfPending()
-                    _events.send(SettingsEvent.ShowToast("Reset failed: ${result.message}"))
+                    eventBus.send(AppEvent.ShowToast("Reset failed: ${result.message}"))
                 }
 
                 else -> Unit
@@ -377,7 +360,7 @@ class SettingsViewModel @Inject constructor(
                 runSync()
             } else {
                 abortSyncSetupIfPending()
-                _events.send(SettingsEvent.ShowToast("Google Drive access was not granted"))
+                eventBus.send(AppEvent.ShowToast("Google Drive access was not granted"))
             }
         }
     }
@@ -399,24 +382,24 @@ class SettingsViewModel @Inject constructor(
             }
         when (result) {
             is SyncResult.ConsentRequired ->
-                _events.send(SettingsEvent.RequestDriveConsent(result.pendingIntent))
+                eventBus.send(AppEvent.RequestDriveConsent(result.pendingIntent))
 
             SyncResult.LoginRequired ->
                 _dialogState.update { it.copy(showYandexLoginDialog = true) }
 
             is SyncResult.Uploaded -> {
                 isSettingUpSync = false
-                _events.send(SettingsEvent.ShowToast("Synced — uploaded to the cloud"))
+                eventBus.send(AppEvent.ShowToast("Synced — uploaded to the cloud"))
             }
 
             is SyncResult.Downloaded -> {
                 isSettingUpSync = false
-                _events.send(SettingsEvent.ShowToast("Synced — downloaded from the cloud"))
+                eventBus.send(AppEvent.ShowToast("Synced — downloaded from the cloud"))
             }
 
             is SyncResult.UpToDate -> {
                 isSettingUpSync = false
-                _events.send(SettingsEvent.ShowToast("Already up to date"))
+                eventBus.send(AppEvent.ShowToast("Already up to date"))
             }
 
             is SyncResult.Disabled -> isSettingUpSync = false
@@ -427,7 +410,7 @@ class SettingsViewModel @Inject constructor(
 
             is SyncResult.Failed -> {
                 abortSyncSetupIfPending()
-                _events.send(SettingsEvent.ShowToast("Sync failed: ${result.message}"))
+                eventBus.send(AppEvent.ShowToast("Sync failed: ${result.message}"))
             }
         }
     }
