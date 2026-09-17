@@ -165,7 +165,7 @@ class MainActivity : FragmentActivity() {
                                             viewModel.navigateTo(Screen.Edit(id))
                                         },
                                         onNavigateToSettings = { viewModel.navigateTo(Screen.Settings) },
-                                        onImportDatabase = { settingsViewModel.onImportClick() },
+                                        onImportDatabase = { viewModel.onImportDatabaseClick() },
                                     )
                                 }
 

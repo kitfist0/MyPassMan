@@ -20,6 +20,7 @@ class MainViewModel @Inject constructor(
     private val googleSyncManager: GoogleSyncManager,
     private val yandexSyncManager: YandexSyncManager,
     private val syncScheduler: SyncScheduler,
+    private val eventBus: AppEventBus,
 ) : ViewModel() {
     private val _currentScreen = MutableStateFlow<Screen>(Screen.List)
     val currentScreen = _currentScreen.asStateFlow()
@@ -62,6 +63,13 @@ class MainViewModel @Inject constructor(
 
     fun navigateTo(screen: Screen) {
         _currentScreen.value = screen
+    }
+
+    fun onImportDatabaseClick() {
+        _currentScreen.value = Screen.Settings
+        viewModelScope.launch {
+            eventBus.send(AppEvent.ShowToast("You can import a database from a file or from the cloud"))
+        }
     }
 
     fun onPinSuccess(mode: PinMode) {
