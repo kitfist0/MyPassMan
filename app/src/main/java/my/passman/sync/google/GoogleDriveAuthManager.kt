@@ -4,6 +4,7 @@ import android.app.PendingIntent
 import android.content.Context
 import com.google.android.gms.auth.api.identity.AuthorizationRequest
 import com.google.android.gms.auth.api.identity.Identity
+import com.google.android.gms.auth.api.identity.RevokeAccessRequest
 import com.google.android.gms.common.api.Scope
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -61,6 +62,24 @@ class GoogleDriveAuthManager @Inject constructor(
             }
         } catch (e: Exception) {
             GoogleDriveAuthResult.Failed(e.message)
+        }
+    }
+
+    /**
+     * Revokes the drive.appdata grant itself (not just a cached token), so the next
+     * [authorize] call has nothing to silently reuse and Play Services must show the
+     * account/consent picker again.
+     */
+    suspend fun signOut() {
+        val request =
+            RevokeAccessRequest
+                .builder()
+                .setScopes(listOf(Scope(DRIVE_APPDATA_SCOPE)))
+                .build()
+        try {
+            authorizationClient.revokeAccess(request).await()
+        } catch (_: Exception) {
+            // Best-effort: nothing useful to do if Play Services can't revoke it.
         }
     }
 

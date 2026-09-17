@@ -300,6 +300,11 @@ class SettingsViewModel @Inject constructor(
 
     fun disableSync() {
         viewModelScope.launch {
+            when (settingsRepository.syncProvider.first()) {
+                SyncProvider.GOOGLE_DRIVE -> googleSyncManager.signOut()
+                SyncProvider.YANDEX_DISK -> yandexAuthManager.signOut()
+                SyncProvider.NONE -> Unit
+            }
             syncScheduler.disablePeriodicSync()
             settingsRepository.clearSyncState()
         }

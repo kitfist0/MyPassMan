@@ -35,6 +35,10 @@ class GoogleSyncManager @Inject constructor(
     private val driveAuthManager: GoogleDriveAuthManager,
     private val driveApiClient: GoogleDriveApiClient,
 ) {
+    suspend fun signOut() {
+        driveAuthManager.signOut()
+    }
+
     suspend fun sync(): SyncResult {
         if (settingsRepository.syncProvider.first() != SyncProvider.GOOGLE_DRIVE) return SyncResult.Disabled
         val passphrase = settingsRepository.getSyncPassphrase() ?: return SyncResult.Disabled

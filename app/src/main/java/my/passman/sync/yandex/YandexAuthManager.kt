@@ -1,6 +1,9 @@
 package my.passman.sync.yandex
 
 import android.net.Uri
+import android.webkit.CookieManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import my.passman.BuildConfig
 import my.passman.data.SettingsRepository
 import javax.inject.Inject
@@ -41,5 +44,20 @@ class YandexAuthManager @Inject constructor(
 
     suspend fun saveToken(accessToken: String) {
         settingsRepository.setYandexAccessToken(accessToken)
+    }
+
+    /**
+     * Clears the login WebView's session cookies so the next [oauth.yandex.ru][authorizeUrl]
+     * load doesn't silently reuse the current Yandex browser session — the user has to log in
+     * (and pick an account) again. The cached access token itself is cleared separately, via
+     * [SettingsRepository.clearSyncState].
+     */
+    suspend fun signOut() {
+        withContext(Dispatchers.Main) {
+            CookieManager.getInstance().apply {
+                removeAllCookies(null)
+                flush()
+            }
+        }
     }
 }
