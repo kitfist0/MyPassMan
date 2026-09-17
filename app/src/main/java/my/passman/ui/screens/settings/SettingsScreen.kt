@@ -1,7 +1,11 @@
 package my.passman.ui.screens.settings
 
+import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -18,6 +22,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -47,6 +52,53 @@ fun SettingsScreen(
 
     BackHandler {
         onBack()
+    }
+
+    val createDocumentLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.CreateDocument("application/octet-stream"),
+        ) { uri ->
+            uri?.let {
+                activity.contentResolver.openOutputStream(it)?.let { os ->
+                    viewModel.executeExport(os)
+                }
+            }
+        }
+
+    val openDocumentLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.OpenDocument(),
+        ) { uri ->
+            uri?.let {
+                activity.contentResolver.openInputStream(it)?.let { isStream ->
+                    viewModel.onImportFileSelected(isStream)
+                }
+            }
+        }
+
+    val driveConsentLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.StartIntentSenderForResult(),
+        ) { result ->
+            viewModel.onDriveConsentResult(result.resultCode == Activity.RESULT_OK)
+        }
+
+    LaunchedEffect(viewModel) {
+        for (event in viewModel.events) {
+            when (event) {
+                SettingsViewModel.SettingsEvent.RequestExportFile -> {
+                    createDocumentLauncher.launch("mypassman_backup.pman")
+                }
+                SettingsViewModel.SettingsEvent.RequestImportFile -> {
+                    openDocumentLauncher.launch(arrayOf("application/octet-stream", "*/*"))
+                }
+                is SettingsViewModel.SettingsEvent.RequestDriveConsent -> {
+                    driveConsentLauncher.launch(
+                        IntentSenderRequest.Builder(event.pendingIntent.intentSender).build(),
+                    )
+                }
+            }
+        }
     }
 
     val sortOrderLabel =

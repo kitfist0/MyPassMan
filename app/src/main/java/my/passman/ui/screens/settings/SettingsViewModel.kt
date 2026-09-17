@@ -1,8 +1,11 @@
 package my.passman.ui.screens.settings
 
+import android.app.PendingIntent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import my.passman.data.AppTheme
@@ -35,6 +38,13 @@ class SettingsViewModel @Inject constructor(
     private val eventBus: AppEventBus,
 ) : ViewModel() {
     private val _dialogState = MutableStateFlow(DialogState())
+
+    // Only launcher-triggering events (file pickers, Drive consent) go through this private
+    // channel — it's collected exclusively by SettingsScreen, keeping every call into this
+    // ViewModel scoped to that one screen. Toasts go through the shared AppEventBus instead,
+    // since displaying one is a generic Context action, not a call back into this ViewModel.
+    private val _events = Channel<SettingsEvent>(Channel.BUFFERED)
+    val events: ReceiveChannel<SettingsEvent> = _events
 
     val isFingerprintAvailable: Boolean = biometricAvailability.isAvailable()
 
@@ -108,6 +118,16 @@ class SettingsViewModel @Inject constructor(
         val backupMode: BackupMode? = null,
     )
 
+    sealed class SettingsEvent {
+        data object RequestExportFile : SettingsEvent()
+
+        data object RequestImportFile : SettingsEvent()
+
+        data class RequestDriveConsent(
+            val pendingIntent: PendingIntent,
+        ) : SettingsEvent()
+    }
+
     private var pendingPassword = charArrayOf()
 
     fun onExportClick() {
@@ -121,7 +141,7 @@ class SettingsViewModel @Inject constructor(
 
     fun onImportClick() {
         viewModelScope.launch {
-            eventBus.send(AppEvent.RequestImportFile)
+            _events.send(SettingsEvent.RequestImportFile)
         }
     }
 
@@ -175,7 +195,7 @@ class SettingsViewModel @Inject constructor(
 
         viewModelScope.launch {
             if (mode == BackupMode.EXPORT) {
-                eventBus.send(AppEvent.RequestExportFile)
+                _events.send(SettingsEvent.RequestExportFile)
             } else if (mode == BackupMode.IMPORT) {
                 executeImport()
             }
@@ -339,7 +359,7 @@ class SettingsViewModel @Inject constructor(
                 }
             when (result) {
                 is SyncResult.ConsentRequired ->
-                    eventBus.send(AppEvent.RequestDriveConsent(result.pendingIntent))
+                    _events.send(SettingsEvent.RequestDriveConsent(result.pendingIntent))
 
                 SyncResult.LoginRequired ->
                     _dialogState.update { it.copy(showYandexLoginDialog = true) }
@@ -387,7 +407,7 @@ class SettingsViewModel @Inject constructor(
             }
         when (result) {
             is SyncResult.ConsentRequired ->
-                eventBus.send(AppEvent.RequestDriveConsent(result.pendingIntent))
+                _events.send(SettingsEvent.RequestDriveConsent(result.pendingIntent))
 
             SyncResult.LoginRequired ->
                 _dialogState.update { it.copy(showYandexLoginDialog = true) }

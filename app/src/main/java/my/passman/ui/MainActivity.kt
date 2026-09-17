@@ -3,11 +3,8 @@ package my.passman.ui
 import android.app.Activity
 import android.os.Bundle
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.result.IntentSenderRequest
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
@@ -60,56 +57,9 @@ class MainActivity : FragmentActivity() {
             val currentScreen by viewModel.currentScreen.collectAsStateWithLifecycle()
             val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
 
-            // Hoisted above the per-screen `when` below (rather than only inside the
-            // Screen.Settings branch) so this ViewModel, its file-picker launchers, and its
-            // event stream stay alive regardless of which screen is showing — e.g. the
-            // "Import Database" shortcut on RecordListScreen can trigger the same import
-            // flow directly, with no need to navigate to Settings first.
-            val settingsViewModel: SettingsViewModel = hiltViewModel()
-
-            val createDocumentLauncher =
-                rememberLauncherForActivityResult(
-                    ActivityResultContracts.CreateDocument("application/octet-stream"),
-                ) { uri ->
-                    uri?.let {
-                        context.contentResolver.openOutputStream(it)?.let { os ->
-                            settingsViewModel.executeExport(os)
-                        }
-                    }
-                }
-
-            val openDocumentLauncher =
-                rememberLauncherForActivityResult(
-                    ActivityResultContracts.OpenDocument(),
-                ) { uri ->
-                    uri?.let {
-                        context.contentResolver.openInputStream(it)?.let { isStream ->
-                            settingsViewModel.onImportFileSelected(isStream)
-                        }
-                    }
-                }
-
-            val driveConsentLauncher =
-                rememberLauncherForActivityResult(
-                    ActivityResultContracts.StartIntentSenderForResult(),
-                ) { result ->
-                    settingsViewModel.onDriveConsentResult(result.resultCode == Activity.RESULT_OK)
-                }
-
             LaunchedEffect(eventBus) {
                 for (event in eventBus.events) {
                     when (event) {
-                        AppEvent.RequestExportFile -> {
-                            createDocumentLauncher.launch("mypassman_backup.pman")
-                        }
-                        AppEvent.RequestImportFile -> {
-                            openDocumentLauncher.launch(arrayOf("application/octet-stream", "*/*"))
-                        }
-                        is AppEvent.RequestDriveConsent -> {
-                            driveConsentLauncher.launch(
-                                IntentSenderRequest.Builder(event.pendingIntent.intentSender).build(),
-                            )
-                        }
                         is AppEvent.ShowToast -> {
                             Toast.makeText(context, event.message, Toast.LENGTH_LONG).show()
                         }
@@ -188,6 +138,7 @@ class MainActivity : FragmentActivity() {
                                 }
 
                                 is Screen.Settings -> {
+                                    val settingsViewModel: SettingsViewModel = hiltViewModel()
                                     SettingsScreen(
                                         viewModel = settingsViewModel,
                                         onManageTags = { viewModel.navigateTo(Screen.Tags) },
