@@ -14,8 +14,10 @@ import my.passman.data.SortOrder
 import my.passman.data.SyncProvider
 import my.passman.sync.SyncResult
 import my.passman.sync.SyncScheduler
+import my.passman.sync.google.GoogleDriveAuthResult
 import my.passman.sync.google.GoogleSyncManager
 import my.passman.sync.yandex.YandexAuthManager
+import my.passman.sync.yandex.YandexAuthResult
 import my.passman.sync.yandex.YandexSyncManager
 import my.passman.ui.AppEvent
 import my.passman.ui.AppEventBus
@@ -292,17 +294,57 @@ class SettingsViewModel @Inject constructor(
     }
 
     private var isSettingUpSync = false
+    private var isSelectingAccount = false
     private var pendingSyncProvider: SyncProvider = SyncProvider.NONE
 
-    /** Called after the user picks a provider from the sync provider dialog. */
+    /**
+     * Called after the user picks a provider from the sync provider dialog. The account (Google
+     * consent / Yandex login) is chosen first — [onAccountSelected] only opens the passphrase
+     * dialog once that succeeds — so a passphrase is never asked for before an account exists to
+     * sync it to.
+     */
     fun onSyncProviderSelected(provider: SyncProvider) {
         _dialogState.update { it.copy(showSyncProviderDialog = false) }
         if (provider == SyncProvider.NONE) {
             disableSync()
         } else {
             pendingSyncProvider = provider
-            _dialogState.update { it.copy(showSyncPassphraseDialog = true) }
+            isSelectingAccount = true
+            viewModelScope.launch { requestAccount(provider) }
         }
+    }
+
+    private suspend fun requestAccount(provider: SyncProvider) {
+        when (provider) {
+            SyncProvider.GOOGLE_DRIVE ->
+                when (val result = googleSyncManager.authorize()) {
+                    is GoogleDriveAuthResult.Authorized -> onAccountSelected()
+                    is GoogleDriveAuthResult.ConsentRequired ->
+                        _events.send(SettingsEvent.RequestDriveConsent(result.pendingIntent))
+                    is GoogleDriveAuthResult.Failed -> {
+                        abortAccountSelection()
+                        eventBus.send(AppEvent.ShowToast("Google sign-in failed: ${result.message}"))
+                    }
+                }
+
+            SyncProvider.YANDEX_DISK ->
+                when (yandexAuthManager.authorize()) {
+                    is YandexAuthResult.Authorized -> onAccountSelected()
+                    YandexAuthResult.LoginRequired -> _dialogState.update { it.copy(showYandexLoginDialog = true) }
+                }
+
+            SyncProvider.NONE -> Unit
+        }
+    }
+
+    private fun onAccountSelected() {
+        isSelectingAccount = false
+        _dialogState.update { it.copy(showSyncPassphraseDialog = true) }
+    }
+
+    private fun abortAccountSelection() {
+        isSelectingAccount = false
+        pendingSyncProvider = SyncProvider.NONE
     }
 
     /** Called once the local backup encryption passphrase has been entered. */
@@ -339,7 +381,11 @@ class SettingsViewModel @Inject constructor(
         _dialogState.update { it.copy(showYandexLoginDialog = false) }
         viewModelScope.launch {
             yandexAuthManager.saveToken(accessToken)
-            runSync()
+            if (isSelectingAccount) {
+                onAccountSelected()
+            } else {
+                runSync()
+            }
         }
     }
 
@@ -381,6 +427,15 @@ class SettingsViewModel @Inject constructor(
 
     fun onDriveConsentResult(granted: Boolean) {
         viewModelScope.launch {
+            if (isSelectingAccount) {
+                if (granted) {
+                    onAccountSelected()
+                } else {
+                    abortAccountSelection()
+                    eventBus.send(AppEvent.ShowToast("Google Drive access was not granted"))
+                }
+                return@launch
+            }
             if (granted) {
                 runSync()
             } else {
@@ -391,6 +446,10 @@ class SettingsViewModel @Inject constructor(
     }
 
     private suspend fun abortSyncSetupIfPending() {
+        if (isSelectingAccount) {
+            abortAccountSelection()
+            return
+        }
         if (isSettingUpSync) {
             syncScheduler.disablePeriodicSync()
             settingsRepository.clearSyncState()

@@ -39,6 +39,9 @@ class GoogleSyncManager @Inject constructor(
         driveAuthManager.signOut()
     }
 
+    /** Requests just the account/consent step, with no data transfer — used to pick an account before setup. */
+    suspend fun authorize(): GoogleDriveAuthResult = driveAuthManager.authorize()
+
     suspend fun sync(): SyncResult {
         if (settingsRepository.syncProvider.first() != SyncProvider.GOOGLE_DRIVE) return SyncResult.Disabled
         val passphrase = settingsRepository.getSyncPassphrase() ?: return SyncResult.Disabled
