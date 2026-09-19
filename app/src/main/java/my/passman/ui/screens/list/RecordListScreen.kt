@@ -8,9 +8,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -82,38 +84,51 @@ fun RecordListScreen(
                     color = MaterialTheme.colorScheme.surface,
                     tonalElevation = 3.dp,
                 ) {
-                    Row(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .statusBarsPadding(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        OutlinedTextField(
-                            value = state.searchQuery,
-                            onValueChange = { viewModel.updateSearchQuery(it) },
-                            modifier =
-                                Modifier
-                                    .weight(1f)
-                                    .padding(16.dp)
-                                    .focusRequester(searchFocusRequester),
-                            placeholder = {
-                                val hint =
-                                    if (state.records.isEmpty()) {
-                                        R.string.search_empty_database
-                                    } else {
-                                        R.string.search_placeholder
-                                    }
-                                Text(stringResource(hint))
-                            },
-                            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                            singleLine = true,
-                        )
-                        IconButton(
-                            onClick = { closeSearch() },
-                            modifier = Modifier.padding(end = 8.dp),
+                    Column(modifier = Modifier.statusBarsPadding()) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.close))
+                            OutlinedTextField(
+                                value = state.searchQuery,
+                                onValueChange = { viewModel.updateSearchQuery(it) },
+                                modifier =
+                                    Modifier
+                                        .weight(1f)
+                                        .padding(16.dp)
+                                        .focusRequester(searchFocusRequester),
+                                placeholder = {
+                                    val hint =
+                                        if (state.records.isEmpty()) {
+                                            R.string.search_empty_database
+                                        } else {
+                                            R.string.search_placeholder
+                                        }
+                                    Text(stringResource(hint))
+                                },
+                                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                                singleLine = true,
+                            )
+                            IconButton(
+                                onClick = { closeSearch() },
+                                modifier = Modifier.padding(end = 8.dp),
+                            ) {
+                                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.close))
+                            }
+                        }
+                        if (state.availableTags.isNotEmpty()) {
+                            LazyRow(
+                                modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 12.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                items(state.availableTags, key = { it.id }) { tag ->
+                                    FilterChip(
+                                        selected = state.selectedTagId == tag.id,
+                                        onClick = { viewModel.onTagClick(tag.id) },
+                                        label = { Text(tag.name) },
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -142,7 +157,7 @@ fun RecordListScreen(
                             .padding(padding),
                     contentAlignment = Alignment.Center,
                 ) {
-                    val searchQueryIsEmpty = state.searchQuery.isEmpty()
+                    val searchQueryIsEmpty = state.searchQuery.isEmpty() && state.selectedTagId == null
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(
                             imageVector = Icons.Default.Inbox,

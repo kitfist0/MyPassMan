@@ -9,19 +9,28 @@ import my.passman.data.RecordDao
 import my.passman.data.RecordWithTag
 import my.passman.data.SettingsRepository
 import my.passman.data.SortOrder
+import my.passman.data.Tag
+import my.passman.data.TagDao
 import javax.inject.Inject
 
 @HiltViewModel
 class RecordListViewModel @Inject constructor(
     private val recordDao: RecordDao,
+    tagDao: TagDao,
     settingsRepository: SettingsRepository,
 ) : ViewModel() {
     private val _searchQuery = MutableStateFlow("")
     private val _isSearchActive = MutableStateFlow(false)
+    private val _selectedTagId = MutableStateFlow<Long?>(null)
 
     private val sortOrder =
         settingsRepository.sortOrder
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SortOrder.BY_NAME)
+
+    private val allTags: StateFlow<List<Tag>> =
+        tagDao
+            .getAllTags()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // null means the initial load from the database hasn't completed yet.
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -29,9 +38,10 @@ class RecordListViewModel @Inject constructor(
         combine(
             _searchQuery,
             sortOrder,
-        ) { query, sort ->
-            query to sort
-        }.flatMapLatest { (query, sort) ->
+            _selectedTagId,
+        ) { query, sort, tagId ->
+            Triple(query, sort, tagId)
+        }.flatMapLatest { (query, sort, tagId) ->
             val flow =
                 if (query.isBlank()) {
                     recordDao.getAllRecords()
@@ -39,13 +49,22 @@ class RecordListViewModel @Inject constructor(
                     recordDao.searchRecords(query)
                 }
             flow.map { list ->
+                val filtered = if (tagId != null) list.filter { it.tag?.id == tagId } else list
                 when (sort) {
-                    SortOrder.BY_NAME -> list.sortedBy { it.record.name.lowercase() }
-                    SortOrder.BY_CREATED -> list.sortedByDescending { it.record.created }
-                    SortOrder.BY_MODIFIED -> list.sortedByDescending { it.record.modified }
+                    SortOrder.BY_NAME -> filtered.sortedBy { it.record.name.lowercase() }
+                    SortOrder.BY_CREATED -> filtered.sortedByDescending { it.record.created }
+                    SortOrder.BY_MODIFIED -> filtered.sortedByDescending { it.record.modified }
                 }
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    private data class TagFilter(
+        val availableTags: List<Tag>,
+        val selectedTagId: Long?,
+    )
+
+    private val tagFilter: Flow<TagFilter> =
+        combine(allTags, _selectedTagId) { tags, selectedTagId -> TagFilter(tags, selectedTagId) }
 
     val uiState: StateFlow<RecordListScreenState> =
         combine(
@@ -53,13 +72,16 @@ class RecordListViewModel @Inject constructor(
             _searchQuery,
             _isSearchActive,
             settingsRepository.pinHash,
-        ) { recordsList, query, isSearchActive, pinHash ->
+            tagFilter,
+        ) { recordsList, query, isSearchActive, pinHash, tags ->
             RecordListScreenState(
                 records = recordsList ?: emptyList(),
                 searchQuery = query,
                 isSearchActive = isSearchActive,
                 isLoading = recordsList == null,
                 isPinEnabled = pinHash != null,
+                availableTags = tags.availableTags,
+                selectedTagId = tags.selectedTagId,
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), RecordListScreenState())
 
@@ -74,5 +96,10 @@ class RecordListViewModel @Inject constructor(
     fun onCloseSearch() {
         _isSearchActive.value = false
         _searchQuery.value = ""
+        _selectedTagId.value = null
+    }
+
+    fun onTagClick(tagId: Long) {
+        _selectedTagId.value = if (_selectedTagId.value == tagId) null else tagId
     }
 }
