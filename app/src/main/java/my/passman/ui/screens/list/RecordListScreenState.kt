@@ -11,4 +11,5 @@ data class RecordListScreenState(
     val isPinEnabled: Boolean = false,
     val availableTags: List<Tag> = emptyList(),
     val selectedTagId: Long? = null,
+    val showLongPressHint: Boolean = false,
 )

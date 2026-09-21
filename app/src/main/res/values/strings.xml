@@ -30,6 +30,7 @@
     <string name="no_matches">No matches found</string>
     <string name="clipboard_password_label">password</string>
     <string name="password_copied">Password copied to clipboard</string>
+    <string name="long_press_hint">Tip: long-press a record to quickly copy its password</string>
 
     <!-- Edit Record Screen -->
     <string name="save_changes_title">Save changes?</string>

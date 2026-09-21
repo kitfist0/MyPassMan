@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import my.passman.data.RecordDao
 import my.passman.data.RecordWithTag
 import my.passman.data.SettingsRepository
@@ -17,7 +18,7 @@ import javax.inject.Inject
 class RecordListViewModel @Inject constructor(
     private val recordDao: RecordDao,
     tagDao: TagDao,
-    settingsRepository: SettingsRepository,
+    private val settingsRepository: SettingsRepository,
 ) : ViewModel() {
     private val _searchQuery = MutableStateFlow("")
     private val _isSearchActive = MutableStateFlow(false)
@@ -58,13 +59,20 @@ class RecordListViewModel @Inject constructor(
             }
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    private data class TagFilter(
+    private data class ListExtras(
         val availableTags: List<Tag>,
         val selectedTagId: Long?,
+        val hasShownLongPressHint: Boolean,
     )
 
-    private val tagFilter: Flow<TagFilter> =
-        combine(allTags, _selectedTagId) { tags, selectedTagId -> TagFilter(tags, selectedTagId) }
+    private val listExtras: Flow<ListExtras> =
+        combine(
+            allTags,
+            _selectedTagId,
+            settingsRepository.hasShownLongPressHint,
+        ) { tags, selectedTagId, hasShownLongPressHint ->
+            ListExtras(tags, selectedTagId, hasShownLongPressHint)
+        }
 
     val uiState: StateFlow<RecordListScreenState> =
         combine(
@@ -72,16 +80,17 @@ class RecordListViewModel @Inject constructor(
             _searchQuery,
             _isSearchActive,
             settingsRepository.pinHash,
-            tagFilter,
-        ) { recordsList, query, isSearchActive, pinHash, tags ->
+            listExtras,
+        ) { recordsList, query, isSearchActive, pinHash, extras ->
             RecordListScreenState(
                 records = recordsList ?: emptyList(),
                 searchQuery = query,
                 isSearchActive = isSearchActive,
                 isLoading = recordsList == null,
                 isPinEnabled = pinHash != null,
-                availableTags = tags.availableTags,
-                selectedTagId = tags.selectedTagId,
+                availableTags = extras.availableTags,
+                selectedTagId = extras.selectedTagId,
+                showLongPressHint = recordsList?.isNotEmpty() == true && !extras.hasShownLongPressHint,
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), RecordListScreenState())
 
@@ -101,5 +110,11 @@ class RecordListViewModel @Inject constructor(
 
     fun onTagClick(tagId: Long) {
         _selectedTagId.value = if (_selectedTagId.value == tagId) null else tagId
+    }
+
+    fun dismissLongPressHint() {
+        viewModelScope.launch {
+            settingsRepository.setHasShownLongPressHint()
+        }
     }
 }
