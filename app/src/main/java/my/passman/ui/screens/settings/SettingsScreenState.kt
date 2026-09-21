@@ -9,6 +9,7 @@ data class SettingsScreenState(
     val theme: AppTheme = AppTheme.SYSTEM,
     val isPinEnabled: Boolean = false,
     val isFingerprintEnabled: Boolean = false,
+    val showPinHint: Boolean = false,
     val showSortDialog: Boolean = false,
     val showThemeDialog: Boolean = false,
     val showAboutDialog: Boolean = false,

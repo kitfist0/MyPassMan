@@ -49,6 +49,10 @@ class SettingsRepository @Inject constructor(
         dataStore.data
             .map { preferences -> preferences[HAS_SHOWN_LONG_PRESS_HINT] ?: false }
 
+    val hasShownPinHint: Flow<Boolean> =
+        dataStore.data
+            .map { preferences -> preferences[HAS_SHOWN_PIN_HINT] ?: false }
+
     val syncProvider: Flow<SyncProvider> =
         dataStore.data
             .map { preferences ->
@@ -180,6 +184,12 @@ class SettingsRepository @Inject constructor(
         }
     }
 
+    suspend fun setHasShownPinHint() {
+        dataStore.edit { preferences ->
+            preferences[HAS_SHOWN_PIN_HINT] = true
+        }
+    }
+
     fun hashPin(pin: String): String {
         val bytes = pin.toByteArray()
         val md = MessageDigest.getInstance("SHA-256")
@@ -194,6 +204,7 @@ class SettingsRepository @Inject constructor(
         val PIN_LENGTH = intPreferencesKey("pin_length")
         val FINGERPRINT_ENABLED = booleanPreferencesKey("fingerprint_enabled")
         val HAS_SHOWN_LONG_PRESS_HINT = booleanPreferencesKey("has_shown_long_press_hint")
+        val HAS_SHOWN_PIN_HINT = booleanPreferencesKey("has_shown_pin_hint")
         val SYNC_PROVIDER = stringPreferencesKey("sync_provider")
         val SYNC_PASSPHRASE = stringPreferencesKey("sync_passphrase")
         val YANDEX_ACCESS_TOKEN = stringPreferencesKey("yandex_access_token")

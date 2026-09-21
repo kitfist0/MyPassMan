@@ -31,6 +31,7 @@
     <string name="clipboard_password_label">password</string>
     <string name="password_copied">Password copied to clipboard</string>
     <string name="long_press_hint">Tip: long-press a record to quickly copy its password</string>
+    <string name="pin_hint">Tip: turn on PIN Protection below to keep your passwords safe</string>
 
     <!-- Edit Record Screen -->
     <string name="save_changes_title">Save changes?</string>

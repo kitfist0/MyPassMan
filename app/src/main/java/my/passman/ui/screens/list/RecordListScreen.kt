@@ -19,7 +19,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Inbox
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
@@ -37,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import my.passman.R
 import my.passman.data.Record
+import my.passman.ui.components.HintBanner
 import my.passman.util.ClipboardUtils
 
 @OptIn(ExperimentalSharedTransitionApi::class)
@@ -210,7 +210,10 @@ fun RecordListScreen(
                 ) {
                     if (state.showLongPressHint) {
                         item(span = { GridItemSpan(maxLineSpan) }) {
-                            LongPressHintBanner(onDismiss = { viewModel.dismissLongPressHint() })
+                            HintBanner(
+                                text = stringResource(R.string.long_press_hint),
+                                onDismiss = { viewModel.dismissLongPressHint() },
+                            )
                         }
                     }
                     items(state.records, key = { it.record.id }) { item ->
@@ -285,42 +288,6 @@ fun RecordListScreen(
                         Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_description))
                     }
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun LongPressHintBanner(onDismiss: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
-    ) {
-        Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                imageVector = Icons.Default.Info,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSecondaryContainer,
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Text(
-                text = stringResource(R.string.long_press_hint),
-                modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSecondaryContainer,
-            )
-            IconButton(onClick = onDismiss) {
-                Icon(
-                    imageVector = Icons.Default.Close,
-                    contentDescription = stringResource(R.string.close),
-                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                )
             }
         }
     }

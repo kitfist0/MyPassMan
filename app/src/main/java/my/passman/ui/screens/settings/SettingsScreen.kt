@@ -32,6 +32,7 @@ import my.passman.R
 import my.passman.data.AppTheme
 import my.passman.data.SortOrder
 import my.passman.data.SyncProvider
+import my.passman.ui.components.HintBanner
 import my.passman.util.BiometricAuthenticator
 import my.passman.util.PasswordValidator
 import java.text.SimpleDateFormat
@@ -440,6 +441,13 @@ fun SettingsScreen(
                     .verticalScroll(rememberScrollState())
                     .padding(16.dp),
         ) {
+            if (state.showPinHint) {
+                HintBanner(
+                    text = stringResource(R.string.pin_hint),
+                    onDismiss = { viewModel.dismissPinHint() },
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+            }
             if (useTwoColumns) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),

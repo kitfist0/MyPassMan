@@ -61,6 +61,7 @@ class SettingsViewModel @Inject constructor(
     private data class PinSettings(
         val isPinEnabled: Boolean,
         val isFingerprintEnabled: Boolean,
+        val hasShownPinHint: Boolean,
     )
 
     private val syncSettings: Flow<SyncSettings> =
@@ -73,7 +74,10 @@ class SettingsViewModel @Inject constructor(
         combine(
             settingsRepository.pinHash,
             settingsRepository.fingerprintEnabled,
-        ) { pinHash, fingerprintEnabled -> PinSettings(pinHash != null, fingerprintEnabled) }
+            settingsRepository.hasShownPinHint,
+        ) { pinHash, fingerprintEnabled, hasShownPinHint ->
+            PinSettings(pinHash != null, fingerprintEnabled, hasShownPinHint)
+        }
 
     val uiState: StateFlow<SettingsScreenState> =
         combine(
@@ -88,6 +92,7 @@ class SettingsViewModel @Inject constructor(
                 theme = theme,
                 isPinEnabled = pin.isPinEnabled,
                 isFingerprintEnabled = pin.isFingerprintEnabled,
+                showPinHint = !pin.isPinEnabled && !pin.hasShownPinHint,
                 showSortDialog = dialogState.showSortDialog,
                 showThemeDialog = dialogState.showThemeDialog,
                 showAboutDialog = dialogState.showAboutDialog,
@@ -171,6 +176,12 @@ class SettingsViewModel @Inject constructor(
     fun setFingerprintEnabled(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.setFingerprintEnabled(enabled)
+        }
+    }
+
+    fun dismissPinHint() {
+        viewModelScope.launch {
+            settingsRepository.setHasShownPinHint()
         }
     }
 
