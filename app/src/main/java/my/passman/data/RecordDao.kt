@@ -5,6 +5,9 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface RecordDao {
+    @Query("SELECT EXISTS(SELECT 1 FROM records)")
+    fun hasRecords(): Flow<Boolean>
+
     @Query("SELECT * FROM records WHERE id = :id")
     suspend fun getRecordById(id: Long): Record?
 

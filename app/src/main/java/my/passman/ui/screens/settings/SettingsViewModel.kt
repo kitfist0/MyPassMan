@@ -9,6 +9,7 @@ import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import my.passman.data.AppTheme
+import my.passman.data.RecordDao
 import my.passman.data.SettingsRepository
 import my.passman.data.SortOrder
 import my.passman.data.SyncProvider
@@ -38,6 +39,7 @@ class SettingsViewModel @Inject constructor(
     private val syncScheduler: SyncScheduler,
     private val biometricAvailability: BiometricAvailability,
     private val eventBus: AppEventBus,
+    recordDao: RecordDao,
 ) : ViewModel() {
     private val _dialogState = MutableStateFlow(DialogState())
 
@@ -62,6 +64,7 @@ class SettingsViewModel @Inject constructor(
         val isPinEnabled: Boolean,
         val isFingerprintEnabled: Boolean,
         val hasShownPinHint: Boolean,
+        val hasRecords: Boolean,
     )
 
     private val syncSettings: Flow<SyncSettings> =
@@ -75,8 +78,9 @@ class SettingsViewModel @Inject constructor(
             settingsRepository.pinHash,
             settingsRepository.fingerprintEnabled,
             settingsRepository.hasShownPinHint,
-        ) { pinHash, fingerprintEnabled, hasShownPinHint ->
-            PinSettings(pinHash != null, fingerprintEnabled, hasShownPinHint)
+            recordDao.hasRecords(),
+        ) { pinHash, fingerprintEnabled, hasShownPinHint, hasRecords ->
+            PinSettings(pinHash != null, fingerprintEnabled, hasShownPinHint, hasRecords)
         }
 
     val uiState: StateFlow<SettingsScreenState> =
@@ -92,7 +96,7 @@ class SettingsViewModel @Inject constructor(
                 theme = theme,
                 isPinEnabled = pin.isPinEnabled,
                 isFingerprintEnabled = pin.isFingerprintEnabled,
-                showPinHint = !pin.isPinEnabled && !pin.hasShownPinHint,
+                showPinHint = !pin.isPinEnabled && !pin.hasShownPinHint && pin.hasRecords,
                 showSortDialog = dialogState.showSortDialog,
                 showThemeDialog = dialogState.showThemeDialog,
                 showAboutDialog = dialogState.showAboutDialog,
