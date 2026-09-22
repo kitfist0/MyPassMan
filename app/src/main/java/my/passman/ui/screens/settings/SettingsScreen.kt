@@ -445,6 +445,8 @@ fun SettingsScreen(
                 HintBanner(
                     text = stringResource(R.string.pin_hint),
                     onDismiss = { viewModel.dismissPinHint() },
+                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                    contentColor = MaterialTheme.colorScheme.onErrorContainer,
                 )
                 Spacer(modifier = Modifier.height(16.dp))
             }
