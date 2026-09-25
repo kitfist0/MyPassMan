@@ -1,0 +1,120 @@
+<resources>
+    <string name="app_name">MyPassMan</string>
+    <string name="about_title">О приложении MyPassMan</string>
+    <string name="about_version">Версия: %1$s</string>
+    <string name="about_description">Простой и безопасный менеджер паролей для Android.</string>
+    <string name="close">Закрыть</string>
+    <string name="settings_title">Настройки</string>
+    <string name="settings_sorting">Сортировка</string>
+    <string name="settings_theme">Тема приложения</string>
+    <string name="settings_about">О приложении</string>
+    <string name="settings_pin">Защита PIN-кодом</string>
+    <string name="settings_fingerprint">Разблокировка по отпечатку</string>
+    <string name="sort_alphabetical">По алфавиту (А-Я)</string>
+    <string name="sort_creation_time">По времени создания (сначала новые)</string>
+    <string name="sort_modified_time">По времени изменения (сначала новые)</string>
+    <string name="theme_light">Светлая</string>
+    <string name="theme_dark">Тёмная</string>
+    <string name="theme_system">Как в системе</string>
+    <string name="select_theme">Выбор темы</string>
+    <string name="select_sort">Выбор сортировки</string>
+    <string name="cancel">Отмена</string>
+
+    <!-- Record List Screen -->
+    <string name="search_placeholder">Поиск…</string>
+    <string name="search_description">Поиск</string>
+    <string name="search_empty_database">Пока нечего искать</string>
+    <string name="settings_description">Настройки</string>
+    <string name="add_description">Добавить</string>
+    <string name="no_records">Записей пока нет</string>
+    <string name="no_matches">Совпадений не найдено</string>
+    <string name="clipboard_password_label">пароль</string>
+    <string name="password_copied">Пароль скопирован в буфер обмена</string>
+    <string name="long_press_hint">Совет: долгое нажатие на запись быстро копирует пароль</string>
+    <string name="pin_hint">Совет: включите защиту PIN-кодом ниже, чтобы обезопасить пароли</string>
+
+    <!-- Edit Record Screen -->
+    <string name="save_changes_title">Сохранить изменения?</string>
+    <string name="save_changes_text">У вас есть несохранённые изменения. Сохранить их перед выходом?</string>
+    <string name="yes">Да</string>
+    <string name="no">Нет</string>
+    <string name="delete_record_title">Удалить запись?</string>
+    <string name="delete_record_text">Вы уверены, что хотите удалить эту запись? Это действие необратимо.</string>
+    <string name="delete">Удалить</string>
+    <string name="new_record">Новая запись</string>
+    <string name="edit_record">Редактирование записи</string>
+    <string name="back_description">Назад</string>
+    <string name="delete_description">Удалить</string>
+    <string name="save">Сохранить</string>
+    <string name="label_name">Название</string>
+    <string name="label_login">Логин</string>
+    <string name="label_secret">Секрет</string>
+    <string name="label_comment">Комментарий</string>
+    <string name="label_tag">Тег</string>
+    <string name="no_tag">Без тега</string>
+    <string name="hide_secret">Скрыть секрет</string>
+    <string name="show_secret">Показать секрет</string>
+    <string name="created_format">Создано: %s</string>
+    <string name="modified_format">Изменено: %s</string>
+    <string name="copy_login">Копировать логин</string>
+    <string name="copy_secret">Копировать секрет</string>
+    <string name="login_copied_toast">Логин скопирован</string>
+    <string name="password_copied_toast">Пароль скопирован</string>
+
+    <!-- Tags Screen -->
+    <string name="tags_title">Управление тегами</string>
+    <string name="no_tags">Тегов пока нет</string>
+    <string name="add_tag_title">Новый тег</string>
+    <string name="edit_tag_title">Редактирование тега</string>
+    <string name="label_tag_name">Название тега</string>
+    <string name="add">Добавить</string>
+    <string name="add_tag_description">Добавить тег</string>
+    <string name="tag_name_error">Тег должен содержать от 1 до %1$d символов: буквы, цифры, точки или дефисы (без пробелов).</string>
+    <string name="settings_manage_tags">Управление тегами</string>
+    <string name="delete_tag_title">Удалить тег?</string>
+    <string name="delete_tag_text">Вы уверены, что хотите удалить тег \"%1$s\"? Он будет удалён из всех связанных записей.</string>
+
+    <string name="settings_export">Экспорт базы данных</string>
+    <string name="settings_import">Импорт базы данных</string>
+    <string name="backup_password_title">Пароль резервной копии</string>
+    <string name="backup_password_message">Введите пароль для шифрования/расшифровки резервной копии. Он понадобится для восстановления данных.</string>
+    <string name="password_requirement_min_length">Не менее 8 символов</string>
+    <string name="password_requirement_letters_digits">Буквы и цифры</string>
+    <string name="password_requirement_symbol">Хотя бы один символ</string>
+    <string name="export_success">База данных успешно экспортирована</string>
+    <string name="export_error">Ошибка экспорта: %s</string>
+    <string name="import_success">База данных успешно импортирована</string>
+    <string name="import_error">Ошибка импорта: %s</string>
+    <string name="invalid_password">Неверный пароль или повреждённый файл</string>
+
+    <!-- PIN Screen -->
+    <string name="pin_title_set">Создание PIN-кода</string>
+    <string name="pin_title_confirm">Подтверждение PIN-кода</string>
+    <string name="pin_title_unlock">Введите PIN-код</string>
+    <string name="pin_error_mismatch">PIN-коды не совпадают</string>
+    <string name="pin_error_invalid">Неверный PIN-код</string>
+    <string name="disable_pin_title">Отключить защиту PIN-кодом?</string>
+    <string name="disable_pin_text">Вы уверены, что хотите отключить защиту PIN-кодом? При открытии приложения PIN-код больше не потребуется.</string>
+    <string name="disable">Отключить</string>
+    <string name="fingerprint_prompt_title">Разблокировка по отпечатку</string>
+    <string name="fingerprint_enable_title">Включить разблокировку по отпечатку?</string>
+    <string name="fingerprint_enable_message">Используйте отпечаток пальца для более быстрой разблокировки MyPassMan.</string>
+    <string name="skip">Пропустить</string>
+
+    <!-- Cloud Sync -->
+    <string name="settings_cloud_sync">Облачная синхронизация</string>
+    <string name="settings_drive_sync_never">Ещё не синхронизировано</string>
+    <string name="settings_drive_sync_last_synced">Последняя синхронизация: %1$s</string>
+    <string name="settings_drive_sync_now">Синхронизировать сейчас</string>
+    <string name="select_sync_provider">Выбор облачного хранилища</string>
+    <string name="sync_provider_none">Выключено</string>
+    <string name="sync_provider_google_drive">Google Диск</string>
+    <string name="sync_provider_yandex_disk">Яндекс Диск</string>
+    <string name="sync_passphrase_title">Установка пароля синхронизации</string>
+    <string name="sync_passphrase_message">Эта кодовая фраза шифрует данные перед загрузкой в облако. Используйте одну и ту же фразу на всех устройствах.</string>
+    <string name="enable">Включить</string>
+    <string name="reset_backup_title">Забыли пароль резервной копии?</string>
+    <string name="reset_backup_text">Резервная копия в облаке зашифрована другим паролем. Вы можете удалить её и загрузить новую копию с этого устройства, либо отменить и попробовать другой пароль.</string>
+    <string name="reset_backup_confirm">Удалить и начать заново</string>
+    <string name="yandex_login_title">Вход в Яндекс</string>
+</resources>
