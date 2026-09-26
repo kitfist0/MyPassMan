@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import my.passman.R
 import my.passman.data.AppTheme
 import my.passman.data.SettingsRepository
 import my.passman.data.SyncProvider
@@ -68,7 +69,7 @@ class MainViewModel @Inject constructor(
     fun onImportDatabaseClick() {
         _currentScreen.value = Screen.Settings
         viewModelScope.launch {
-            eventBus.send(AppEvent.ShowToast("You can import a database from a file or from the cloud".asText()))
+            eventBus.send(AppEvent.ShowToast(textOf(R.string.import_hint_toast)))
         }
     }
 

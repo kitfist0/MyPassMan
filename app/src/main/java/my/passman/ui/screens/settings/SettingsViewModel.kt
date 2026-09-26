@@ -8,6 +8,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import my.passman.R
 import my.passman.data.AppTheme
 import my.passman.data.RecordDao
 import my.passman.data.SettingsRepository
@@ -22,7 +23,7 @@ import my.passman.sync.yandex.YandexAuthResult
 import my.passman.sync.yandex.YandexSyncManager
 import my.passman.ui.AppEvent
 import my.passman.ui.AppEventBus
-import my.passman.ui.asText
+import my.passman.ui.textOf
 import my.passman.util.BackupManager
 import my.passman.util.BiometricAvailability
 import java.io.InputStream
@@ -201,7 +202,7 @@ class SettingsViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
-                eventBus.send(AppEvent.ShowToast("Failed to read file: ${e.message}".asText()))
+                eventBus.send(AppEvent.ShowToast(textOf(R.string.read_file_error, e.message.toString())))
             }
         }
     }
@@ -224,9 +225,9 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 backupManager.exportDatabase(outputStream, pendingPassword)
-                eventBus.send(AppEvent.ShowToast("Export successful".asText()))
+                eventBus.send(AppEvent.ShowToast(textOf(R.string.export_success)))
             } catch (e: Exception) {
-                eventBus.send(AppEvent.ShowToast("Export failed: ${e.message}".asText()))
+                eventBus.send(AppEvent.ShowToast(textOf(R.string.export_error, e.message.toString())))
             } finally {
                 pendingPassword = charArrayOf()
             }
@@ -238,11 +239,11 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 backupManager.importDatabase(data, pendingPassword)
-                eventBus.send(AppEvent.ShowToast("Import successful".asText()))
+                eventBus.send(AppEvent.ShowToast(textOf(R.string.import_success)))
             } catch (_: BadPaddingException) {
-                eventBus.send(AppEvent.ShowToast("Import failed: incorrect password".asText()))
+                eventBus.send(AppEvent.ShowToast(textOf(R.string.import_error_wrong_password)))
             } catch (e: Exception) {
-                eventBus.send(AppEvent.ShowToast("Import failed: ${e.message}".asText()))
+                eventBus.send(AppEvent.ShowToast(textOf(R.string.import_error, e.message.toString())))
             } finally {
                 pendingPassword = charArrayOf()
                 pendingImportData = null
@@ -339,7 +340,7 @@ class SettingsViewModel @Inject constructor(
                         _events.send(SettingsEvent.RequestDriveConsent(result.pendingIntent))
                     is GoogleDriveAuthResult.Failed -> {
                         abortAccountSelection()
-                        eventBus.send(AppEvent.ShowToast("Google sign-in failed: ${result.message}".asText()))
+                        eventBus.send(AppEvent.ShowToast(textOf(R.string.google_sign_in_failed, result.message.toString())))
                     }
                 }
 
@@ -428,12 +429,12 @@ class SettingsViewModel @Inject constructor(
 
                 is SyncResult.Uploaded -> {
                     isSettingUpSync = false
-                    eventBus.send(AppEvent.ShowToast("Old backup deleted — uploaded a fresh copy".asText()))
+                    eventBus.send(AppEvent.ShowToast(textOf(R.string.reset_backup_success)))
                 }
 
                 is SyncResult.Failed -> {
                     abortSyncSetupIfPending()
-                    eventBus.send(AppEvent.ShowToast("Reset failed: ${result.message}".asText()))
+                    eventBus.send(AppEvent.ShowToast(textOf(R.string.reset_backup_error, result.message.toString())))
                 }
 
                 else -> Unit
@@ -448,7 +449,7 @@ class SettingsViewModel @Inject constructor(
                     onAccountSelected()
                 } else {
                     abortAccountSelection()
-                    eventBus.send(AppEvent.ShowToast("Google Drive access was not granted".asText()))
+                    eventBus.send(AppEvent.ShowToast(textOf(R.string.google_drive_access_denied)))
                 }
                 return@launch
             }
@@ -456,7 +457,7 @@ class SettingsViewModel @Inject constructor(
                 runSync()
             } else {
                 abortSyncSetupIfPending()
-                eventBus.send(AppEvent.ShowToast("Google Drive access was not granted".asText()))
+                eventBus.send(AppEvent.ShowToast(textOf(R.string.google_drive_access_denied)))
             }
         }
     }
@@ -489,17 +490,17 @@ class SettingsViewModel @Inject constructor(
 
             is SyncResult.Uploaded -> {
                 isSettingUpSync = false
-                eventBus.send(AppEvent.ShowToast("Synced — uploaded to the cloud".asText()))
+                eventBus.send(AppEvent.ShowToast(textOf(R.string.sync_uploaded)))
             }
 
             is SyncResult.Downloaded -> {
                 isSettingUpSync = false
-                eventBus.send(AppEvent.ShowToast("Synced — downloaded from the cloud".asText()))
+                eventBus.send(AppEvent.ShowToast(textOf(R.string.sync_downloaded)))
             }
 
             is SyncResult.UpToDate -> {
                 isSettingUpSync = false
-                eventBus.send(AppEvent.ShowToast("Already up to date".asText()))
+                eventBus.send(AppEvent.ShowToast(textOf(R.string.sync_up_to_date)))
             }
 
             is SyncResult.Disabled -> isSettingUpSync = false
@@ -510,7 +511,7 @@ class SettingsViewModel @Inject constructor(
 
             is SyncResult.Failed -> {
                 abortSyncSetupIfPending()
-                eventBus.send(AppEvent.ShowToast("Sync failed: ${result.message}".asText()))
+                eventBus.send(AppEvent.ShowToast(textOf(R.string.sync_error, result.message.toString())))
             }
         }
     }

@@ -32,6 +32,7 @@
     <string name="password_copied">Пароль скопирован в буфер обмена</string>
     <string name="long_press_hint">Совет: долгое нажатие на запись быстро копирует пароль</string>
     <string name="pin_hint">Совет: включите защиту PIN-кодом ниже, чтобы обезопасить пароли</string>
+    <string name="import_hint_toast">Вы можете импортировать базу данных из файла или из облака</string>
 
     <!-- Edit Record Screen -->
     <string name="save_changes_title">Сохранить изменения?</string>
@@ -85,7 +86,9 @@
     <string name="export_error">Ошибка экспорта: %s</string>
     <string name="import_success">База данных успешно импортирована</string>
     <string name="import_error">Ошибка импорта: %s</string>
+    <string name="import_error_wrong_password">Ошибка импорта: неверный пароль</string>
     <string name="invalid_password">Неверный пароль или повреждённый файл</string>
+    <string name="read_file_error">Не удалось прочитать файл: %s</string>
 
     <!-- PIN Screen -->
     <string name="pin_title_set">Создание PIN-кода</string>
@@ -117,4 +120,12 @@
     <string name="reset_backup_text">Резервная копия в облаке зашифрована другим паролем. Вы можете удалить её и загрузить новую копию с этого устройства, либо отменить и попробовать другой пароль.</string>
     <string name="reset_backup_confirm">Удалить и начать заново</string>
     <string name="yandex_login_title">Вход в Яндекс</string>
+    <string name="google_sign_in_failed">Ошибка входа в Google: %s</string>
+    <string name="google_drive_access_denied">Доступ к Google Диску не предоставлен</string>
+    <string name="reset_backup_success">Старая резервная копия удалена — загружена новая</string>
+    <string name="reset_backup_error">Ошибка сброса: %s</string>
+    <string name="sync_uploaded">Синхронизировано — загружено в облако</string>
+    <string name="sync_downloaded">Синхронизировано — загружено из облака</string>
+    <string name="sync_up_to_date">Уже актуально</string>
+    <string name="sync_error">Ошибка синхронизации: %s</string>
 </resources>

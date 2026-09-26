@@ -32,6 +32,7 @@
     <string name="password_copied">Password copied to clipboard</string>
     <string name="long_press_hint">Tip: long-press a record to quickly copy its password</string>
     <string name="pin_hint">Tip: turn on PIN Protection below to keep your passwords safe</string>
+    <string name="import_hint_toast">You can import a database from a file or from the cloud</string>
 
     <!-- Edit Record Screen -->
     <string name="save_changes_title">Save changes?</string>
@@ -85,7 +86,9 @@
     <string name="export_error">Export failed: %s</string>
     <string name="import_success">Database imported successfully</string>
     <string name="import_error">Import failed: %s</string>
+    <string name="import_error_wrong_password">Import failed: incorrect password</string>
     <string name="invalid_password">Invalid password or corrupted file</string>
+    <string name="read_file_error">Failed to read file: %s</string>
 
     <!-- PIN Screen -->
     <string name="pin_title_set">Create PIN</string>
@@ -117,4 +120,12 @@
     <string name="reset_backup_text">The backup in the cloud was encrypted with a different password. You can delete it and upload a fresh copy from this device, or cancel and try a different password.</string>
     <string name="reset_backup_confirm">Delete &amp; Start Over</string>
     <string name="yandex_login_title">Sign in to Yandex</string>
+    <string name="google_sign_in_failed">Google sign-in failed: %s</string>
+    <string name="google_drive_access_denied">Google Drive access was not granted</string>
+    <string name="reset_backup_success">Old backup deleted — uploaded a fresh copy</string>
+    <string name="reset_backup_error">Reset failed: %s</string>
+    <string name="sync_uploaded">Synced — uploaded to the cloud</string>
+    <string name="sync_downloaded">Synced — downloaded from the cloud</string>
+    <string name="sync_up_to_date">Already up to date</string>
+    <string name="sync_error">Sync failed: %s</string>
 </resources>
