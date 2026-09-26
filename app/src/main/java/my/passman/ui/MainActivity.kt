@@ -61,7 +61,7 @@ class MainActivity : FragmentActivity() {
                 for (event in eventBus.events) {
                     when (event) {
                         is AppEvent.ShowToast -> {
-                            Toast.makeText(context, event.message, Toast.LENGTH_LONG).show()
+                            Toast.makeText(context, event.text.resolve(context), Toast.LENGTH_LONG).show()
                         }
                     }
                 }

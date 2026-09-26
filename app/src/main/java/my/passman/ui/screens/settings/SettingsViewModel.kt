@@ -22,6 +22,7 @@ import my.passman.sync.yandex.YandexAuthResult
 import my.passman.sync.yandex.YandexSyncManager
 import my.passman.ui.AppEvent
 import my.passman.ui.AppEventBus
+import my.passman.ui.asText
 import my.passman.util.BackupManager
 import my.passman.util.BiometricAvailability
 import java.io.InputStream
@@ -200,7 +201,7 @@ class SettingsViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
-                eventBus.send(AppEvent.ShowToast("Failed to read file: ${e.message}"))
+                eventBus.send(AppEvent.ShowToast("Failed to read file: ${e.message}".asText()))
             }
         }
     }
@@ -223,9 +224,9 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 backupManager.exportDatabase(outputStream, pendingPassword)
-                eventBus.send(AppEvent.ShowToast("Export successful"))
+                eventBus.send(AppEvent.ShowToast("Export successful".asText()))
             } catch (e: Exception) {
-                eventBus.send(AppEvent.ShowToast("Export failed: ${e.message}"))
+                eventBus.send(AppEvent.ShowToast("Export failed: ${e.message}".asText()))
             } finally {
                 pendingPassword = charArrayOf()
             }
@@ -237,11 +238,11 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 backupManager.importDatabase(data, pendingPassword)
-                eventBus.send(AppEvent.ShowToast("Import successful"))
+                eventBus.send(AppEvent.ShowToast("Import successful".asText()))
             } catch (_: BadPaddingException) {
-                eventBus.send(AppEvent.ShowToast("Import failed: incorrect password"))
+                eventBus.send(AppEvent.ShowToast("Import failed: incorrect password".asText()))
             } catch (e: Exception) {
-                eventBus.send(AppEvent.ShowToast("Import failed: ${e.message}"))
+                eventBus.send(AppEvent.ShowToast("Import failed: ${e.message}".asText()))
             } finally {
                 pendingPassword = charArrayOf()
                 pendingImportData = null
@@ -338,7 +339,7 @@ class SettingsViewModel @Inject constructor(
                         _events.send(SettingsEvent.RequestDriveConsent(result.pendingIntent))
                     is GoogleDriveAuthResult.Failed -> {
                         abortAccountSelection()
-                        eventBus.send(AppEvent.ShowToast("Google sign-in failed: ${result.message}"))
+                        eventBus.send(AppEvent.ShowToast("Google sign-in failed: ${result.message}".asText()))
                     }
                 }
 
@@ -427,12 +428,12 @@ class SettingsViewModel @Inject constructor(
 
                 is SyncResult.Uploaded -> {
                     isSettingUpSync = false
-                    eventBus.send(AppEvent.ShowToast("Old backup deleted — uploaded a fresh copy"))
+                    eventBus.send(AppEvent.ShowToast("Old backup deleted — uploaded a fresh copy".asText()))
                 }
 
                 is SyncResult.Failed -> {
                     abortSyncSetupIfPending()
-                    eventBus.send(AppEvent.ShowToast("Reset failed: ${result.message}"))
+                    eventBus.send(AppEvent.ShowToast("Reset failed: ${result.message}".asText()))
                 }
 
                 else -> Unit
@@ -447,7 +448,7 @@ class SettingsViewModel @Inject constructor(
                     onAccountSelected()
                 } else {
                     abortAccountSelection()
-                    eventBus.send(AppEvent.ShowToast("Google Drive access was not granted"))
+                    eventBus.send(AppEvent.ShowToast("Google Drive access was not granted".asText()))
                 }
                 return@launch
             }
@@ -455,7 +456,7 @@ class SettingsViewModel @Inject constructor(
                 runSync()
             } else {
                 abortSyncSetupIfPending()
-                eventBus.send(AppEvent.ShowToast("Google Drive access was not granted"))
+                eventBus.send(AppEvent.ShowToast("Google Drive access was not granted".asText()))
             }
         }
     }
@@ -488,17 +489,17 @@ class SettingsViewModel @Inject constructor(
 
             is SyncResult.Uploaded -> {
                 isSettingUpSync = false
-                eventBus.send(AppEvent.ShowToast("Synced — uploaded to the cloud"))
+                eventBus.send(AppEvent.ShowToast("Synced — uploaded to the cloud".asText()))
             }
 
             is SyncResult.Downloaded -> {
                 isSettingUpSync = false
-                eventBus.send(AppEvent.ShowToast("Synced — downloaded from the cloud"))
+                eventBus.send(AppEvent.ShowToast("Synced — downloaded from the cloud".asText()))
             }
 
             is SyncResult.UpToDate -> {
                 isSettingUpSync = false
-                eventBus.send(AppEvent.ShowToast("Already up to date"))
+                eventBus.send(AppEvent.ShowToast("Already up to date".asText()))
             }
 
             is SyncResult.Disabled -> isSettingUpSync = false
@@ -509,7 +510,7 @@ class SettingsViewModel @Inject constructor(
 
             is SyncResult.Failed -> {
                 abortSyncSetupIfPending()
-                eventBus.send(AppEvent.ShowToast("Sync failed: ${result.message}"))
+                eventBus.send(AppEvent.ShowToast("Sync failed: ${result.message}".asText()))
             }
         }
     }

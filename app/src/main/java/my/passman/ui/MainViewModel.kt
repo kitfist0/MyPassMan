@@ -68,7 +68,7 @@ class MainViewModel @Inject constructor(
     fun onImportDatabaseClick() {
         _currentScreen.value = Screen.Settings
         viewModelScope.launch {
-            eventBus.send(AppEvent.ShowToast("You can import a database from a file or from the cloud"))
+            eventBus.send(AppEvent.ShowToast("You can import a database from a file or from the cloud".asText()))
         }
     }
 
