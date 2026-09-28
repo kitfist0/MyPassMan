@@ -61,10 +61,6 @@ class SettingsRepository @Inject constructor(
                 } ?: SyncProvider.NONE
             }
 
-    val hasSyncPassphrase: Flow<Boolean> =
-        dataStore.data
-            .map { preferences -> preferences[SYNC_PASSPHRASE] != null }
-
     val lastSyncedAt: Flow<Long?> =
         dataStore.data
             .map { preferences -> preferences[LAST_SYNCED_AT] }
