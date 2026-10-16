@@ -11,13 +11,9 @@ import java.security.SecureRandom
  * wrapped form (see [KeystoreCipher.DATABASE_KEY_ALIAS]) inside
  * `noBackupFilesDir`, so neither the key file nor the Keystore key ever leave
  * this device.
- *
- * @property isNew `true` when no usable key existed and a fresh one was just
- * generated — any encrypted database already on disk is then unreadable.
  */
 class DatabaseKey private constructor(
     private val raw: ByteArray,
-    val isNew: Boolean,
 ) {
     /** SQLCipher raw-key literal (`x'<64 hex>'`), which skips its own PBKDF2 pass. */
     fun toPassphrase(): ByteArray = "x'${raw.toHex()}'".toByteArray(Charsets.US_ASCII)
@@ -26,10 +22,25 @@ class DatabaseKey private constructor(
         private const val KEY_FILE_NAME = "database.key"
         private const val KEY_LENGTH_BYTE = 32
 
-        fun getOrCreate(context: Context): DatabaseKey {
-            val file = AtomicFile(File(context.noBackupFilesDir, KEY_FILE_NAME))
-            load(file)?.let { return DatabaseKey(it, isNew = false) }
+        /** Returns the stored key, or `null` if there is none or it can no longer be unwrapped. */
+        fun load(context: Context): DatabaseKey? {
+            val file = keyFile(context)
+            if (!file.baseFile.exists()) return null
+            return try {
+                KeystoreCipher
+                    .decrypt(file.readFully(), KeystoreCipher.DATABASE_KEY_ALIAS)
+                    .takeIf { it.size == KEY_LENGTH_BYTE }
+                    ?.let(::DatabaseKey)
+            } catch (_: Exception) {
+                // The Keystore key is gone (e.g. lock screen reset on some OEMs) or the
+                // file is corrupt — either way the old key is unrecoverable.
+                null
+            }
+        }
 
+        /** Generates a fresh key and persists it, replacing any stored one. */
+        fun create(context: Context): DatabaseKey {
+            val file = keyFile(context)
             val raw = ByteArray(KEY_LENGTH_BYTE).apply { SecureRandom().nextBytes(this) }
             val wrapped = KeystoreCipher.encrypt(raw, KeystoreCipher.DATABASE_KEY_ALIAS)
             val stream = file.startWrite()
@@ -40,21 +51,10 @@ class DatabaseKey private constructor(
                 file.failWrite(stream)
                 throw e
             }
-            return DatabaseKey(raw, isNew = true)
+            return DatabaseKey(raw)
         }
 
-        private fun load(file: AtomicFile): ByteArray? {
-            if (!file.baseFile.exists()) return null
-            return try {
-                KeystoreCipher
-                    .decrypt(file.readFully(), KeystoreCipher.DATABASE_KEY_ALIAS)
-                    .takeIf { it.size == KEY_LENGTH_BYTE }
-            } catch (_: Exception) {
-                // The Keystore key is gone (e.g. lock screen reset on some OEMs) or the
-                // file is corrupt — either way the old key is unrecoverable.
-                null
-            }
-        }
+        private fun keyFile(context: Context) = AtomicFile(File(context.noBackupFilesDir, KEY_FILE_NAME))
 
         private fun ByteArray.toHex(): String = joinToString("") { "%02x".format(it) }
     }

@@ -66,9 +66,15 @@ class EncryptedOpenHelperFactory(
             name: String?,
         ): ByteArray {
             System.loadLibrary("sqlcipher")
-            val key = DatabaseKey.getOrCreate(context)
-            // In-memory databases have no name and nothing on disk to discard.
-            if (key.isNew && name != null) context.deleteDatabase(name)
+            val key =
+                DatabaseKey.load(context) ?: run {
+                    // Discard the database before persisting the new key: if the process
+                    // dies in between, the next launch still sees no key and retries,
+                    // instead of pairing the new key with an unreadable file.
+                    // In-memory databases have no name and nothing on disk to discard.
+                    if (name != null) context.deleteDatabase(name)
+                    DatabaseKey.create(context)
+                }
             return key.toPassphrase()
         }
     }
