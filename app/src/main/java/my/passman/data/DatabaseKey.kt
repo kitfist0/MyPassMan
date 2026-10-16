@@ -2,13 +2,12 @@ package my.passman.data
 
 import android.content.Context
 import android.util.AtomicFile
-import my.passman.util.KeystoreCipher
 import java.io.File
 import java.security.SecureRandom
 
 /**
  * The SQLCipher key for the local database: 32 random bytes, persisted only in
- * wrapped form (see [KeystoreCipher.DATABASE_KEY_ALIAS]) inside
+ * wrapped form (see [DeviceBoundCipher.DATABASE_KEY_ALIAS]) inside
  * `noBackupFilesDir`, so neither the key file nor the Keystore key ever leave
  * this device.
  */
@@ -27,8 +26,8 @@ class DatabaseKey private constructor(
             val file = keyFile(context)
             if (!file.baseFile.exists()) return null
             return try {
-                KeystoreCipher
-                    .decrypt(file.readFully(), KeystoreCipher.DATABASE_KEY_ALIAS)
+                DeviceBoundCipher
+                    .decrypt(file.readFully(), DeviceBoundCipher.DATABASE_KEY_ALIAS)
                     .takeIf { it.size == KEY_LENGTH_BYTE }
                     ?.let(::DatabaseKey)
             } catch (_: Exception) {
@@ -42,7 +41,7 @@ class DatabaseKey private constructor(
         fun create(context: Context): DatabaseKey {
             val file = keyFile(context)
             val raw = ByteArray(KEY_LENGTH_BYTE).apply { SecureRandom().nextBytes(this) }
-            val wrapped = KeystoreCipher.encrypt(raw, KeystoreCipher.DATABASE_KEY_ALIAS)
+            val wrapped = DeviceBoundCipher.encrypt(raw, DeviceBoundCipher.DATABASE_KEY_ALIAS)
             val stream = file.startWrite()
             try {
                 stream.write(wrapped)

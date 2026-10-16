@@ -1,4 +1,4 @@
-package my.passman.util
+package my.passman.data
 
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
@@ -12,14 +12,14 @@ import javax.crypto.spec.GCMParameterSpec
 /**
  * Wraps small secrets (e.g. the Drive sync passphrase) with a non-exportable
  * Android Keystore AES key so they can be persisted at rest on this device
- * without prompting the user again. Unlike [CryptoUtils], the resulting
- * ciphertext cannot be decrypted on another device or after the key is lost
- * (e.g. app data cleared) — it is not meant to be portable.
+ * without prompting the user again. Unlike [my.passman.util.CryptoUtils], the
+ * resulting ciphertext cannot be decrypted on another device or after the key
+ * is lost (e.g. app data cleared) — it is not meant to be portable.
  *
  * Each [keyAlias] is a separate Keystore key, so clearing one (e.g. on sync
  * sign-out) does not invalidate secrets wrapped under another.
  */
-object KeystoreCipher {
+object DeviceBoundCipher {
     const val SYNC_KEY_ALIAS = "sync_passphrase_key"
     const val DATABASE_KEY_ALIAS = "database_key"
 
