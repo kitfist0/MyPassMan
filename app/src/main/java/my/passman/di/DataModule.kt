@@ -11,6 +11,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import my.passman.data.AppDatabase
+import my.passman.data.EncryptedOpenHelperFactory
 import my.passman.data.RecordDao
 import my.passman.data.TagDao
 import my.passman.util.BackupManager
@@ -34,11 +35,9 @@ object DataModule {
         @ApplicationContext context: Context,
     ): AppDatabase =
         Room
-            .databaseBuilder(
-                context.applicationContext,
-                AppDatabase::class.java,
-                "pass_man_database",
-            ).build()
+            .databaseBuilder(context.applicationContext, AppDatabase::class.java, "pass_man_database")
+            .openHelperFactory(EncryptedOpenHelperFactory(context))
+            .build()
 
     @Provides
     fun provideRecordDao(database: AppDatabase): RecordDao = database.recordDao()
