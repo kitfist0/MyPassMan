@@ -10,7 +10,6 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import my.passman.util.KeystoreCipher
 import java.security.MessageDigest
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -81,7 +80,7 @@ class SettingsRepository @Inject constructor(
 
     suspend fun setYandexAccessToken(token: String) {
         dataStore.edit { preferences ->
-            preferences[YANDEX_ACCESS_TOKEN] = KeystoreCipher.encryptToString(token)
+            preferences[YANDEX_ACCESS_TOKEN] = DeviceBoundCipher.encryptToString(token)
         }
     }
 
@@ -91,7 +90,7 @@ class SettingsRepository @Inject constructor(
                 .map { it[YANDEX_ACCESS_TOKEN] }
                 .first() ?: return null
         return try {
-            KeystoreCipher.decryptFromString(encrypted)
+            DeviceBoundCipher.decryptFromString(encrypted)
         } catch (_: Exception) {
             null
         }
@@ -99,7 +98,7 @@ class SettingsRepository @Inject constructor(
 
     suspend fun setSyncPassphrase(passphrase: String) {
         dataStore.edit { preferences ->
-            preferences[SYNC_PASSPHRASE] = KeystoreCipher.encryptToString(passphrase)
+            preferences[SYNC_PASSPHRASE] = DeviceBoundCipher.encryptToString(passphrase)
         }
     }
 
@@ -109,7 +108,7 @@ class SettingsRepository @Inject constructor(
                 .map { it[SYNC_PASSPHRASE] }
                 .first() ?: return null
         return try {
-            KeystoreCipher.decryptFromString(encrypted).toCharArray()
+            DeviceBoundCipher.decryptFromString(encrypted).toCharArray()
         } catch (_: Exception) {
             // The Keystore key is device-local and never backed up; if this value was
             // restored from a backup onto a new device/install, the key won't exist.
@@ -118,7 +117,7 @@ class SettingsRepository @Inject constructor(
     }
 
     suspend fun clearSyncState() {
-        KeystoreCipher.clearKey()
+        DeviceBoundCipher.clearKey()
         dataStore.edit { preferences ->
             preferences.remove(SYNC_PROVIDER)
             preferences.remove(SYNC_PASSPHRASE)
