@@ -188,7 +188,13 @@ class SettingsRepository @Inject constructor(
 
     suspend fun verifyPin(pin: String): Boolean {
         val storedHash = pinHash.first() ?: return false
-        return withContext(Dispatchers.Default) { PinHasher.verify(pin, storedHash) }
+        val isValid = withContext(Dispatchers.Default) { PinHasher.verify(pin, storedHash) }
+        // The plain PIN is only available on a successful unlock, so that is the
+        // one chance to upgrade a legacy SHA-256 hash to Argon2id.
+        if (isValid && PinHasher.isLegacy(storedHash)) {
+            setPin(pin)
+        }
+        return isValid
     }
 
     private companion object {
