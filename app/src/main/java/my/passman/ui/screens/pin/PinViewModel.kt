@@ -121,7 +121,7 @@ class PinViewModel @AssistedInject constructor(
                     _uiState.update { it.copy(isValidating = true) }
                     delay(500.milliseconds)
                     val storedHash = settingsRepository.pinHash.first()
-                    if (storedHash == null || settingsRepository.hashPin(enteredPin) == storedHash) {
+                    if (storedHash == null || settingsRepository.verifyPin(enteredPin)) {
                         _uiState.update { it.copy(isSuccess = true, isValidating = false) }
                     } else {
                         _uiState.update {

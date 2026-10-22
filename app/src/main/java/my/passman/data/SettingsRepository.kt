@@ -7,10 +7,11 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import java.security.MessageDigest
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -152,7 +153,7 @@ class SettingsRepository @Inject constructor(
     }
 
     suspend fun setPin(pin: String) {
-        val hash = hashPin(pin)
+        val hash = withContext(Dispatchers.Default) { PinHasher.hash(pin) }
         dataStore.edit { preferences ->
             preferences[PIN_HASH] = hash
             preferences[PIN_LENGTH] = pin.length
@@ -185,11 +186,9 @@ class SettingsRepository @Inject constructor(
         }
     }
 
-    fun hashPin(pin: String): String {
-        val bytes = pin.toByteArray()
-        val md = MessageDigest.getInstance("SHA-256")
-        val digest = md.digest(bytes)
-        return digest.joinToString("") { "%02x".format(it) }
+    suspend fun verifyPin(pin: String): Boolean {
+        val storedHash = pinHash.first() ?: return false
+        return withContext(Dispatchers.Default) { PinHasher.verify(pin, storedHash) }
     }
 
     private companion object {
