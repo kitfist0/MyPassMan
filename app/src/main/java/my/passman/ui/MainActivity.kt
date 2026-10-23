@@ -2,6 +2,7 @@ package my.passman.ui
 
 import android.app.Activity
 import android.os.Bundle
+import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -48,6 +49,9 @@ class MainActivity : FragmentActivity() {
     @OptIn(ExperimentalSharedTransitionApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Keep the vault out of screenshots, screen recordings and the recents preview.
+        // Compose dialogs and popups inherit the flag from this window by default.
+        window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
         enableEdgeToEdge()
         setContent {
             val context = LocalContext.current
