@@ -33,7 +33,7 @@
     <string name="long_press_hint">Совет: долгое нажатие на запись быстро копирует пароль</string>
     <string name="pin_hint">Совет: включите защиту PIN-кодом ниже, чтобы обезопасить пароли</string>
     <string name="go_to_settings">Перейти в настройки</string>
-    <string name="import_hint">Начните работу с MyPassMan. Добавьте свои записи из файла или из облака</string>
+    <string name="import_hint">Начните работу с MyPassMan. Создайте первую запись кнопкой «+» или добавьте свои записи из файла или из облака</string>
 
     <!-- Edit Record Screen -->
     <string name="save_changes_title">Сохранить изменения?</string>
