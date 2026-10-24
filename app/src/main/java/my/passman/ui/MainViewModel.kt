@@ -1,5 +1,6 @@
 package my.passman.ui
 
+import android.os.SystemClock
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -14,6 +15,8 @@ import my.passman.sync.google.GoogleSyncManager
 import my.passman.sync.yandex.YandexSyncManager
 import my.passman.ui.screens.pin.PinMode
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
@@ -27,6 +30,16 @@ class MainViewModel @Inject constructor(
     val currentScreen = _currentScreen.asStateFlow()
 
     private var isAuthorized = false
+    private var isPinEnabled = false
+    private var backgroundedAt: Long? = null
+
+    /** Shown over [currentScreen] while the vault is locked, so the screen underneath keeps its state. */
+    private val _lockScreen = MutableStateFlow<Screen.Pin?>(null)
+    val lockScreen = _lockScreen.asStateFlow()
+
+    /** False until the first unlock, so the vault is not composed behind the lock screen on a cold start. */
+    private val _hasBeenUnlocked = MutableStateFlow(value = false)
+    val hasBeenUnlocked = _hasBeenUnlocked.asStateFlow()
 
     val appTheme: StateFlow<AppTheme> =
         settingsRepository.appTheme
@@ -38,10 +51,12 @@ class MainViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             settingsRepository.pinHash.collect { hash ->
+                isPinEnabled = hash != null
                 if (hash != null && (!isAuthorized)) {
-                    _currentScreen.value = Screen.Pin(PinMode.UNLOCK)
+                    _lockScreen.value = Screen.Pin(PinMode.UNLOCK)
                 } else {
                     isAuthorized = true
+                    _hasBeenUnlocked.value = true
                 }
                 _isLoading.value = false
             }
@@ -75,11 +90,30 @@ class MainViewModel @Inject constructor(
 
     fun onPinSuccess(mode: PinMode) {
         isAuthorized = true
-        _currentScreen.value =
-            if (mode == PinMode.SET || mode == PinMode.CONFIRM) {
-                Screen.Settings
-            } else {
-                Screen.List
-            }
+        if (mode == PinMode.UNLOCK) {
+            _lockScreen.value = null
+            _hasBeenUnlocked.value = true
+        } else {
+            _currentScreen.value = Screen.Settings
+        }
+    }
+
+    fun onAppBackgrounded() {
+        backgroundedAt = SystemClock.elapsedRealtime()
+    }
+
+    fun onAppForegrounded() {
+        val since = backgroundedAt ?: return
+        backgroundedAt = null
+        // elapsedRealtime is monotonic, so changing the wall clock cannot skip the lock.
+        val timeInBackground = (SystemClock.elapsedRealtime() - since).milliseconds
+        if (isPinEnabled && isAuthorized && timeInBackground >= AUTO_LOCK_TIMEOUT) {
+            isAuthorized = false
+            _lockScreen.value = Screen.Pin(PinMode.UNLOCK)
+        }
+    }
+
+    private companion object {
+        val AUTO_LOCK_TIMEOUT = 30.seconds
     }
 }

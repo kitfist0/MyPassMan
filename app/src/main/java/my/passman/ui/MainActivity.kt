@@ -6,6 +6,7 @@ import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedContent
@@ -16,6 +17,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -23,10 +25,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.core.view.WindowCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dagger.hilt.android.AndroidEntryPoint
 import my.passman.ui.screens.edit.EditRecordScreen
@@ -63,6 +69,17 @@ class MainActivity : FragmentActivity() {
             val appTheme by viewModel.appTheme.collectAsStateWithLifecycle()
             val currentScreen by viewModel.currentScreen.collectAsStateWithLifecycle()
             val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+            val lockScreen by viewModel.lockScreen.collectAsStateWithLifecycle()
+            val hasBeenUnlocked by viewModel.hasBeenUnlocked.collectAsStateWithLifecycle()
+
+            LifecycleEventEffect(Lifecycle.Event.ON_STOP) { viewModel.onAppBackgrounded() }
+            LifecycleEventEffect(Lifecycle.Event.ON_START) { viewModel.onAppForegrounded() }
+
+            val focusManager = LocalFocusManager.current
+            LaunchedEffect(lockScreen) {
+                // Otherwise a text field under the lock screen keeps the keyboard and receives input.
+                if (lockScreen != null) focusManager.clearFocus(force = true)
+            }
 
             LaunchedEffect(eventBus) {
                 for (event in eventBus.events) {
@@ -109,91 +126,120 @@ class MainActivity : FragmentActivity() {
                         return@Surface
                     }
 
-                    SharedTransitionLayout {
-                        AnimatedContent(
-                            targetState = currentScreen,
-                            transitionSpec = {
-                                if (targetState is Screen.Edit) {
-                                    (slideInHorizontally { it } + fadeIn())
-                                        .togetherWith(slideOutHorizontally { -it } + fadeOut())
-                                } else {
-                                    (slideInHorizontally { -it } + fadeIn())
-                                        .togetherWith(slideOutHorizontally { it } + fadeOut())
-                                }
-                            },
-                            label = "ScreenTransition",
-                        ) { targetScreen ->
-                            val animatedVisibilityScope = this
-                            val sharedTransitionScope = this@SharedTransitionLayout
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        if (hasBeenUnlocked) {
+                            SharedTransitionLayout(
+                                modifier =
+                                    if (lockScreen != null) {
+                                        // Hide the locked vault from accessibility services.
+                                        Modifier.clearAndSetSemantics {}
+                                    } else {
+                                        Modifier
+                                    },
+                            ) {
+                                AnimatedContent(
+                                    targetState = currentScreen,
+                                    transitionSpec = {
+                                        if (targetState is Screen.Edit) {
+                                            (slideInHorizontally { it } + fadeIn())
+                                                .togetherWith(slideOutHorizontally { -it } + fadeOut())
+                                        } else {
+                                            (slideInHorizontally { -it } + fadeIn())
+                                                .togetherWith(slideOutHorizontally { it } + fadeOut())
+                                        }
+                                    },
+                                    label = "ScreenTransition",
+                                ) { targetScreen ->
+                                    val animatedVisibilityScope = this
+                                    val sharedTransitionScope = this@SharedTransitionLayout
 
-                            when (targetScreen) {
-                                is Screen.List -> {
-                                    val recordListViewModel: RecordListViewModel = hiltViewModel()
-                                    RecordListScreen(
-                                        viewModel = recordListViewModel,
-                                        sharedTransitionScope = sharedTransitionScope,
-                                        animatedVisibilityScope = animatedVisibilityScope,
-                                        onAddRecord = { viewModel.navigateTo(Screen.Edit(null)) },
-                                        onEditRecord = { id ->
-                                            viewModel.navigateTo(Screen.Edit(id))
-                                        },
-                                        onNavigateToSettings = { viewModel.navigateTo(Screen.Settings) },
-                                        onImportDatabase = { viewModel.onImportDatabaseClick() },
-                                    )
-                                }
+                                    when (targetScreen) {
+                                        is Screen.List -> {
+                                            val recordListViewModel: RecordListViewModel = hiltViewModel()
+                                            RecordListScreen(
+                                                viewModel = recordListViewModel,
+                                                sharedTransitionScope = sharedTransitionScope,
+                                                animatedVisibilityScope = animatedVisibilityScope,
+                                                onAddRecord = { viewModel.navigateTo(Screen.Edit(null)) },
+                                                onEditRecord = { id ->
+                                                    viewModel.navigateTo(Screen.Edit(id))
+                                                },
+                                                onNavigateToSettings = { viewModel.navigateTo(Screen.Settings) },
+                                                onImportDatabase = { viewModel.onImportDatabaseClick() },
+                                            )
+                                        }
 
-                                is Screen.Edit -> {
-                                    val editRecordViewModel: EditRecordViewModel =
-                                        hiltViewModel(
-                                            key = "edit-${targetScreen.recordId}-${targetScreen.sessionKey}",
-                                            creationCallback = { factory: EditRecordViewModel.Factory ->
-                                                factory.create(targetScreen.recordId)
-                                            },
-                                        )
-                                    EditRecordScreen(
-                                        viewModel = editRecordViewModel,
-                                        sharedTransitionScope = sharedTransitionScope,
-                                        animatedVisibilityScope = animatedVisibilityScope,
-                                        onSave = { viewModel.navigateTo(Screen.List) },
-                                        onDelete = { viewModel.navigateTo(Screen.List) },
-                                        onCancel = { viewModel.navigateTo(Screen.List) },
-                                    )
-                                }
+                                        is Screen.Edit -> {
+                                            val editRecordViewModel: EditRecordViewModel =
+                                                hiltViewModel(
+                                                    key = "edit-${targetScreen.recordId}-${targetScreen.sessionKey}",
+                                                    creationCallback = { factory: EditRecordViewModel.Factory ->
+                                                        factory.create(targetScreen.recordId)
+                                                    },
+                                                )
+                                            EditRecordScreen(
+                                                viewModel = editRecordViewModel,
+                                                sharedTransitionScope = sharedTransitionScope,
+                                                animatedVisibilityScope = animatedVisibilityScope,
+                                                onSave = { viewModel.navigateTo(Screen.List) },
+                                                onDelete = { viewModel.navigateTo(Screen.List) },
+                                                onCancel = { viewModel.navigateTo(Screen.List) },
+                                            )
+                                        }
 
-                                is Screen.Settings -> {
-                                    val settingsViewModel: SettingsViewModel = hiltViewModel()
-                                    SettingsScreen(
-                                        viewModel = settingsViewModel,
-                                        onManageTags = { viewModel.navigateTo(Screen.Tags) },
-                                        onSetupNewPin = { viewModel.navigateTo(Screen.Pin(PinMode.SET)) },
-                                    ) {
-                                        viewModel.navigateTo(Screen.List)
+                                        is Screen.Settings -> {
+                                            val settingsViewModel: SettingsViewModel = hiltViewModel()
+                                            SettingsScreen(
+                                                viewModel = settingsViewModel,
+                                                onManageTags = { viewModel.navigateTo(Screen.Tags) },
+                                                onSetupNewPin = { viewModel.navigateTo(Screen.Pin(PinMode.SET)) },
+                                            ) {
+                                                viewModel.navigateTo(Screen.List)
+                                            }
+                                        }
+
+                                        is Screen.Tags -> {
+                                            val tagsViewModel: TagsViewModel = hiltViewModel()
+                                            TagsScreen(
+                                                viewModel = tagsViewModel,
+                                                onBack = { viewModel.navigateTo(Screen.Settings) },
+                                            )
+                                        }
+
+                                        is Screen.Pin -> {
+                                            val pinViewModel: PinViewModel =
+                                                hiltViewModel(
+                                                    key = "pin-${targetScreen.mode}-${targetScreen.sessionKey}",
+                                                    creationCallback = { factory: PinViewModel.Factory ->
+                                                        factory.create(targetScreen.mode)
+                                                    },
+                                                )
+                                            PinScreen(
+                                                viewModel = pinViewModel,
+                                                onBack = { viewModel.navigateTo(Screen.Settings) },
+                                                onSuccess = { viewModel.onPinSuccess(targetScreen.mode) },
+                                            )
+                                        }
                                     }
                                 }
-
-                                is Screen.Tags -> {
-                                    val tagsViewModel: TagsViewModel = hiltViewModel()
-                                    TagsScreen(
-                                        viewModel = tagsViewModel,
-                                        onBack = { viewModel.navigateTo(Screen.Settings) },
-                                    )
-                                }
-
-                                is Screen.Pin -> {
-                                    val pinViewModel: PinViewModel =
-                                        hiltViewModel(
-                                            key = "pin-${targetScreen.mode}-${targetScreen.sessionKey}",
-                                            creationCallback = { factory: PinViewModel.Factory ->
-                                                factory.create(targetScreen.mode)
-                                            },
-                                        )
-                                    PinScreen(
-                                        viewModel = pinViewModel,
-                                        onBack = { viewModel.navigateTo(Screen.Settings) },
-                                        onSuccess = { viewModel.onPinSuccess(targetScreen.mode) },
-                                    )
-                                }
                             }
+                        }
+
+                        lockScreen?.let { screen ->
+                            val pinViewModel: PinViewModel =
+                                hiltViewModel(
+                                    key = "pin-${screen.mode}-${screen.sessionKey}",
+                                    creationCallback = { factory: PinViewModel.Factory ->
+                                        factory.create(screen.mode)
+                                    },
+                                )
+                            // Registered after the screens' handlers, so it takes priority over them.
+                            BackHandler { moveTaskToBack(true) }
+                            PinScreen(
+                                viewModel = pinViewModel,
+                                onBack = {},
+                                onSuccess = { viewModel.onPinSuccess(screen.mode) },
+                            )
                         }
                     }
                 }
