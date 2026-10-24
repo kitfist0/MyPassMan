@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import my.passman.R
 import my.passman.data.AppTheme
 import my.passman.data.SettingsRepository
 import my.passman.data.SyncProvider
@@ -24,7 +23,6 @@ class MainViewModel @Inject constructor(
     private val googleSyncManager: GoogleSyncManager,
     private val yandexSyncManager: YandexSyncManager,
     private val syncScheduler: SyncScheduler,
-    private val eventBus: AppEventBus,
     private val timeSource: TimeSource,
 ) : ViewModel() {
     private val _currentScreen = MutableStateFlow<Screen>(Screen.List)
@@ -80,13 +78,6 @@ class MainViewModel @Inject constructor(
 
     fun navigateTo(screen: Screen) {
         _currentScreen.value = screen
-    }
-
-    fun onImportDatabaseClick() {
-        _currentScreen.value = Screen.Settings
-        viewModelScope.launch {
-            eventBus.send(AppEvent.ShowToast(textOf(R.string.import_hint_toast)))
-        }
     }
 
     fun onPinSuccess(mode: PinMode) {

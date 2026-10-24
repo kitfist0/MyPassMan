@@ -48,7 +48,6 @@ fun RecordListScreen(
     onAddRecord: () -> Unit,
     onEditRecord: (Long) -> Unit,
     onNavigateToSettings: () -> Unit,
-    onImportDatabase: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val searchFocusRequester = remember { FocusRequester() }
@@ -180,12 +179,29 @@ fun RecordListScreen(
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        if (searchQueryIsEmpty) {
-                            Spacer(modifier = Modifier.height(16.dp))
-                            TextButton(onClick = onImportDatabase) {
-                                Text(stringResource(R.string.settings_import))
-                            }
-                        }
+                    }
+                    if (searchQueryIsEmpty) {
+                        // Same place as the hint banner above the records grid.
+                        HintBanner(
+                            text = stringResource(R.string.import_hint),
+                            icon = null,
+                            textStyle = MaterialTheme.typography.bodyLarge,
+                            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                            actionLabel = stringResource(R.string.go_to_settings),
+                            onAction = onNavigateToSettings,
+                            modifier =
+                                Modifier
+                                    .align(Alignment.TopCenter)
+                                    .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
+                                    .padding(
+                                        start = 16.dp,
+                                        end = 16.dp,
+                                        top =
+                                            (if (state.isSearchActive) 0.dp else systemBarsPadding.calculateTopPadding()) +
+                                                16.dp,
+                                    ),
+                        )
                     }
                 }
             } else {

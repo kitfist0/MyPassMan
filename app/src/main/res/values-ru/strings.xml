@@ -32,7 +32,8 @@
     <string name="password_copied">Пароль скопирован в буфер обмена</string>
     <string name="long_press_hint">Совет: долгое нажатие на запись быстро копирует пароль</string>
     <string name="pin_hint">Совет: включите защиту PIN-кодом ниже, чтобы обезопасить пароли</string>
-    <string name="import_hint_toast">Вы можете импортировать базу данных из файла или из облака</string>
+    <string name="go_to_settings">Перейти в настройки</string>
+    <string name="import_hint">Начните работу с MyPassMan. Добавьте свои записи из файла или из облака</string>
 
     <!-- Edit Record Screen -->
     <string name="save_changes_title">Сохранить изменения?</string>
