@@ -1,6 +1,8 @@
 package my.passman.ui
 
 import android.app.Activity
+import android.app.ActivityManager
+import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
 import android.widget.Toast
@@ -19,6 +21,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
@@ -82,6 +85,22 @@ class MainActivity : FragmentActivity() {
             }
 
             MyPassManTheme(appTheme = appTheme) {
+                val backgroundColor = MaterialTheme.colorScheme.background.toArgb()
+                SideEffect {
+                    // FLAG_SECURE makes recents show a blank placeholder in the task background
+                    // color, which otherwise follows the XML theme and ignores the in-app theme.
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        setTaskDescription(
+                            ActivityManager.TaskDescription
+                                .Builder()
+                                .setBackgroundColor(backgroundColor)
+                                .setStatusBarColor(backgroundColor)
+                                .setNavigationBarColor(backgroundColor)
+                                .build(),
+                        )
+                    }
+                }
+
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background,
