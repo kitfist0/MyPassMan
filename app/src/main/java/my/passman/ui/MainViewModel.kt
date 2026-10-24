@@ -1,6 +1,5 @@
 package my.passman.ui
 
-import android.os.SystemClock
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -15,8 +14,9 @@ import my.passman.sync.google.GoogleSyncManager
 import my.passman.sync.yandex.YandexSyncManager
 import my.passman.ui.screens.pin.PinMode
 import javax.inject.Inject
-import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TimeMark
+import kotlin.time.TimeSource
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
@@ -25,13 +25,14 @@ class MainViewModel @Inject constructor(
     private val yandexSyncManager: YandexSyncManager,
     private val syncScheduler: SyncScheduler,
     private val eventBus: AppEventBus,
+    private val timeSource: TimeSource,
 ) : ViewModel() {
     private val _currentScreen = MutableStateFlow<Screen>(Screen.List)
     val currentScreen = _currentScreen.asStateFlow()
 
     private var isAuthorized = false
     private var isPinEnabled = false
-    private var backgroundedAt: Long? = null
+    private var backgroundedAt: TimeMark? = null
 
     /** Shown over [currentScreen] while the vault is locked, so the screen underneath keeps its state. */
     private val _lockScreen = MutableStateFlow<Screen.Pin?>(null)
@@ -99,15 +100,13 @@ class MainViewModel @Inject constructor(
     }
 
     fun onAppBackgrounded() {
-        backgroundedAt = SystemClock.elapsedRealtime()
+        backgroundedAt = timeSource.markNow()
     }
 
     fun onAppForegrounded() {
-        val since = backgroundedAt ?: return
+        val mark = backgroundedAt ?: return
         backgroundedAt = null
-        // elapsedRealtime is monotonic, so changing the wall clock cannot skip the lock.
-        val timeInBackground = (SystemClock.elapsedRealtime() - since).milliseconds
-        if (isPinEnabled && isAuthorized && timeInBackground >= AUTO_LOCK_TIMEOUT) {
+        if (isPinEnabled && isAuthorized && mark.elapsedNow() >= AUTO_LOCK_TIMEOUT) {
             isAuthorized = false
             _lockScreen.value = Screen.Pin(PinMode.UNLOCK)
         }
