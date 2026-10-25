@@ -36,7 +36,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import my.passman.R
 import my.passman.data.Record
+import my.passman.data.Tag
+import my.passman.data.TagColor
 import my.passman.ui.components.HintBanner
+import my.passman.ui.theme.scheme
 import my.passman.util.ClipboardUtils
 
 @OptIn(ExperimentalSharedTransitionApi::class)
@@ -235,7 +238,7 @@ fun RecordListScreen(
                     items(state.records, key = { it.record.id }) { item ->
                         RecordCard(
                             record = item.record,
-                            tagName = item.tag?.name,
+                            tag = item.tag,
                             sharedTransitionScope = sharedTransitionScope,
                             animatedVisibilityScope = animatedVisibilityScope,
                             onClick = { onEditRecord(item.record.id) },
@@ -313,7 +316,7 @@ fun RecordListScreen(
 @Composable
 fun RecordCard(
     record: Record,
-    tagName: String?,
+    tag: Tag?,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
     onClick: () -> Unit,
@@ -403,16 +406,24 @@ fun RecordCard(
                 }
             }
 
-            if (tagName != null) {
+            if (tag != null) {
+                val tagColors = tag.color.scheme()
                 SuggestionChip(
                     onClick = onClick,
                     label = {
                         Text(
-                            text = tagName,
+                            text = tag.name,
                             style = MaterialTheme.typography.labelSmall,
                         )
                     },
                     modifier = Modifier.align(Alignment.TopEnd),
+                    colors =
+                        SuggestionChipDefaults.suggestionChipColors(
+                            containerColor = tagColors.container,
+                            labelColor = tagColors.content,
+                        ),
+                    // A colored fill is its own outline; only the uncolored chip keeps the border.
+                    border = if (tag.color == TagColor.DEFAULT) SuggestionChipDefaults.suggestionChipBorder(true) else null,
                 )
             }
         }
