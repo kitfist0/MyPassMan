@@ -5,7 +5,6 @@ import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.*
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
@@ -15,7 +14,6 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -28,7 +26,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
@@ -44,7 +41,7 @@ import my.passman.data.Record
 import my.passman.data.Tag
 import my.passman.data.TagColor
 import my.passman.ui.components.HintBanner
-import my.passman.ui.theme.accent
+import my.passman.ui.components.TagColorDot
 import my.passman.ui.theme.scheme
 import my.passman.util.ClipboardUtils
 
@@ -339,14 +336,7 @@ private fun TagFilterChip(
                     modifier = Modifier.size(FilterChipDefaults.IconSize),
                 )
             } else {
-                Box(
-                    modifier =
-                        Modifier
-                            .size(10.dp)
-                            .clip(CircleShape)
-                            .background(tag.color.accent)
-                            .border(1.dp, if (tag.color == TagColor.DEFAULT) outline else tag.color.accent, CircleShape),
-                )
+                TagColorDot(color = tag.color)
             }
         },
         colors =
