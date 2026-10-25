@@ -5,6 +5,7 @@ import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.*
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
@@ -14,9 +15,11 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Inbox
 import androidx.compose.material.icons.filled.Search
@@ -25,8 +28,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
@@ -39,6 +44,7 @@ import my.passman.data.Record
 import my.passman.data.Tag
 import my.passman.data.TagColor
 import my.passman.ui.components.HintBanner
+import my.passman.ui.theme.accent
 import my.passman.ui.theme.scheme
 import my.passman.util.ClipboardUtils
 
@@ -126,10 +132,10 @@ fun RecordListScreen(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
                                 items(state.availableTags, key = { it.id }) { tag ->
-                                    FilterChip(
+                                    TagFilterChip(
+                                        tag = tag,
                                         selected = state.selectedTagId == tag.id,
                                         onClick = { viewModel.onTagClick(tag.id) },
-                                        label = { Text(tag.name) },
                                     )
                                 }
                             }
@@ -310,6 +316,54 @@ fun RecordListScreen(
             }
         }
     }
+}
+
+/** Unselected: a dot in the tag's accent. Selected: filled with the tag's color and checked. */
+@Composable
+private fun TagFilterChip(
+    tag: Tag,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    val tagColors = tag.color.scheme()
+    val outline = MaterialTheme.colorScheme.outline
+    FilterChip(
+        selected = selected,
+        onClick = onClick,
+        label = { Text(tag.name) },
+        leadingIcon = {
+            if (selected) {
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = null,
+                    modifier = Modifier.size(FilterChipDefaults.IconSize),
+                )
+            } else {
+                Box(
+                    modifier =
+                        Modifier
+                            .size(10.dp)
+                            .clip(CircleShape)
+                            .background(tag.color.accent)
+                            .border(1.dp, if (tag.color == TagColor.DEFAULT) outline else tag.color.accent, CircleShape),
+                )
+            }
+        },
+        colors =
+            FilterChipDefaults.filterChipColors(
+                selectedContainerColor = tagColors.container,
+                selectedLabelColor = tagColors.content,
+                selectedLeadingIconColor = tagColors.content,
+            ),
+        border =
+            FilterChipDefaults.filterChipBorder(
+                enabled = true,
+                selected = selected,
+                // The uncolored tag has a transparent fill, so it keeps an outline when selected.
+                selectedBorderColor = if (tag.color == TagColor.DEFAULT) outline else Color.Transparent,
+                selectedBorderWidth = 1.dp,
+            ),
+    )
 }
 
 @OptIn(ExperimentalSharedTransitionApi::class, ExperimentalFoundationApi::class)

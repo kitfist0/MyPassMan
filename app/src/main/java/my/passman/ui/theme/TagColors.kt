@@ -58,3 +58,22 @@ fun TagColor.scheme(): TagColorScheme {
     val isDark = colorScheme.background.luminance() < 0.5f
     return (if (isDark) DarkTagColors else LightTagColors).getValue(this)
 }
+
+// Saturated mid tones for small marks such as color dots, which stay visible on both light and
+// dark surfaces where the pale light-theme fills would disappear.
+private val TagAccents =
+    mapOf(
+        TagColor.RED to Color(0xFFE5534B),
+        TagColor.ORANGE to Color(0xFFF08A3C),
+        TagColor.YELLOW to Color(0xFFD4A900),
+        TagColor.GREEN to Color(0xFF4CAF50),
+        TagColor.TEAL to Color(0xFF26B5A3),
+        TagColor.BLUE to Color(0xFF4C8DF6),
+        TagColor.PURPLE to Color(0xFF9B72F2),
+        TagColor.PINK to Color(0xFFE26BA3),
+        TagColor.GRAY to Color(0xFF8A93A3),
+    )
+
+/** Accent of this tag color for small marks; transparent for [TagColor.DEFAULT], drawn outlined. */
+val TagColor.accent: Color
+    get() = TagAccents[this] ?: Color.Transparent
