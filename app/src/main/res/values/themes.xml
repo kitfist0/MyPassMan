@@ -1,4 +1,8 @@
 <resources>
 
-    <style name="Theme.MyPassMan" parent="Theme.MaterialComponents.DayNight" />
+    <style name="Theme.MyPassMan" parent="Theme.MaterialComponents.DayNight">
+        <!-- Matches the Compose background, so cold start and the recents placeholder use the brand colour. -->
+        <item name="android:colorBackground">@color/window_background</item>
+        <item name="android:windowBackground">@color/window_background</item>
+    </style>
 </resources>
