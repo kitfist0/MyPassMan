@@ -25,6 +25,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import my.passman.R
+import my.passman.ui.components.TagColorDot
 import my.passman.util.ClipboardUtils
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -319,6 +320,7 @@ fun EditRecordScreen(
                         onValueChange = {},
                         readOnly = true,
                         label = { Text(stringResource(R.string.label_tag)) },
+                        leadingIcon = selectedTag?.let { tag -> { TagColorDot(color = tag.color, size = TAG_DOT_SIZE) } },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                         colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
                         modifier =
@@ -333,6 +335,8 @@ fun EditRecordScreen(
                     ) {
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.no_tag)) },
+                            // Keeps "No Tag" aligned with the tag names next to their dots.
+                            leadingIcon = { Spacer(modifier = Modifier.size(TAG_DOT_SIZE)) },
                             onClick = {
                                 viewModel.onTagChange(null)
                                 expanded = false
@@ -341,6 +345,7 @@ fun EditRecordScreen(
                         state.allTags.forEach { tag ->
                             DropdownMenuItem(
                                 text = { Text(tag.name) },
+                                leadingIcon = { TagColorDot(color = tag.color, size = TAG_DOT_SIZE) },
                                 onClick = {
                                     viewModel.onTagChange(tag.id)
                                     expanded = false
@@ -386,3 +391,5 @@ fun EditRecordScreen(
         }
     }
 }
+
+private val TAG_DOT_SIZE = 12.dp
