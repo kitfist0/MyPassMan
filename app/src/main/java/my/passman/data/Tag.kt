@@ -14,6 +14,8 @@ data class Tag(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val name: String,
+    // A default keeps backups made before tags had colors readable.
+    val color: TagColor = TagColor.DEFAULT,
 ) {
     companion object {
         const val MAX_NAME_LENGTH = 25
