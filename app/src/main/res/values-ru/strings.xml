@@ -69,6 +69,17 @@
     <string name="add_tag_title">Новый тег</string>
     <string name="edit_tag_title">Редактирование тега</string>
     <string name="label_tag_name">Название тега</string>
+    <string name="label_tag_color">Цвет</string>
+    <string name="tag_color_default">По умолчанию</string>
+    <string name="tag_color_red">Красный</string>
+    <string name="tag_color_orange">Оранжевый</string>
+    <string name="tag_color_yellow">Жёлтый</string>
+    <string name="tag_color_green">Зелёный</string>
+    <string name="tag_color_teal">Бирюзовый</string>
+    <string name="tag_color_blue">Синий</string>
+    <string name="tag_color_purple">Фиолетовый</string>
+    <string name="tag_color_pink">Розовый</string>
+    <string name="tag_color_gray">Серый</string>
     <string name="add">Добавить</string>
     <string name="add_tag_description">Добавить тег</string>
     <string name="tag_name_error">Тег должен содержать от 1 до %1$d символов: буквы, цифры, точки или дефисы (без пробелов).</string>

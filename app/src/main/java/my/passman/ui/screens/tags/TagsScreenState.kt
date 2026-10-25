@@ -1,6 +1,7 @@
 package my.passman.ui.screens.tags
 
 import my.passman.data.Tag
+import my.passman.data.TagColor
 
 data class TagsScreenState(
     val tags: List<Tag> = emptyList(),
@@ -10,6 +11,7 @@ data class TagsScreenState(
 data class TagsDialogState(
     val activeDialog: TagsDialog? = null,
     val tagName: String = "",
+    val tagColor: TagColor = TagColor.DEFAULT,
 )
 
 sealed interface TagsDialog {

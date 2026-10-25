@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import my.passman.data.Tag
+import my.passman.data.TagColor
 import my.passman.data.TagDao
 import javax.inject.Inject
 
@@ -41,12 +42,16 @@ class TagsViewModel @Inject constructor(
         }
     }
 
+    fun onTagColorChange(color: TagColor) {
+        _dialogState.update { it.copy(tagColor = color) }
+    }
+
     fun showAddDialog() {
-        _dialogState.update { it.copy(activeDialog = TagsDialog.Add, tagName = "") }
+        _dialogState.update { it.copy(activeDialog = TagsDialog.Add, tagName = "", tagColor = TagColor.DEFAULT) }
     }
 
     fun dismissDialog() {
-        _dialogState.update { it.copy(activeDialog = null, tagName = "") }
+        _dialogState.update { it.copy(activeDialog = null, tagName = "", tagColor = TagColor.DEFAULT) }
     }
 
     fun showDeleteConfirmation(tag: Tag) {
@@ -54,14 +59,14 @@ class TagsViewModel @Inject constructor(
     }
 
     fun showEditDialog(tag: Tag) {
-        _dialogState.update { it.copy(activeDialog = TagsDialog.Edit(tag), tagName = tag.name) }
+        _dialogState.update { it.copy(activeDialog = TagsDialog.Edit(tag), tagName = tag.name, tagColor = tag.color) }
     }
 
     fun onAddDialogConfirmButtonClick() {
-        val name = _dialogState.value.tagName
-        if (name.isBlank()) return
+        val state = _dialogState.value
+        if (state.tagName.isBlank()) return
         viewModelScope.launch {
-            tagDao.upsertTag(Tag(name = name.trim()))
+            tagDao.upsertTag(Tag(name = state.tagName.trim(), color = state.tagColor))
         }
     }
 
@@ -71,9 +76,9 @@ class TagsViewModel @Inject constructor(
         if (activeDialog is TagsDialog.Edit) {
             val tag = activeDialog.tag
             val newName = state.tagName
-            if (newName.isBlank() || newName == tag.name) return
+            if (newName.isBlank() || (newName == tag.name && state.tagColor == tag.color)) return
             viewModelScope.launch {
-                tagDao.upsertTag(tag.copy(name = newName.trim()))
+                tagDao.upsertTag(tag.copy(name = newName.trim(), color = state.tagColor))
             }
         }
     }
