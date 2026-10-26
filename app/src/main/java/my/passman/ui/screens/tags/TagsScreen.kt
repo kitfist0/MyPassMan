@@ -1,5 +1,6 @@
 package my.passman.ui.screens.tags
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -37,6 +38,10 @@ fun TagsScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val dialogState = state.dialog
+
+    BackHandler {
+        onBack()
+    }
 
     when (val dialog = dialogState.activeDialog) {
         TagsDialog.Add -> {
