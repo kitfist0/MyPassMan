@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Inbox
 import androidx.compose.material.icons.filled.Search
@@ -27,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
@@ -36,7 +38,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import my.passman.R
 import my.passman.data.Record
+import my.passman.data.Tag
+import my.passman.data.TagColor
 import my.passman.ui.components.HintBanner
+import my.passman.ui.components.TagColorDot
+import my.passman.ui.theme.scheme
 import my.passman.util.ClipboardUtils
 
 @OptIn(ExperimentalSharedTransitionApi::class)
@@ -123,10 +129,10 @@ fun RecordListScreen(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
                                 items(state.availableTags, key = { it.id }) { tag ->
-                                    FilterChip(
+                                    TagFilterChip(
+                                        tag = tag,
                                         selected = state.selectedTagId == tag.id,
                                         onClick = { viewModel.onTagClick(tag.id) },
-                                        label = { Text(tag.name) },
                                     )
                                 }
                             }
@@ -235,7 +241,7 @@ fun RecordListScreen(
                     items(state.records, key = { it.record.id }) { item ->
                         RecordCard(
                             record = item.record,
-                            tagName = item.tag?.name,
+                            tag = item.tag,
                             sharedTransitionScope = sharedTransitionScope,
                             animatedVisibilityScope = animatedVisibilityScope,
                             onClick = { onEditRecord(item.record.id) },
@@ -309,11 +315,52 @@ fun RecordListScreen(
     }
 }
 
+/** Unselected: a dot in the tag's accent. Selected: filled with the tag's color and checked. */
+@Composable
+private fun TagFilterChip(
+    tag: Tag,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    val tagColors = tag.color.scheme()
+    val outline = MaterialTheme.colorScheme.outline
+    FilterChip(
+        selected = selected,
+        onClick = onClick,
+        label = { Text(tag.name) },
+        leadingIcon = {
+            if (selected) {
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = null,
+                    modifier = Modifier.size(FilterChipDefaults.IconSize),
+                )
+            } else {
+                TagColorDot(color = tag.color)
+            }
+        },
+        colors =
+            FilterChipDefaults.filterChipColors(
+                selectedContainerColor = tagColors.container,
+                selectedLabelColor = tagColors.content,
+                selectedLeadingIconColor = tagColors.content,
+            ),
+        border =
+            FilterChipDefaults.filterChipBorder(
+                enabled = true,
+                selected = selected,
+                // The uncolored tag has a transparent fill, so it keeps an outline when selected.
+                selectedBorderColor = if (tag.color == TagColor.DEFAULT) outline else Color.Transparent,
+                selectedBorderWidth = 1.dp,
+            ),
+    )
+}
+
 @OptIn(ExperimentalSharedTransitionApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun RecordCard(
     record: Record,
-    tagName: String?,
+    tag: Tag?,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
     onClick: () -> Unit,
@@ -403,16 +450,24 @@ fun RecordCard(
                 }
             }
 
-            if (tagName != null) {
+            if (tag != null) {
+                val tagColors = tag.color.scheme()
                 SuggestionChip(
                     onClick = onClick,
                     label = {
                         Text(
-                            text = tagName,
+                            text = tag.name,
                             style = MaterialTheme.typography.labelSmall,
                         )
                     },
                     modifier = Modifier.align(Alignment.TopEnd),
+                    colors =
+                        SuggestionChipDefaults.suggestionChipColors(
+                            containerColor = tagColors.container,
+                            labelColor = tagColors.content,
+                        ),
+                    // A colored fill is its own outline; only the uncolored chip keeps the border.
+                    border = if (tag.color == TagColor.DEFAULT) SuggestionChipDefaults.suggestionChipBorder(true) else null,
                 )
             }
         }
