@@ -3,7 +3,6 @@ package my.passman.util
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import my.passman.data.Record
 import my.passman.data.RecordDao
@@ -37,18 +36,11 @@ class BackupManager(
     suspend fun decryptPayload(
         encryptedData: ByteArray,
         password: CharArray,
-    ): BackupPayload {
-        val json =
-            withContext(Dispatchers.Default) {
-                CryptoUtils.decrypt(encryptedData, password).toString(Charsets.UTF_8)
-            }
-        return try {
+    ): BackupPayload =
+        withContext(Dispatchers.Default) {
+            val json = CryptoUtils.decrypt(encryptedData, password).toString(Charsets.UTF_8)
             Json.decodeFromString(BackupPayload.serializer(), json)
-        } catch (_: SerializationException) {
-            // Backups created before tags were included in the export are a bare JSON array of records.
-            BackupPayload(records = Json.decodeFromString(json), tags = emptyList())
         }
-    }
 
     suspend fun exportDatabase(
         outputStream: OutputStream,
