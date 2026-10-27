@@ -45,7 +45,7 @@ With sync turned on:
 - The app uploads a single backup file to **your own** cloud storage account. It cannot see your
   other files.
 - **Before upload**, the backup is encrypted on your device with AES-256-GCM. The key is derived
-  from your sync passphrase. The cloud provider and the developer cannot read the contents.
+  from your sync passphrase with Argon2id. The cloud provider and the developer cannot read the contents.
 - To decide which copy is newer, the app also stores a modification timestamp with the file.
 - Sync runs in the background, about every 15 minutes, while it is enabled.
 
@@ -61,7 +61,7 @@ settings.
 ## 4. Manual backup export and import
 
 You can export your vault to a `.pman` file and import it again. The file is encrypted with
-AES-256-GCM using a password you choose. It is saved only where you pick through the Android
+AES-256-GCM, with the key derived from a password you choose using Argon2id. It is saved only where you pick through the Android
 system file picker. The app does not send it anywhere.
 
 ## 5. Android system backup

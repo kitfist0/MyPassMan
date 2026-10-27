@@ -25,7 +25,7 @@
 
 * **Backup & Export**:
     * Export and import encrypted local backup files (`.pman`).
-    * Strong encryption using **AES-256-GCM** with PBKDF2 key derivation (10,000 iterations).
+    * Strong encryption using **AES-256-GCM** with **Argon2id** key derivation (64 MiB, 3 passes).
 
 * **Cloud Sync**:
     * Cloud integration with **Google Drive** and **Yandex Disk**.
@@ -48,7 +48,7 @@
 | **Architecture**         | MVVM + Unidirectional Data Flow (StateFlow, SharedFlow)      |
 | **Dependency Injection** | Dagger Hilt                                                  |
 | **Database & Storage**   | Room ORM, DataStore Preferences                              |
-| **Security**             | BiometricPrompt, Android KeyStore, AES-256-GCM, PBKDF2       |
+| **Security**             | BiometricPrompt, Android KeyStore, AES-256-GCM, Argon2id     |
 | **Networking & Cloud**   | Retrofit 2, OkHttp 4, Google Drive API, Yandex Disk REST API |
 | **Background Work**      | WorkManager (Hilt integrated)                                |
 | **Build & Linting**      | Gradle (Kotlin DSL), KSP, Ktlint                             |
@@ -81,7 +81,7 @@ my.passman/
 
 1. **Data Privacy**: All vault credentials are stored locally in the application's encrypted
    database.
-2. **Encrypted Backups**: Backup files are encrypted using AES-256-GCM and salted PBKDF2 key
+2. **Encrypted Backups**: Backup files are encrypted using AES-256-GCM and salted Argon2id key
    derivation from a user master password.
 3. **Biometrics**: Cryptographic keys for biometric unlock are safely held inside hardware-backed
    Android KeyStore.
