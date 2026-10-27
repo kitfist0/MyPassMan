@@ -1,7 +1,6 @@
 package my.passman.data
 
-import org.bouncycastle.crypto.generators.Argon2BytesGenerator
-import org.bouncycastle.crypto.params.Argon2Parameters
+import my.passman.util.Argon2id
 import org.bouncycastle.util.encoders.Base64
 import java.security.MessageDigest
 import java.security.SecureRandom
@@ -29,7 +28,7 @@ object PinHasher {
     fun hash(pin: String): String {
         val salt = ByteArray(SALT_LENGTH_BYTE).also { secureRandom.nextBytes(it) }
         val hash = argon2(pin, salt, MEMORY_KIB, ITERATIONS, PARALLELISM, HASH_LENGTH_BYTE)
-        return "\$$ALGORITHM\$v=${Argon2Parameters.ARGON2_VERSION_13}" +
+        return "\$$ALGORITHM\$v=${Argon2id.VERSION}" +
             "\$m=$MEMORY_KIB,t=$ITERATIONS,p=$PARALLELISM" +
             "\$${Base64.toBase64String(salt)}\$${Base64.toBase64String(hash)}"
     }
@@ -76,19 +75,7 @@ object PinHasher {
         iterations: Int,
         parallelism: Int,
         length: Int,
-    ): ByteArray {
-        val parameters =
-            Argon2Parameters
-                .Builder(Argon2Parameters.ARGON2_id)
-                .withVersion(Argon2Parameters.ARGON2_VERSION_13)
-                .withSalt(salt)
-                .withMemoryAsKB(memoryKib)
-                .withIterations(iterations)
-                .withParallelism(parallelism)
-                .build()
-        val generator = Argon2BytesGenerator().apply { init(parameters) }
-        return ByteArray(length).also { generator.generateBytes(pin.toCharArray(), it) }
-    }
+    ): ByteArray = Argon2id.derive(pin.toCharArray(), salt, memoryKib, iterations, parallelism, length)
 
     private fun legacySha256(pin: String): String =
         MessageDigest
