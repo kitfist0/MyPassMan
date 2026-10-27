@@ -1,5 +1,7 @@
 package my.passman.util
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
@@ -22,19 +24,24 @@ class BackupManager(
 
     suspend fun exportPayload(): BackupPayload = BackupPayload(records = recordDao.getRecordsList(), tags = tagDao.getTagsList())
 
-    fun encryptPayload(
+    // Key derivation (Argon2id) is deliberately slow, so keep it off the caller's thread.
+    suspend fun encryptPayload(
         payload: BackupPayload,
         password: CharArray,
-    ): ByteArray {
-        val json = Json.encodeToString(BackupPayload.serializer(), payload)
-        return CryptoUtils.encrypt(json.toByteArray(Charsets.UTF_8), password)
-    }
+    ): ByteArray =
+        withContext(Dispatchers.Default) {
+            val json = Json.encodeToString(BackupPayload.serializer(), payload)
+            CryptoUtils.encrypt(json.toByteArray(Charsets.UTF_8), password)
+        }
 
-    fun decryptPayload(
+    suspend fun decryptPayload(
         encryptedData: ByteArray,
         password: CharArray,
     ): BackupPayload {
-        val json = CryptoUtils.decrypt(encryptedData, password).toString(Charsets.UTF_8)
+        val json =
+            withContext(Dispatchers.Default) {
+                CryptoUtils.decrypt(encryptedData, password).toString(Charsets.UTF_8)
+            }
         return try {
             Json.decodeFromString(BackupPayload.serializer(), json)
         } catch (_: SerializationException) {
