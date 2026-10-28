@@ -10,3 +10,4 @@
 local.properties
 /cert
 /app/google-services.json
+/app/release
