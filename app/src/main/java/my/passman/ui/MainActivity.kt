@@ -9,6 +9,7 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
@@ -28,6 +29,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -55,8 +57,22 @@ class MainActivity : FragmentActivity() {
     @Inject
     lateinit var eventBus: AppEventBus
 
+    private val viewModel: MainViewModel by viewModels()
+
     @OptIn(ExperimentalSharedTransitionApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen().apply {
+            // Hold the splash until settings are loaded, instead of flashing an empty screen.
+            setKeepOnScreenCondition { viewModel.isLoading.value }
+            setOnExitAnimationListener { splashScreenView ->
+                splashScreenView.view
+                    .animate()
+                    .alpha(0f)
+                    .setDuration(SPLASH_EXIT_DURATION_MS)
+                    .withEndAction { splashScreenView.remove() }
+                    .start()
+            }
+        }
         super.onCreate(savedInstanceState)
         // Keep the vault out of screenshots, screen recordings and the recents preview.
         // Compose dialogs and popups inherit the flag from this window by default.
@@ -65,7 +81,6 @@ class MainActivity : FragmentActivity() {
         setContent {
             val context = LocalContext.current
 
-            val viewModel: MainViewModel = hiltViewModel()
             val appTheme by viewModel.appTheme.collectAsStateWithLifecycle()
             val currentScreen by viewModel.currentScreen.collectAsStateWithLifecycle()
             val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
@@ -244,5 +259,9 @@ class MainActivity : FragmentActivity() {
                 }
             }
         }
+    }
+
+    private companion object {
+        const val SPLASH_EXIT_DURATION_MS = 200L
     }
 }
