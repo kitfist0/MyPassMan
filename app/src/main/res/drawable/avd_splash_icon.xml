@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Splash screen icon: the launcher foreground with the password "typed in".
+    The field grows in, then each masked character pops in one after another.
+    Paths and colors are copied from ic_launcher_foreground.xml; keep them in sync.
+    Played by the system on API 31+ (see values-v31/themes.xml), so keep it under 1000ms.
+-->
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt">
+    <aapt:attr name="android:drawable">
+        <vector
+            android:width="108dp"
+            android:height="108dp"
+            android:viewportWidth="108"
+            android:viewportHeight="108">
+            <group
+                android:name="field"
+                android:pivotX="54"
+                android:pivotY="54"
+                android:scaleX="0.6"
+                android:scaleY="0.6">
+                <path
+                    android:name="field_body"
+                    android:fillAlpha="0"
+                    android:fillColor="#1E3150"
+                    android:pathData="M28.90,42.50L79.10,42.50A5.10,5.10 0 0 1 84.20,47.60L84.20,60.40A5.10,5.10 0 0 1 79.10,65.50L28.90,65.50A5.10,5.10 0 0 1 23.80,60.40L23.80,47.60A5.10,5.10 0 0 1 28.90,42.50Z" />
+                <path
+                    android:name="cursor"
+                    android:fillAlpha="0"
+                    android:fillColor="#2DD4BF"
+                    android:pathData="M78.43,46.00L80.19,46.00L80.19,62.01L78.43,62.01Z" />
+            </group>
+            <group
+                android:name="char1"
+                android:pivotX="36.02"
+                android:pivotY="54"
+                android:scaleX="0"
+                android:scaleY="0">
+                <path
+                    android:fillColor="#2DD4BF"
+                    android:pathData="M32.64,60.80L30.83,59.50L34.20,54.93L28.74,53.18L29.43,51.08L34.89,52.82L34.89,47.17L37.14,47.17L37.14,52.82L42.60,51.08L43.30,53.18L37.83,54.93L41.21,59.50L39.39,60.80L36.02,56.23L32.64,60.80Z" />
+            </group>
+            <group
+                android:name="char2"
+                android:pivotX="52.64"
+                android:pivotY="54"
+                android:scaleX="0"
+                android:scaleY="0">
+                <path
+                    android:fillColor="#E6EDF5"
+                    android:pathData="M50.65,60.83L48.62,59.85L50.62,55.71L46.14,56.73L45.64,54.54L50.12,53.52L46.53,50.65L47.93,48.90L51.52,51.76L51.52,47.17L53.77,47.17L53.77,51.76L57.36,48.90L58.76,50.65L55.17,53.52L59.65,54.54L59.15,56.73L54.67,55.71L56.66,59.85L54.64,60.83L52.64,56.69L50.65,60.83Z" />
+            </group>
+            <group
+                android:name="char3"
+                android:pivotX="68.94"
+                android:pivotY="54"
+                android:scaleX="0"
+                android:scaleY="0">
+                <path
+                    android:fillColor="#E6EDF5"
+                    android:pathData="M67.65,60.84L65.53,60.07L66.82,56.54L63.56,58.42L62.44,56.47L65.69,54.59L61.99,53.94L62.38,51.72L66.08,52.37L63.67,49.49L65.39,48.05L67.81,50.92L67.81,47.17L70.06,47.17L70.06,50.92L72.48,48.05L74.20,49.49L71.79,52.37L75.49,51.72L75.88,53.94L72.18,54.59L75.43,56.47L74.31,58.42L71.05,56.54L72.34,60.07L70.22,60.84L68.94,57.31L67.65,60.84Z" />
+            </group>
+        </vector>
+    </aapt:attr>
+
+    <target android:name="field">
+        <aapt:attr name="android:animation">
+            <set>
+                <objectAnimator
+                    android:duration="250"
+                    android:interpolator="@android:interpolator/fast_out_slow_in"
+                    android:propertyName="scaleX"
+                    android:valueFrom="0.6"
+                    android:valueTo="1" />
+                <objectAnimator
+                    android:duration="250"
+                    android:interpolator="@android:interpolator/fast_out_slow_in"
+                    android:propertyName="scaleY"
+                    android:valueFrom="0.6"
+                    android:valueTo="1" />
+            </set>
+        </aapt:attr>
+    </target>
+
+    <target android:name="field_body">
+        <aapt:attr name="android:animation">
+            <objectAnimator
+                android:duration="200"
+                android:propertyName="fillAlpha"
+                android:valueFrom="0"
+                android:valueTo="1" />
+        </aapt:attr>
+    </target>
+
+    <!-- The cursor appears with the field, then blinks once after the last character. -->
+    <target android:name="cursor">
+        <aapt:attr name="android:animation">
+            <set android:ordering="sequentially">
+                <objectAnimator
+                    android:duration="200"
+                    android:propertyName="fillAlpha"
+                    android:valueFrom="0"
+                    android:valueTo="1" />
+                <objectAnimator
+                    android:duration="120"
+                    android:propertyName="fillAlpha"
+                    android:startOffset="520"
+                    android:valueFrom="1"
+                    android:valueTo="0" />
+                <objectAnimator
+                    android:duration="120"
+                    android:propertyName="fillAlpha"
+                    android:valueFrom="0"
+                    android:valueTo="1" />
+            </set>
+        </aapt:attr>
+    </target>
+
+    <target android:name="char1">
+        <aapt:attr name="android:animation">
+            <set>
+                <objectAnimator
+                    android:duration="200"
+                    android:interpolator="@android:interpolator/overshoot"
+                    android:propertyName="scaleX"
+                    android:startOffset="250"
+                    android:valueFrom="0"
+                    android:valueTo="1" />
+                <objectAnimator
+                    android:duration="200"
+                    android:interpolator="@android:interpolator/overshoot"
+                    android:propertyName="scaleY"
+                    android:startOffset="250"
+                    android:valueFrom="0"
+                    android:valueTo="1" />
+            </set>
+        </aapt:attr>
+    </target>
+
+    <target android:name="char2">
+        <aapt:attr name="android:animation">
+            <set>
+                <objectAnimator
+                    android:duration="200"
+                    android:interpolator="@android:interpolator/overshoot"
+                    android:propertyName="scaleX"
+                    android:startOffset="400"
+                    android:valueFrom="0"
+                    android:valueTo="1" />
+                <objectAnimator
+                    android:duration="200"
+                    android:interpolator="@android:interpolator/overshoot"
+                    android:propertyName="scaleY"
+                    android:startOffset="400"
+                    android:valueFrom="0"
+                    android:valueTo="1" />
+            </set>
+        </aapt:attr>
+    </target>
+
+    <target android:name="char3">
+        <aapt:attr name="android:animation">
+            <set>
+                <objectAnimator
+                    android:duration="200"
+                    android:interpolator="@android:interpolator/overshoot"
+                    android:propertyName="scaleX"
+                    android:startOffset="550"
+                    android:valueFrom="0"
+                    android:valueTo="1" />
+                <objectAnimator
+                    android:duration="200"
+                    android:interpolator="@android:interpolator/overshoot"
+                    android:propertyName="scaleY"
+                    android:startOffset="550"
+                    android:valueFrom="0"
+                    android:valueTo="1" />
+            </set>
+        </aapt:attr>
+    </target>
+</animated-vector>
