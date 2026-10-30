@@ -5,4 +5,15 @@
         <item name="android:colorBackground">@color/window_background</item>
         <item name="android:windowBackground">@color/window_background</item>
     </style>
+
+    <!--
+        Launch theme for MainActivity, swapped for Theme.MyPassMan by installSplashScreen().
+        Below API 31 the compat splash cannot animate, so it shows the static launcher icon.
+    -->
+    <style name="Theme.MyPassMan.Starting" parent="Theme.SplashScreen.IconBackground">
+        <item name="windowSplashScreenBackground">@color/window_background</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/splash_icon_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/Theme.MyPassMan</item>
+    </style>
 </resources>
