@@ -34,8 +34,8 @@ val DarkSurfaceContainerHigh = NavyField
 val DarkSurfaceContainerHighest = Color(0xFF283B5C)
 val DarkSurfaceBright = Color(0xFF2B3B57)
 
-// Light scheme: a darker teal keeps the accent readable on light surfaces, navy is the text colour.
-val LightPrimary = Color(0xFF006B5F)
+// Light scheme: a darker teal keeps the accent readable on light surfaces, a dark gray is the text colour.
+val LightPrimary = Color(0xFF00897B)
 val LightOnPrimary = Color(0xFFFFFFFF)
 val LightPrimaryContainer = Color(0xFF9CF2E2)
 val LightOnPrimaryContainer = Color(0xFF00201B)
@@ -48,9 +48,9 @@ val LightOnTertiary = Color(0xFFFFFFFF)
 val LightTertiaryContainer = Color(0xFFD6E3FF)
 val LightOnTertiaryContainer = Color(0xFF001B3E)
 val LightBackground = Color(0xFFF6F8FC)
-val LightOnBackground = Navy
+val LightOnBackground = Color(0xFF454E5C)
 val LightSurfaceVariant = Color(0xFFDCE3EE)
-val LightOnSurfaceVariant = Color(0xFF414A59)
+val LightOnSurfaceVariant = Color(0xFF5E6776)
 val LightOutline = Color(0xFF717B8A)
 val LightOutlineVariant = Color(0xFFC1C8D5)
 val LightSurfaceContainerLowest = Color(0xFFFFFFFF)
