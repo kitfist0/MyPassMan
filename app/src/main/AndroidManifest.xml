@@ -25,8 +25,10 @@
                 android:value="androidx.startup"
                 tools:node="remove" />
         </provider>
+        <!-- uiMode: Compose follows night mode changes itself, see AppNightMode. -->
         <activity
             android:name=".ui.MainActivity"
+            android:configChanges="uiMode"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.MyPassMan.Starting"

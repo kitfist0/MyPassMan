@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="window_background">#FF0F1B2D</color>
+    <!-- The launcher icon colors. -->
+    <color name="splash_field">#FF1E3150</color>
+    <color name="splash_mask">#FFE6EDF5</color>
+    <color name="splash_accent">#FF2DD4BF</color>
 </resources>

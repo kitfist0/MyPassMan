@@ -8,6 +8,12 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="window_background">#FFF6F8FC</color>
-    <!-- Same as ic_launcher_background, so the splash icon looks like the launcher icon. -->
-    <color name="splash_icon_background">#FF0F1B2D</color>
+    <!--
+        Splash icon colors. They follow the theme, unlike ic_launcher_foreground: the icon sits
+        right on the window background, in the text and accent colors of the Compose color scheme.
+    -->
+    <color name="splash_icon_background">@color/window_background</color>
+    <color name="splash_field">#FFDCE3EE</color>
+    <color name="splash_mask">#FF454E5C</color>
+    <color name="splash_accent">#FF00897B</color>
 </resources>

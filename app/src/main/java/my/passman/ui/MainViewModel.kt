@@ -12,6 +12,7 @@ import my.passman.sync.SyncScheduler
 import my.passman.sync.google.GoogleSyncManager
 import my.passman.sync.yandex.YandexSyncManager
 import my.passman.ui.screens.pin.PinMode
+import my.passman.util.AppNightMode
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeMark
@@ -24,6 +25,7 @@ class MainViewModel @Inject constructor(
     private val yandexSyncManager: YandexSyncManager,
     private val syncScheduler: SyncScheduler,
     private val timeSource: TimeSource,
+    private val appNightMode: AppNightMode,
 ) : ViewModel() {
     private val _currentScreen = MutableStateFlow<Screen>(Screen.List)
     val currentScreen = _currentScreen.asStateFlow()
@@ -59,6 +61,11 @@ class MainViewModel @Inject constructor(
                 }
                 _isLoading.value = false
             }
+        }
+
+        viewModelScope.launch {
+            // Keeps the splash screen of the next launch in the theme the user picked.
+            settingsRepository.appTheme.distinctUntilChanged().collect(appNightMode::set)
         }
 
         viewModelScope.launch {

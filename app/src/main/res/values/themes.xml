@@ -8,12 +8,12 @@
 
     <!--
         Launch theme for MainActivity, swapped for Theme.MyPassMan by installSplashScreen().
-        Below API 31 the compat splash cannot animate, so it shows the static launcher icon.
+        Below API 31 the compat splash cannot animate, so it shows a static copy of the icon.
     -->
     <style name="Theme.MyPassMan.Starting" parent="Theme.SplashScreen.IconBackground">
         <item name="windowSplashScreenBackground">@color/window_background</item>
         <item name="windowSplashScreenIconBackgroundColor">@color/splash_icon_background</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon</item>
         <item name="postSplashScreenTheme">@style/Theme.MyPassMan</item>
     </style>
 </resources>
