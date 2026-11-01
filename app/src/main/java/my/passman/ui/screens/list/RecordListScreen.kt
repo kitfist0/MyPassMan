@@ -371,7 +371,9 @@ fun RecordCard(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        // Closer to the background than the default surfaceContainerHighest:
+        // darker in the dark theme, lighter in the light one.
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
     ) {
         Box(
             modifier =
