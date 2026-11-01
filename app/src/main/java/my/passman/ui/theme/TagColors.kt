@@ -29,33 +29,33 @@ private val TagAccents =
         TagColor.GRAY to Color(0xFF6A7587),
     )
 
-// Material 3 style containers in the accent's hue, picked by CIELAB lightness: a pale fill (L* 88)
-// with a near-black label (L* 10) in the light theme, a deep fill (L* 30) with a pale label (L* 90)
-// in the dark one. Labels have at least 11.9:1 and 7.2:1 contrast respectively (WCAG AAA).
+// Containers in the accent's hue, picked by CIELAB lightness: a light fill (L* 80) with a near-black
+// label (L* 10) in the light theme, a medium fill (L* 42) with an almost white label (L* 95) in the
+// dark one. Labels have at least 9.5:1 and 5.3:1 contrast respectively (WCAG AA).
 private val LightTagSchemes =
     mapOf(
-        TagColor.RED to TagColorScheme(Color(0xFFFFD3CD), Color(0xFF3D0600)),
-        TagColor.ORANGE to TagColorScheme(Color(0xFFFED4BB), Color(0xFF2D1601)),
-        TagColor.YELLOW to TagColorScheme(Color(0xFFF2DAA8), Color(0xFF231B01)),
-        TagColor.GREEN to TagColorScheme(Color(0xFFBEE8BB), Color(0xFF052101)),
-        TagColor.TEAL to TagColorScheme(Color(0xFF9AECDE), Color(0xFF00201C)),
-        TagColor.BLUE to TagColorScheme(Color(0xFFD3DCFF), Color(0xFF011B3D)),
-        TagColor.PURPLE to TagColorScheme(Color(0xFFE6D6FE), Color(0xFF20143C)),
-        TagColor.PINK to TagColorScheme(Color(0xFFFFD1E2), Color(0xFF3C0221)),
-        TagColor.GRAY to TagColorScheme(Color(0xFFCED8EA), Color(0xFF171C23)),
+        TagColor.RED to TagColorScheme(Color(0xFFFFB4AA), Color(0xFF3D0600)),
+        TagColor.ORANGE to TagColorScheme(Color(0xFFFAB88E), Color(0xFF2D1601)),
+        TagColor.YELLOW to TagColorScheme(Color(0xFFDFC483), Color(0xFF231B01)),
+        TagColor.GREEN to TagColorScheme(Color(0xFF9ED49B), Color(0xFF052101)),
+        TagColor.TEAL to TagColorScheme(Color(0xFF69D9C8), Color(0xFF00201C)),
+        TagColor.BLUE to TagColorScheme(Color(0xFFB3C5FE), Color(0xFF011B3D)),
+        TagColor.PURPLE to TagColorScheme(Color(0xFFD5BBFC), Color(0xFF20143C)),
+        TagColor.PINK to TagColorScheme(Color(0xFFFFB0CF), Color(0xFF3C0221)),
+        TagColor.GRAY to TagColorScheme(Color(0xFFB7C2D3), Color(0xFF171C23)),
     )
 
 private val DarkTagSchemes =
     mapOf(
-        TagColor.RED to TagColorScheme(Color(0xFF73332E), Color(0xFFFEDAD6)),
-        TagColor.ORANGE to TagColorScheme(Color(0xFF683C1C), Color(0xFFFEDCC7)),
-        TagColor.YELLOW to TagColorScheme(Color(0xFF554512), Color(0xFFF4E0B9)),
-        TagColor.GREEN to TagColorScheme(Color(0xFF255026), Color(0xFFCBEBC8)),
-        TagColor.TEAL to TagColorScheme(Color(0xFF025048), Color(0xFFB0EFE4)),
-        TagColor.BLUE to TagColorScheme(Color(0xFF2C4677), Color(0xFFDBE2FE)),
-        TagColor.PURPLE to TagColorScheme(Color(0xFF4F3E6F), Color(0xFFEBDDFF)),
-        TagColor.PINK to TagColorScheme(Color(0xFF71314E), Color(0xFFFED9E7)),
-        TagColor.GRAY to TagColorScheme(Color(0xFF404753), Color(0xFFDBE3F1)),
+        TagColor.RED to TagColorScheme(Color(0xFF9B4B45), Color(0xFFFFEDEA)),
+        TagColor.ORANGE to TagColorScheme(Color(0xFF8E552E), Color(0xFFFFEDE4)),
+        TagColor.YELLOW to TagColorScheme(Color(0xFF766121), Color(0xFFFBF0DA)),
+        TagColor.GREEN to TagColorScheme(Color(0xFF396F3A), Color(0xFFE4F6E2)),
+        TagColor.TEAL to TagColorScheme(Color(0xFF057065), Color(0xFFD6F8F1)),
+        TagColor.BLUE to TagColorScheme(Color(0xFF4462A0), Color(0xFFEDF0FF)),
+        TagColor.PURPLE to TagColorScheme(Color(0xFF6E5895), Color(0xFFF5EEFF)),
+        TagColor.PINK to TagColorScheme(Color(0xFF99486C), Color(0xFFFFECF3)),
+        TagColor.GRAY to TagColorScheme(Color(0xFF575F6B), Color(0xFFEDF1F8)),
     )
 
 /**
