@@ -13,6 +13,8 @@ import androidx.activity.viewModels
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -24,6 +26,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -37,6 +40,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.delay
 import my.passman.ui.screens.edit.EditRecordScreen
 import my.passman.ui.screens.edit.EditRecordViewModel
 import my.passman.ui.screens.list.RecordListScreen
@@ -51,6 +55,7 @@ import my.passman.ui.screens.tags.TagsViewModel
 import my.passman.ui.theme.MyPassManTheme
 import my.passman.ui.theme.resolveDarkTheme
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.seconds
 
 @AndroidEntryPoint
 class MainActivity : FragmentActivity() {
@@ -59,8 +64,13 @@ class MainActivity : FragmentActivity() {
 
     private val viewModel: MainViewModel by viewModels()
 
+    /** Content stays invisible until the splash has faded out, so the two never show through each other. */
+    private var isSplashGone by mutableStateOf(false)
+
     @OptIn(ExperimentalSharedTransitionApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
+        // A recreated activity (e.g. after rotation) gets no splash screen.
+        isSplashGone = savedInstanceState != null
         installSplashScreen().apply {
             // Hold the splash until settings are loaded, instead of flashing an empty screen.
             setKeepOnScreenCondition { viewModel.isLoading.value }
@@ -69,8 +79,10 @@ class MainActivity : FragmentActivity() {
                     .animate()
                     .alpha(0f)
                     .setDuration(SPLASH_EXIT_DURATION_MS)
-                    .withEndAction { splashScreenView.remove() }
-                    .start()
+                    .withEndAction {
+                        splashScreenView.remove()
+                        isSplashGone = true
+                    }.start()
             }
         }
         super.onCreate(savedInstanceState)
@@ -86,6 +98,17 @@ class MainActivity : FragmentActivity() {
             val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
             val lockScreen by viewModel.lockScreen.collectAsStateWithLifecycle()
             val hasBeenUnlocked by viewModel.hasBeenUnlocked.collectAsStateWithLifecycle()
+
+            LaunchedEffect(Unit) {
+                // The system skips the splash for some launches, and then never calls the exit listener.
+                delay(SPLASH_FALLBACK_TIMEOUT)
+                isSplashGone = true
+            }
+            val contentAlpha by animateFloatAsState(
+                targetValue = if (isSplashGone) 1f else 0f,
+                animationSpec = tween(CONTENT_FADE_IN_DURATION_MS),
+                label = "ContentFadeIn",
+            )
 
             LifecycleEventEffect(Lifecycle.Event.ON_STOP) { viewModel.onAppBackgrounded() }
             LifecycleEventEffect(Lifecycle.Event.ON_START) { viewModel.onAppForegrounded() }
@@ -141,7 +164,7 @@ class MainActivity : FragmentActivity() {
                         return@Surface
                     }
 
-                    Box(modifier = Modifier.fillMaxSize()) {
+                    Box(modifier = Modifier.fillMaxSize().graphicsLayer { alpha = contentAlpha }) {
                         if (hasBeenUnlocked) {
                             SharedTransitionLayout(
                                 modifier =
@@ -263,5 +286,7 @@ class MainActivity : FragmentActivity() {
 
     private companion object {
         const val SPLASH_EXIT_DURATION_MS = 200L
+        const val CONTENT_FADE_IN_DURATION_MS = 200
+        val SPLASH_FALLBACK_TIMEOUT = 2.seconds
     }
 }
