@@ -371,9 +371,9 @@ fun RecordCard(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        // Closer to the background than the default surfaceContainerHighest:
-        // darker in the dark theme, lighter in the light one.
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+        // Close to the background, unlike the default surfaceContainerHighest, and two steps away
+        // from the surfaceContainerHigh toolbar pill so the two never blend.
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
     ) {
         Box(
             modifier =
