@@ -15,7 +15,7 @@
     <string name="sort_modified_time">По времени изменения (сначала новые)</string>
     <string name="theme_light">Светлая</string>
     <string name="theme_dark">Тёмная</string>
-    <string name="theme_system">Как в системе</string>
+    <string name="theme_system">Системная</string>
     <string name="select_theme">Выбор темы</string>
     <string name="select_sort">Выбор сортировки</string>
     <string name="cancel">Отмена</string>
