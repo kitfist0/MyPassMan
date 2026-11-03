@@ -4,7 +4,7 @@
     The field grows in, then each masked character pops in one after another.
     Paths are copied from ic_launcher_foreground.xml; keep them in sync. Colors come from the
     splash_* resources, so the icon follows the light or dark theme.
-    Played by the system on API 31+ (see values-v31/themes.xml), so keep it under 1000ms.
+    Played by the system on API 31+ (see values-v31/themes.xml), so keep it under 1000ms. Lasts 900ms.
 -->
 <animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:aapt="http://schemas.android.com/aapt">
@@ -103,13 +103,13 @@
                     android:valueFrom="0"
                     android:valueTo="1" />
                 <objectAnimator
-                    android:duration="120"
+                    android:duration="85"
                     android:propertyName="fillAlpha"
-                    android:startOffset="520"
+                    android:startOffset="530"
                     android:valueFrom="1"
                     android:valueTo="0" />
                 <objectAnimator
-                    android:duration="120"
+                    android:duration="85"
                     android:propertyName="fillAlpha"
                     android:valueFrom="0"
                     android:valueTo="1" />
@@ -145,14 +145,14 @@
                     android:duration="200"
                     android:interpolator="@android:interpolator/overshoot"
                     android:propertyName="scaleX"
-                    android:startOffset="400"
+                    android:startOffset="390"
                     android:valueFrom="0"
                     android:valueTo="1" />
                 <objectAnimator
                     android:duration="200"
                     android:interpolator="@android:interpolator/overshoot"
                     android:propertyName="scaleY"
-                    android:startOffset="400"
+                    android:startOffset="390"
                     android:valueFrom="0"
                     android:valueTo="1" />
             </set>
@@ -166,14 +166,14 @@
                     android:duration="200"
                     android:interpolator="@android:interpolator/overshoot"
                     android:propertyName="scaleX"
-                    android:startOffset="550"
+                    android:startOffset="530"
                     android:valueFrom="0"
                     android:valueTo="1" />
                 <objectAnimator
                     android:duration="200"
                     android:interpolator="@android:interpolator/overshoot"
                     android:propertyName="scaleY"
-                    android:startOffset="550"
+                    android:startOffset="530"
                     android:valueFrom="0"
                     android:valueTo="1" />
             </set>
