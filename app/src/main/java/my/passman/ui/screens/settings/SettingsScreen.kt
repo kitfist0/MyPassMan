@@ -622,7 +622,7 @@ private fun BackupSettingsCard(
                             state.lastSyncedAt?.let {
                                 stringResource(
                                     R.string.settings_drive_sync_last_synced,
-                                    SimpleDateFormat("dd.MMM.yyyy HH:mm", Locale.getDefault()).format(Date(it)),
+                                    SimpleDateFormat("d MMM yyyy, HH:mm", Locale.getDefault()).format(Date(it)),
                                 )
                             } ?: stringResource(R.string.settings_drive_sync_never)
                         } else {
