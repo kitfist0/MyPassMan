@@ -12,15 +12,25 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.Label
+import androidx.compose.material.icons.automirrored.outlined.Sort
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.outlined.Cloud
+import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.Fingerprint
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material.icons.outlined.Upload
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -439,11 +449,14 @@ fun SettingsScreen(
                     .fillMaxSize()
                     .padding(padding)
                     .verticalScroll(rememberScrollState())
-                    .padding(16.dp),
+                    // No horizontal padding: the items' own 16dp inset puts their icons under the
+                    // back arrow and their text under the title.
+                    .padding(vertical = 16.dp),
         ) {
             if (state.showPinHint) {
                 HintBanner(
                     text = stringResource(R.string.pin_hint),
+                    modifier = Modifier.padding(horizontal = 16.dp),
                     onDismiss = { viewModel.dismissPinHint() },
                     containerColor = MaterialTheme.colorScheme.errorContainer,
                     contentColor = MaterialTheme.colorScheme.onErrorContainer,
@@ -510,11 +523,13 @@ private fun GeneralSettingsCard(
         Column {
             ListItem(
                 headlineContent = { Text(stringResource(R.string.settings_sorting)) },
+                leadingContent = { SettingsIcon(Icons.AutoMirrored.Outlined.Sort) },
                 supportingContent = { Text(sortOrderLabel) },
                 modifier = Modifier.clickable { viewModel.showSortDialog() },
             )
             ListItem(
                 headlineContent = { Text(stringResource(R.string.settings_theme)) },
+                leadingContent = { SettingsIcon(Icons.Outlined.Palette) },
                 supportingContent = { Text(themeLabel) },
                 modifier = Modifier.clickable { viewModel.showThemeDialog() },
             )
@@ -527,6 +542,7 @@ private fun GeneralSettingsCard(
             }
             ListItem(
                 headlineContent = { Text(stringResource(R.string.settings_pin)) },
+                leadingContent = { SettingsIcon(Icons.Outlined.Lock) },
                 trailingContent = {
                     Switch(
                         checked = state.isPinEnabled,
@@ -556,6 +572,7 @@ private fun GeneralSettingsCard(
                 }
                 ListItem(
                     headlineContent = { Text(stringResource(R.string.settings_fingerprint)) },
+                    leadingContent = { SettingsIcon(Icons.Outlined.Fingerprint) },
                     trailingContent = {
                         Switch(
                             checked = state.isFingerprintEnabled,
@@ -567,6 +584,7 @@ private fun GeneralSettingsCard(
             }
             ListItem(
                 headlineContent = { Text(stringResource(R.string.settings_manage_tags)) },
+                leadingContent = { SettingsIcon(Icons.AutoMirrored.Outlined.Label) },
                 modifier = Modifier.clickable { onManageTags() },
             )
         }
@@ -597,6 +615,7 @@ private fun BackupSettingsCard(
                 }
             ListItem(
                 headlineContent = { Text(stringResource(R.string.settings_cloud_sync)) },
+                leadingContent = { SettingsIcon(Icons.Outlined.Cloud) },
                 supportingContent = {
                     val lastSyncedLabel =
                         if (isSyncEnabled) {
@@ -626,19 +645,28 @@ private fun BackupSettingsCard(
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
             ListItem(
                 headlineContent = { Text(stringResource(R.string.settings_export)) },
+                leadingContent = { SettingsIcon(Icons.Outlined.Upload) },
                 modifier = Modifier.clickable { viewModel.onExportClick() },
             )
             ListItem(
                 headlineContent = { Text(stringResource(R.string.settings_import)) },
+                leadingContent = { SettingsIcon(Icons.Outlined.Download) },
                 modifier = Modifier.clickable { viewModel.onImportClick() },
             )
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
             ListItem(
                 headlineContent = { Text(stringResource(R.string.settings_about)) },
+                leadingContent = { SettingsIcon(Icons.Outlined.Info) },
                 modifier = Modifier.clickable { viewModel.showAboutDialog() },
             )
         }
     }
+}
+
+/** Leading icon of a settings item; decorative, since the item's text already says what it is. */
+@Composable
+private fun SettingsIcon(imageVector: ImageVector) {
+    Icon(imageVector = imageVector, contentDescription = null)
 }
 
 @Composable
