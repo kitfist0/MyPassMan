@@ -75,9 +75,16 @@ class MainActivity : FragmentActivity() {
             // Hold the splash until settings are loaded, instead of flashing an empty screen.
             setKeepOnScreenCondition { viewModel.isLoading.value }
             setOnExitAnimationListener { splashScreenView ->
+                // On a fast device the settings load long before the icon animation ends, so let it
+                // play out instead of cutting it off. The start is wall-clock time, and both values
+                // are 0 below API 31, so there is no delay there.
+                val iconAnimationEnd =
+                    splashScreenView.iconAnimationStartMillis + splashScreenView.iconAnimationDurationMillis
+                val remaining = (iconAnimationEnd - System.currentTimeMillis()).coerceIn(0, MAX_SPLASH_HOLD_MS)
                 splashScreenView.view
                     .animate()
                     .alpha(0f)
+                    .setStartDelay(remaining)
                     .setDuration(SPLASH_EXIT_DURATION_MS)
                     .withEndAction {
                         splashScreenView.remove()
@@ -286,6 +293,9 @@ class MainActivity : FragmentActivity() {
 
     private companion object {
         const val SPLASH_EXIT_DURATION_MS = 200L
+
+        /** Guards against a clock change mid-launch holding the splash for long. */
+        const val MAX_SPLASH_HOLD_MS = 1000L
         const val CONTENT_FADE_IN_DURATION_MS = 200
         val SPLASH_FALLBACK_TIMEOUT = 2.seconds
     }
