@@ -11,8 +11,8 @@
     <string name="settings_pin">PIN Protection</string>
     <string name="settings_fingerprint">Fingerprint Unlock</string>
     <string name="sort_alphabetical">Alphabetical (A-Z)</string>
-    <string name="sort_creation_time">Creation Time (Newest First)</string>
-    <string name="sort_modified_time">Last Modified (Newest First)</string>
+    <string name="sort_creation_time">Creation Time</string>
+    <string name="sort_modified_time">Last Modified</string>
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
     <string name="theme_system">System</string>

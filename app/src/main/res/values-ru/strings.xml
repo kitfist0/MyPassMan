@@ -11,8 +11,8 @@
     <string name="settings_pin">Защита PIN-кодом</string>
     <string name="settings_fingerprint">Разблокировка по отпечатку</string>
     <string name="sort_alphabetical">По алфавиту (А-Я)</string>
-    <string name="sort_creation_time">По времени создания (сначала новые)</string>
-    <string name="sort_modified_time">По времени изменения (сначала новые)</string>
+    <string name="sort_creation_time">По времени создания</string>
+    <string name="sort_modified_time">По времени изменения</string>
     <string name="theme_light">Светлая</string>
     <string name="theme_dark">Тёмная</string>
     <string name="theme_system">Системная</string>
