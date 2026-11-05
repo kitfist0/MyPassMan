@@ -86,7 +86,7 @@ fun resolveDarkTheme(appTheme: AppTheme): Boolean =
 @Composable
 fun MyPassManTheme(
     appTheme: AppTheme = AppTheme.SYSTEM,
-    // Dynamic color (Android 12+) would replace the brand colours of the launcher icon, so it is off by default.
+    // Dynamic color (Android 12+) replaces the brand colors with the wallpaper's, so it is opt-in.
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit,
 ) {

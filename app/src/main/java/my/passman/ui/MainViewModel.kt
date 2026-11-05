@@ -46,6 +46,10 @@ class MainViewModel @Inject constructor(
         settingsRepository.appTheme
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), AppTheme.SYSTEM)
 
+    val dynamicColor: StateFlow<Boolean> =
+        settingsRepository.dynamicColor
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     private val _isLoading = MutableStateFlow(value = true)
     val isLoading = _isLoading.asStateFlow()
 

@@ -101,6 +101,7 @@ class MainActivity : FragmentActivity() {
             val context = LocalContext.current
 
             val appTheme by viewModel.appTheme.collectAsStateWithLifecycle()
+            val dynamicColor by viewModel.dynamicColor.collectAsStateWithLifecycle()
             val currentScreen by viewModel.currentScreen.collectAsStateWithLifecycle()
             val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
             val lockScreen by viewModel.lockScreen.collectAsStateWithLifecycle()
@@ -146,7 +147,7 @@ class MainActivity : FragmentActivity() {
                 }
             }
 
-            MyPassManTheme(appTheme = appTheme) {
+            MyPassManTheme(appTheme = appTheme, dynamicColor = dynamicColor) {
                 val backgroundColor = MaterialTheme.colorScheme.background.toArgb()
                 SideEffect {
                     // FLAG_SECURE makes recents show a blank placeholder in the task background
