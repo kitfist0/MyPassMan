@@ -33,6 +33,11 @@ class SettingsRepository @Inject constructor(
                 AppTheme.valueOf(themeName)
             }
 
+    /** Material You colors from the wallpaper (Android 12+) instead of the brand palette. */
+    val dynamicColor: Flow<Boolean> =
+        dataStore.data
+            .map { preferences -> preferences[DYNAMIC_COLOR] ?: false }
+
     val pinHash: Flow<String?> =
         dataStore.data
             .map { preferences -> preferences[PIN_HASH] }
@@ -152,6 +157,12 @@ class SettingsRepository @Inject constructor(
         }
     }
 
+    suspend fun setDynamicColor(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[DYNAMIC_COLOR] = enabled
+        }
+    }
+
     suspend fun setPin(pin: String) {
         val hash = withContext(Dispatchers.Default) { PinHasher.hash(pin) }
         dataStore.edit { preferences ->
@@ -200,6 +211,7 @@ class SettingsRepository @Inject constructor(
     private companion object {
         val SORT_ORDER = stringPreferencesKey("sort_order")
         val APP_THEME = stringPreferencesKey("app_theme")
+        val DYNAMIC_COLOR = booleanPreferencesKey("dynamic_color")
         val PIN_HASH = stringPreferencesKey("pin_hash")
         val PIN_LENGTH = intPreferencesKey("pin_length")
         val FINGERPRINT_ENABLED = booleanPreferencesKey("fingerprint_enabled")
