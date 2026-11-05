@@ -7,6 +7,8 @@
     <string name="settings_title">Настройки</string>
     <string name="settings_sorting">Сортировка</string>
     <string name="settings_theme">Тема приложения</string>
+    <string name="settings_dynamic_color">Динамические цвета</string>
+    <string name="settings_dynamic_color_summary">Цвета в тон обоям</string>
     <string name="settings_about">О приложении</string>
     <string name="settings_pin">Защита PIN-кодом</string>
     <string name="settings_fingerprint">Разблокировка по отпечатку</string>

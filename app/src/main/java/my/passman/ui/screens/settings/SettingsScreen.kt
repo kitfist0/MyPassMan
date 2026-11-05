@@ -26,6 +26,7 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Upload
+import androidx.compose.material.icons.outlined.Wallpaper
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -533,6 +534,20 @@ private fun GeneralSettingsCard(
                 supportingContent = { Text(themeLabel) },
                 modifier = Modifier.clickable { viewModel.showThemeDialog() },
             )
+            if (viewModel.isDynamicColorAvailable) {
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.settings_dynamic_color)) },
+                    leadingContent = { SettingsIcon(Icons.Outlined.Wallpaper) },
+                    supportingContent = { Text(stringResource(R.string.settings_dynamic_color_summary)) },
+                    trailingContent = {
+                        Switch(
+                            checked = state.isDynamicColorEnabled,
+                            onCheckedChange = viewModel::setDynamicColor,
+                        )
+                    },
+                    modifier = Modifier.clickable { viewModel.setDynamicColor(!state.isDynamicColorEnabled) },
+                )
+            }
             val onPinToggle: (Boolean) -> Unit = { checked ->
                 if (checked) {
                     onSetupNewPin()

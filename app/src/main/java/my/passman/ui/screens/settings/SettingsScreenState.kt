@@ -7,6 +7,7 @@ import my.passman.data.SyncProvider
 data class SettingsScreenState(
     val sortOrder: SortOrder = SortOrder.BY_NAME,
     val theme: AppTheme = AppTheme.SYSTEM,
+    val isDynamicColorEnabled: Boolean = false,
     val isPinEnabled: Boolean = false,
     val isFingerprintEnabled: Boolean = false,
     val showPinHint: Boolean = false,

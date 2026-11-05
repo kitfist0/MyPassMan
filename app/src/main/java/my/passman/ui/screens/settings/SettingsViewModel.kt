@@ -1,6 +1,7 @@
 package my.passman.ui.screens.settings
 
 import android.app.PendingIntent
+import android.os.Build
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -54,12 +55,20 @@ class SettingsViewModel @Inject constructor(
 
     val isFingerprintAvailable: Boolean = biometricAvailability.isAvailable()
 
+    /** Wallpaper-based dynamic color only exists on Android 12+. */
+    val isDynamicColorAvailable: Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+
     val yandexAuthorizeUrl: String get() = yandexAuthManager.authorizeUrl
     val yandexRedirectUri: String get() = yandexAuthManager.redirectUri
 
     private data class SyncSettings(
         val provider: SyncProvider,
         val lastSyncedAt: Long?,
+    )
+
+    private data class AppearanceSettings(
+        val theme: AppTheme,
+        val isDynamicColorEnabled: Boolean,
     )
 
     private data class PinSettings(
@@ -75,6 +84,12 @@ class SettingsViewModel @Inject constructor(
             settingsRepository.lastSyncedAt,
         ) { provider, lastSyncedAt -> SyncSettings(provider, lastSyncedAt) }
 
+    private val appearanceSettings: Flow<AppearanceSettings> =
+        combine(
+            settingsRepository.appTheme,
+            settingsRepository.dynamicColor,
+        ) { theme, dynamicColor -> AppearanceSettings(theme, dynamicColor) }
+
     private val pinSettings: Flow<PinSettings> =
         combine(
             settingsRepository.pinHash,
@@ -88,14 +103,15 @@ class SettingsViewModel @Inject constructor(
     val uiState: StateFlow<SettingsScreenState> =
         combine(
             settingsRepository.sortOrder,
-            settingsRepository.appTheme,
+            appearanceSettings,
             pinSettings,
             _dialogState,
             syncSettings,
-        ) { sortOrder, theme, pin, dialogState, sync ->
+        ) { sortOrder, appearance, pin, dialogState, sync ->
             SettingsScreenState(
                 sortOrder = sortOrder,
-                theme = theme,
+                theme = appearance.theme,
+                isDynamicColorEnabled = appearance.isDynamicColorEnabled,
                 isPinEnabled = pin.isPinEnabled,
                 isFingerprintEnabled = pin.isFingerprintEnabled,
                 showPinHint = !pin.isPinEnabled && !pin.hasShownPinHint && pin.hasRecords,
@@ -177,6 +193,12 @@ class SettingsViewModel @Inject constructor(
     fun confirmDisablePin() {
         _dialogState.update { it.copy(showDisablePinDialog = false) }
         clearPin()
+    }
+
+    fun setDynamicColor(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setDynamicColor(enabled)
+        }
     }
 
     fun setFingerprintEnabled(enabled: Boolean) {
