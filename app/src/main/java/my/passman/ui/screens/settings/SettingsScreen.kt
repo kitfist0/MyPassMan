@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Cloud
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Fingerprint
@@ -26,7 +27,6 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Upload
-import androidx.compose.material.icons.outlined.Wallpaper
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -613,7 +613,7 @@ private fun ThemeSettingsCard(
             ThemeListItem(viewModel = viewModel, themeLabel = themeLabel)
             ListItem(
                 headlineContent = { Text(stringResource(R.string.settings_dynamic_color)) },
-                leadingContent = { SettingsIcon(Icons.Outlined.Wallpaper) },
+                leadingContent = { SettingsIcon(Icons.Outlined.AutoAwesome) },
                 trailingContent = {
                     Switch(
                         checked = state.isDynamicColorEnabled,
