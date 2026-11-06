@@ -8,7 +8,6 @@
     <string name="settings_sorting">Sorting</string>
     <string name="settings_theme">App Theme</string>
     <string name="settings_dynamic_color">Dynamic Colors</string>
-    <string name="settings_dynamic_color_summary">Match the colors of your wallpaper</string>
     <string name="settings_about">About App</string>
     <string name="settings_pin">PIN Protection</string>
     <string name="settings_fingerprint">Fingerprint Unlock</string>

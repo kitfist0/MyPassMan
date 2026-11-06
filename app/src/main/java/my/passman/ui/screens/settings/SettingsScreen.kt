@@ -538,7 +538,6 @@ private fun GeneralSettingsCard(
                 ListItem(
                     headlineContent = { Text(stringResource(R.string.settings_dynamic_color)) },
                     leadingContent = { SettingsIcon(Icons.Outlined.Wallpaper) },
-                    supportingContent = { Text(stringResource(R.string.settings_dynamic_color_summary)) },
                     trailingContent = {
                         Switch(
                             checked = state.isDynamicColorEnabled,
