@@ -464,36 +464,40 @@ fun SettingsScreen(
                 )
                 Spacer(modifier = Modifier.height(16.dp))
             }
-            if (useTwoColumns) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                ) {
-                    GeneralSettingsCard(
-                        modifier = Modifier.weight(1f),
-                        viewModel = viewModel,
-                        state = state,
-                        sortOrderLabel = sortOrderLabel,
-                        themeLabel = themeLabel,
-                        onManageTags = onManageTags,
-                        onSetupNewPin = onSetupNewPin,
-                        isFingerprintAvailable = viewModel.isFingerprintAvailable,
-                        activity = activity,
-                    )
-                    BackupSettingsCard(modifier = Modifier.weight(1f), viewModel = viewModel, state = state)
-                }
-            } else {
+            // The theme gets a section of its own only when it has more than one item.
+            val hasThemeSection = viewModel.isDynamicColorAvailable
+            val generalAndThemeCards: @Composable () -> Unit = {
                 GeneralSettingsCard(
                     modifier = Modifier.fillMaxWidth(),
                     viewModel = viewModel,
                     state = state,
                     sortOrderLabel = sortOrderLabel,
-                    themeLabel = themeLabel,
+                    themeLabel = themeLabel.takeUnless { hasThemeSection },
                     onManageTags = onManageTags,
                     onSetupNewPin = onSetupNewPin,
                     isFingerprintAvailable = viewModel.isFingerprintAvailable,
                     activity = activity,
                 )
+                if (hasThemeSection) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    ThemeSettingsCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        viewModel = viewModel,
+                        state = state,
+                        themeLabel = themeLabel,
+                    )
+                }
+            }
+            if (useTwoColumns) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    Column(modifier = Modifier.weight(1f)) { generalAndThemeCards() }
+                    BackupSettingsCard(modifier = Modifier.weight(1f), viewModel = viewModel, state = state)
+                }
+            } else {
+                generalAndThemeCards()
                 Spacer(modifier = Modifier.height(16.dp))
                 BackupSettingsCard(modifier = Modifier.fillMaxWidth(), viewModel = viewModel, state = state)
             }
@@ -507,7 +511,8 @@ private fun GeneralSettingsCard(
     viewModel: SettingsViewModel,
     state: SettingsScreenState,
     sortOrderLabel: String,
-    themeLabel: String,
+    // Null when the theme item lives in its own section instead.
+    themeLabel: String?,
     onManageTags: () -> Unit,
     onSetupNewPin: () -> Unit,
     isFingerprintAvailable: Boolean,
@@ -528,24 +533,8 @@ private fun GeneralSettingsCard(
                 supportingContent = { Text(sortOrderLabel) },
                 modifier = Modifier.clickable { viewModel.showSortDialog() },
             )
-            ListItem(
-                headlineContent = { Text(stringResource(R.string.settings_theme)) },
-                leadingContent = { SettingsIcon(Icons.Outlined.Palette) },
-                supportingContent = { Text(themeLabel) },
-                modifier = Modifier.clickable { viewModel.showThemeDialog() },
-            )
-            if (viewModel.isDynamicColorAvailable) {
-                ListItem(
-                    headlineContent = { Text(stringResource(R.string.settings_dynamic_color)) },
-                    leadingContent = { SettingsIcon(Icons.Outlined.Wallpaper) },
-                    trailingContent = {
-                        Switch(
-                            checked = state.isDynamicColorEnabled,
-                            onCheckedChange = viewModel::setDynamicColor,
-                        )
-                    },
-                    modifier = Modifier.clickable { viewModel.setDynamicColor(!state.isDynamicColorEnabled) },
-                )
+            if (themeLabel != null) {
+                ThemeListItem(viewModel = viewModel, themeLabel = themeLabel)
             }
             val onPinToggle: (Boolean) -> Unit = { checked ->
                 if (checked) {
@@ -603,6 +592,51 @@ private fun GeneralSettingsCard(
             )
         }
     }
+}
+
+@Composable
+private fun ThemeSettingsCard(
+    modifier: Modifier,
+    viewModel: SettingsViewModel,
+    state: SettingsScreenState,
+    themeLabel: String,
+) {
+    Card(
+        modifier = modifier,
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+            ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+    ) {
+        Column {
+            ThemeListItem(viewModel = viewModel, themeLabel = themeLabel)
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_dynamic_color)) },
+                leadingContent = { SettingsIcon(Icons.Outlined.Wallpaper) },
+                trailingContent = {
+                    Switch(
+                        checked = state.isDynamicColorEnabled,
+                        onCheckedChange = viewModel::setDynamicColor,
+                    )
+                },
+                modifier = Modifier.clickable { viewModel.setDynamicColor(!state.isDynamicColorEnabled) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun ThemeListItem(
+    viewModel: SettingsViewModel,
+    themeLabel: String,
+) {
+    ListItem(
+        headlineContent = { Text(stringResource(R.string.settings_theme)) },
+        leadingContent = { SettingsIcon(Icons.Outlined.Palette) },
+        supportingContent = { Text(themeLabel) },
+        modifier = Modifier.clickable { viewModel.showThemeDialog() },
+    )
 }
 
 @Composable
