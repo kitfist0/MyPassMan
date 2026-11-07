@@ -20,5 +20,5 @@
 
 ## Build
 
-- Min SDK 24, target SDK 36, Kotlin 2.x, AGP 9.3.2
+- Min SDK 24, target SDK 36, Kotlin 2.x
 - Run ./gradlew ktlintCheck detekt before considering a change complete
