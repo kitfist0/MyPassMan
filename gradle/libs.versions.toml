@@ -21,6 +21,7 @@ hiltNavigationCompose = "1.4.0"
 hiltWork = "1.4.0"
 jetbrainsKotlinPluginSerialization = "2.4.10"
 junit = "4.13.2"
+junit5 = "5.14.4"
 junitVersion = "1.3.0"
 kotlin = "2.4.10"
 kotlinxCoroutinesAndroid = "1.11.0"
@@ -34,6 +35,7 @@ lifecycleRuntimeKtx = "2.11.0"
 lifecycleViewmodelCompose = "2.11.0"
 lifecycleViewmodelNavigation3 = "2.11.0"
 material = "1.14.0"
+mockk = "1.14.12"
 navigation3Runtime = "1.1.7"
 navigation3Ui = "1.1.7"
 okhttp = "5.4.0"
@@ -44,6 +46,7 @@ roomKtx = "2.8.4"
 roomRuntime = "2.8.4"
 runner = "1.7.0"
 sqlcipherAndroid = "4.19.1"
+turbine = "1.2.1"
 workRuntime = "2.11.2"
 
 [libraries]
@@ -90,16 +93,22 @@ google-http-client-gson = { group = "com.google.http-client", name = "google-htt
 hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 hilt-compiler = { group = "com.google.dagger", name = "hilt-android-compiler", version.ref = "hilt" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
+junit-bom = { group = "org.junit", name = "junit-bom", version.ref = "junit5" }
+junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter" }
+junit-platform-launcher = { group = "org.junit.platform", name = "junit-platform-launcher" }
+junit-vintage-engine = { group = "org.junit.vintage", name = "junit-vintage-engine" }
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "kotlinxCoroutinesAndroid" }
 kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinxCoroutinesCore" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinxCoroutinesTest" }
 kotlinx-serialization-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-core", version.ref = "kotlinxSerializationCore" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
 play-services-auth = { group = "com.google.android.gms", name = "play-services-auth", version.ref = "playServicesAuth" }
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 sqlcipher-android = { group = "net.zetetic", name = "sqlcipher-android", version.ref = "sqlcipherAndroid" }
+turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
 retrofit-converter-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofit" }
 
 [plugins]
