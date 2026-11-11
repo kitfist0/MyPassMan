@@ -37,6 +37,8 @@ class YandexSyncManager @Inject constructor(
             }
         } catch (_: BadPaddingException) {
             SyncResult.InvalidPassphrase
+        } catch (_: YandexUnauthorizedException) {
+            SyncResult.LoginRequired
         } catch (e: Exception) {
             SyncResult.Failed(e.message)
         } finally {
@@ -66,6 +68,8 @@ class YandexSyncManager @Inject constructor(
                 }
                 YandexAuthResult.LoginRequired -> SyncResult.LoginRequired
             }
+        } catch (_: YandexUnauthorizedException) {
+            SyncResult.LoginRequired
         } catch (e: Exception) {
             SyncResult.Failed(e.message)
         } finally {

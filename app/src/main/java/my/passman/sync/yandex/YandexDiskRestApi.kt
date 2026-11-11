@@ -60,10 +60,12 @@ interface YandexDiskRestApi {
         const val BASE_URL = "https://cloud-api.yandex.net/v1/disk/"
     }
 
+    // Without overwrite=true Yandex answers 409 when the file already exists.
     @GET("resources/upload")
     suspend fun getUploadLink(
         @Header("Authorization") token: String,
         @Query("path") path: String,
+        @Query("overwrite") overwrite: Boolean,
     ): Response<Link>
 
     @GET("resources/download")

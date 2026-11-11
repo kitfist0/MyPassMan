@@ -260,6 +260,17 @@ class YandexSyncManagerTest {
             }
 
         @Test
+        fun rejectedToken_requiresLoginInsteadOfRetrying() =
+            runTest {
+                coEvery { apiClient.findBackupFile(TOKEN) } throws YandexUnauthorizedException()
+
+                assertEquals(SyncResult.LoginRequired, manager.sync())
+                coVerify(exactly = 0) { apiClient.uploadBackup(any(), any()) }
+                coVerify(exactly = 0) { settingsRepository.recordSyncSuccess(any(), any()) }
+                assertPassphraseWiped()
+            }
+
+        @Test
         fun uploadError_doesNotRecordSuccess() =
             runTest {
                 givenRemote(null)
@@ -323,6 +334,17 @@ class YandexSyncManagerTest {
                 assertEquals(SyncResult.Uploaded, manager.resetRemoteBackup())
                 coVerify(exactly = 0) { apiClient.deleteBackup(any()) }
                 verifyUploaded(LAST_LOCAL)
+            }
+
+        @Test
+        fun rejectedToken_requiresLogin() =
+            runTest {
+                coEvery { apiClient.findBackupFile(TOKEN) } throws YandexUnauthorizedException()
+
+                assertEquals(SyncResult.LoginRequired, manager.resetRemoteBackup())
+                coVerify(exactly = 0) { apiClient.deleteBackup(any()) }
+                coVerify(exactly = 0) { apiClient.uploadBackup(any(), any()) }
+                assertPassphraseWiped()
             }
 
         @Test

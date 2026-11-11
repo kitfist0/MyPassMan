@@ -20,6 +20,7 @@ import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import retrofit2.Response
+import java.io.IOException
 import java.time.OffsetDateTime
 
 class YandexDiskApiClientTest {
@@ -66,6 +67,25 @@ class YandexDiskApiClientTest {
             }
 
         @Test
+        fun rejectedToken_throwsUnauthorized() =
+            runTest {
+                coEvery { api.getResourceMeta(AUTH, PATH, any()) } returns errorResponse(401)
+
+                assertThrows<YandexUnauthorizedException> { client.findBackupFile(TOKEN) }
+            }
+
+        @ParameterizedTest
+        @ValueSource(ints = [403, 429, 500, 503])
+        fun otherErrors_throwInsteadOfReportingMissingFile(code: Int) =
+            runTest {
+                coEvery { api.getResourceMeta(AUTH, PATH, any()) } returns errorResponse(code)
+
+                val error = assertThrows<IOException> { client.findBackupFile(TOKEN) }
+
+                assertEquals("Yandex Disk failed to look up the backup (HTTP $code)", error.message)
+            }
+
+        @Test
         fun emptyBody_returnsNull() =
             runTest {
                 coEvery { api.getResourceMeta(AUTH, PATH, any()) } returns Response.success(null)
@@ -97,7 +117,7 @@ class YandexDiskApiClientTest {
         fun putsBytesToUploadLink_andReturnsRefetchedTimestamp() =
             runTest {
                 val body = slot<RequestBody>()
-                coEvery { api.getUploadLink(AUTH, PATH) } returns Response.success(Link(UPLOAD_HREF, "PUT", false))
+                coEvery { api.getUploadLink(AUTH, PATH, true) } returns Response.success(Link(UPLOAD_HREF, "PUT", false))
                 coEvery { api.uploadBytes(UPLOAD_HREF, capture(body)) } returns Response.success(Unit)
                 givenMeta("2026-11-11T10:15:30+00:00")
 
@@ -111,7 +131,7 @@ class YandexDiskApiClientTest {
         @Test
         fun metadataUnavailableAfterUpload_fallsBackToCurrentTime() =
             runTest {
-                coEvery { api.getUploadLink(AUTH, PATH) } returns Response.success(Link(UPLOAD_HREF, "PUT", false))
+                coEvery { api.getUploadLink(AUTH, PATH, true) } returns Response.success(Link(UPLOAD_HREF, "PUT", false))
                 coEvery { api.uploadBytes(UPLOAD_HREF, any()) } returns Response.success(Unit)
                 coEvery { api.getResourceMeta(AUTH, PATH, any()) } returns errorResponse(404)
 
@@ -124,14 +144,45 @@ class YandexDiskApiClientTest {
             }
 
         @Test
-        fun noUploadLink_throws_withoutUploading() =
+        fun uploadLinkError_throws_withoutUploading() =
             runTest {
-                coEvery { api.getUploadLink(AUTH, PATH) } returns errorResponse(409)
+                coEvery { api.getUploadLink(AUTH, PATH, true) } returns errorResponse(507)
+
+                val error = assertThrows<IOException> { client.uploadBackup(TOKEN, DATA) }
+
+                assertEquals("Yandex Disk failed to get an upload link (HTTP 507)", error.message)
+                coVerify(exactly = 0) { api.uploadBytes(any(), any()) }
+            }
+
+        @Test
+        fun emptyUploadLink_throws_withoutUploading() =
+            runTest {
+                coEvery { api.getUploadLink(AUTH, PATH, true) } returns Response.success(null)
 
                 val error = assertThrows<IllegalStateException> { client.uploadBackup(TOKEN, DATA) }
 
                 assertEquals("Yandex Disk did not return an upload link", error.message)
                 coVerify(exactly = 0) { api.uploadBytes(any(), any()) }
+            }
+
+        @Test
+        fun rejectedToken_throwsUnauthorized() =
+            runTest {
+                coEvery { api.getUploadLink(AUTH, PATH, true) } returns errorResponse(401)
+
+                assertThrows<YandexUnauthorizedException> { client.uploadBackup(TOKEN, DATA) }
+            }
+
+        @Test
+        fun failedPut_throws_withoutReportingSuccess() =
+            runTest {
+                coEvery { api.getUploadLink(AUTH, PATH, true) } returns Response.success(Link(UPLOAD_HREF, "PUT", false))
+                coEvery { api.uploadBytes(UPLOAD_HREF, any()) } returns errorResponse(500)
+
+                val error = assertThrows<IOException> { client.uploadBackup(TOKEN, DATA) }
+
+                assertEquals("Yandex Disk failed to upload the backup (HTTP 500)", error.message)
+                coVerify(exactly = 0) { api.getResourceMeta(any(), any(), any()) }
             }
     }
 
@@ -147,9 +198,20 @@ class YandexDiskApiClientTest {
             }
 
         @Test
-        fun noDownloadLink_throws_withoutDownloading() =
+        fun downloadLinkError_throws_withoutDownloading() =
             runTest {
                 coEvery { api.getDownloadLink(AUTH, PATH) } returns errorResponse(404)
+
+                val error = assertThrows<IOException> { client.downloadBackup(TOKEN) }
+
+                assertEquals("Yandex Disk failed to get a download link (HTTP 404)", error.message)
+                coVerify(exactly = 0) { api.downloadBytes(any()) }
+            }
+
+        @Test
+        fun emptyDownloadLink_throws_withoutDownloading() =
+            runTest {
+                coEvery { api.getDownloadLink(AUTH, PATH) } returns Response.success(null)
 
                 val error = assertThrows<IllegalStateException> { client.downloadBackup(TOKEN) }
 
@@ -158,10 +220,29 @@ class YandexDiskApiClientTest {
             }
 
         @Test
+        fun rejectedToken_throwsUnauthorized() =
+            runTest {
+                coEvery { api.getDownloadLink(AUTH, PATH) } returns errorResponse(401)
+
+                assertThrows<YandexUnauthorizedException> { client.downloadBackup(TOKEN) }
+            }
+
+        @Test
         fun failedDownload_throws() =
             runTest {
                 coEvery { api.getDownloadLink(AUTH, PATH) } returns Response.success(Link(DOWNLOAD_HREF, "GET", false))
                 coEvery { api.downloadBytes(DOWNLOAD_HREF) } returns errorResponse<ResponseBody>(500)
+
+                val error = assertThrows<IOException> { client.downloadBackup(TOKEN) }
+
+                assertEquals("Yandex Disk failed to download the backup (HTTP 500)", error.message)
+            }
+
+        @Test
+        fun emptyDownload_throws() =
+            runTest {
+                coEvery { api.getDownloadLink(AUTH, PATH) } returns Response.success(Link(DOWNLOAD_HREF, "GET", false))
+                coEvery { api.downloadBytes(DOWNLOAD_HREF) } returns Response.success(null)
 
                 val error = assertThrows<IllegalStateException> { client.downloadBackup(TOKEN) }
 
