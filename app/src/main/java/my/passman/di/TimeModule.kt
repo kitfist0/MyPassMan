@@ -5,6 +5,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import my.passman.util.ElapsedRealtimeTimeSource
+import kotlin.time.Clock
 import kotlin.time.TimeSource
 
 @Module
@@ -12,4 +13,7 @@ import kotlin.time.TimeSource
 object TimeModule {
     @Provides
     fun provideTimeSource(): TimeSource = ElapsedRealtimeTimeSource
+
+    @Provides
+    fun provideClock(): Clock = Clock.System
 }

@@ -14,6 +14,7 @@ import my.passman.data.AppDatabase
 import my.passman.data.EncryptedOpenHelperFactory
 import my.passman.data.RecordDao
 import my.passman.data.TagDao
+import my.passman.data.VaultStateDao
 import my.passman.util.BackupManager
 import javax.inject.Singleton
 
@@ -44,6 +45,9 @@ object DataModule {
 
     @Provides
     fun provideTagDao(database: AppDatabase): TagDao = database.tagDao()
+
+    @Provides
+    fun provideVaultStateDao(database: AppDatabase): VaultStateDao = database.vaultStateDao()
 
     @Provides
     @Singleton
