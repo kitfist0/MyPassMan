@@ -12,18 +12,18 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import my.passman.data.Tag
 import my.passman.data.TagColor
-import my.passman.data.TagDao
+import my.passman.data.TagRepository
 import javax.inject.Inject
 
 @HiltViewModel
 class TagsViewModel @Inject constructor(
-    private val tagDao: TagDao,
+    private val tagRepository: TagRepository,
 ) : ViewModel() {
     private val _dialogState = MutableStateFlow(TagsDialogState())
 
     val uiState: StateFlow<TagsScreenState> =
         combine(
-            tagDao.getAllTags(),
+            tagRepository.getAllTags(),
             _dialogState,
         ) { tags, dialogState ->
             TagsScreenState(
@@ -66,7 +66,7 @@ class TagsViewModel @Inject constructor(
         val state = _dialogState.value
         if (state.tagName.isBlank()) return
         viewModelScope.launch {
-            tagDao.upsertTag(Tag(name = state.tagName.trim(), color = state.tagColor))
+            tagRepository.saveTag(Tag(name = state.tagName.trim(), color = state.tagColor))
         }
     }
 
@@ -78,14 +78,14 @@ class TagsViewModel @Inject constructor(
             val newName = state.tagName
             if (newName.isBlank() || (newName == tag.name && state.tagColor == tag.color)) return
             viewModelScope.launch {
-                tagDao.upsertTag(tag.copy(name = newName.trim(), color = state.tagColor))
+                tagRepository.saveTag(tag.copy(name = newName.trim(), color = state.tagColor))
             }
         }
     }
 
     fun onDeleteDialogConfirmButtonClick(tag: Tag) {
         viewModelScope.launch {
-            tagDao.deleteTag(tag)
+            tagRepository.deleteTag(tag)
         }
     }
 }

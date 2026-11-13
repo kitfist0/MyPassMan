@@ -16,9 +16,9 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import my.passman.data.Record
-import my.passman.data.RecordDao
+import my.passman.data.RecordRepository
 import my.passman.data.Tag
-import my.passman.data.TagDao
+import my.passman.data.TagRepository
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -43,13 +43,13 @@ class EditRecordViewModelTest {
             tagId = 1,
         )
 
-    private val recordDao =
-        mockk<RecordDao>(relaxUnitFun = true) {
+    private val recordRepository =
+        mockk<RecordRepository>(relaxUnitFun = true) {
             coEvery { getRecordById(any()) } returns null
             coEvery { getRecordById(existing.id) } returns existing
         }
-    private val tagDao =
-        mockk<TagDao> {
+    private val tagRepository =
+        mockk<TagRepository> {
             every { getAllTags() } returns tags
         }
 
@@ -64,12 +64,12 @@ class EditRecordViewModelTest {
     }
 
     private fun TestScope.viewModel(recordId: Long?): EditRecordViewModel =
-        EditRecordViewModel(recordDao, tagDao, recordId).also { advanceUntilIdle() }
+        EditRecordViewModel(recordRepository, tagRepository, recordId).also { advanceUntilIdle() }
 
     private fun EditRecordViewModel.exitRequested() = exitEvent.tryReceive().isSuccess
 
     @Test
-    fun allTags_followTagDao() =
+    fun allTags_followRepository() =
         runTest {
             val vm = viewModel(null)
             assertEquals(tags.value, vm.uiState.value.allTags)
@@ -147,7 +147,7 @@ class EditRecordViewModelTest {
                 assertFalse(state.isLoading)
                 assertFalse(state.canSave)
                 assertEquals("", state.name)
-                coVerify(exactly = 0) { recordDao.getRecordById(any()) }
+                coVerify(exactly = 0) { recordRepository.getRecordById(any()) }
             }
 
         @Test
@@ -172,7 +172,7 @@ class EditRecordViewModelTest {
         fun save_insertsTrimmedRecordWithFreshTimestamps() =
             runTest {
                 val saved = slot<Record>()
-                coEvery { recordDao.upsertRecord(capture(saved)) } returns Unit
+                coEvery { recordRepository.saveRecord(capture(saved)) } returns Unit
                 val vm = viewModel(null)
                 vm.onNameChange("  Bank ")
                 vm.onLoginChange(" john ")
@@ -206,7 +206,7 @@ class EditRecordViewModelTest {
                 vm.delete()
                 advanceUntilIdle()
 
-                coVerify(exactly = 0) { recordDao.deleteRecord(any()) }
+                coVerify(exactly = 0) { recordRepository.deleteRecord(any()) }
             }
 
         @Test
@@ -251,7 +251,7 @@ class EditRecordViewModelTest {
         @Test
         fun loading_showsSpinnerThenFillsFields() =
             runTest {
-                val vm = EditRecordViewModel(recordDao, tagDao, existing.id)
+                val vm = EditRecordViewModel(recordRepository, tagRepository, existing.id)
 
                 vm.uiState.test {
                     assertTrue(awaitItem().isLoading)
@@ -323,7 +323,7 @@ class EditRecordViewModelTest {
         fun save_keepsIdAndCreationTime() =
             runTest {
                 val saved = slot<Record>()
-                coEvery { recordDao.upsertRecord(capture(saved)) } returns Unit
+                coEvery { recordRepository.saveRecord(capture(saved)) } returns Unit
                 val vm = viewModel(existing.id)
                 vm.onLoginChange("new@example.com")
 
@@ -349,19 +349,7 @@ class EditRecordViewModelTest {
                 vm.delete()
                 advanceUntilIdle()
 
-                coVerify(exactly = 1) { recordDao.deleteRecord(existing) }
-            }
-
-        @Test
-        fun delete_whenRecordVanished_doesNothing() =
-            runTest {
-                val vm = viewModel(existing.id)
-                coEvery { recordDao.getRecordById(existing.id) } returns null
-
-                vm.delete()
-                advanceUntilIdle()
-
-                coVerify(exactly = 0) { recordDao.deleteRecord(any()) }
+                coVerify(exactly = 1) { recordRepository.deleteRecord(existing.id) }
             }
 
         @Test
@@ -389,7 +377,7 @@ class EditRecordViewModelTest {
         @Test
         fun onBackPressed_whileLoading_exits() =
             runTest {
-                val vm = EditRecordViewModel(recordDao, tagDao, existing.id)
+                val vm = EditRecordViewModel(recordRepository, tagRepository, existing.id)
                 assertTrue(vm.uiState.value.isLoading)
 
                 vm.onBackPressed()

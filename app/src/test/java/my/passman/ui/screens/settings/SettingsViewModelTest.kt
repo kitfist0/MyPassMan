@@ -19,7 +19,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import my.passman.R
 import my.passman.data.AppTheme
-import my.passman.data.RecordDao
+import my.passman.data.RecordRepository
 import my.passman.data.SettingsRepository
 import my.passman.data.SortOrder
 import my.passman.data.SyncProvider
@@ -74,7 +74,7 @@ class SettingsViewModelTest {
             every { lastSyncedAt } returns this@SettingsViewModelTest.lastSyncedAt
             coEvery { setSyncProvider(any()) } answers { this@SettingsViewModelTest.syncProvider.value = firstArg() }
         }
-    private val recordDao = mockk<RecordDao> { every { hasRecords() } returns hasRecords }
+    private val recordRepository = mockk<RecordRepository> { every { hasRecords() } returns hasRecords }
     private val backupManager = mockk<BackupManager>(relaxUnitFun = true)
     private val googleSyncManager = mockk<GoogleSyncManager>(relaxUnitFun = true)
     private val yandexSyncManager = mockk<YandexSyncManager>()
@@ -111,7 +111,7 @@ class SettingsViewModelTest {
                 syncScheduler,
                 biometricAvailability,
                 eventBus,
-                recordDao,
+                recordRepository,
             )
         backgroundScope.launch { vm.uiState.collect {} }
         advanceUntilIdle()

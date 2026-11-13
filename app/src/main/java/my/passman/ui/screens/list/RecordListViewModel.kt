@@ -6,18 +6,18 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import my.passman.data.RecordDao
+import my.passman.data.RecordRepository
 import my.passman.data.RecordWithTag
 import my.passman.data.SettingsRepository
 import my.passman.data.SortOrder
 import my.passman.data.Tag
-import my.passman.data.TagDao
+import my.passman.data.TagRepository
 import javax.inject.Inject
 
 @HiltViewModel
 class RecordListViewModel @Inject constructor(
-    private val recordDao: RecordDao,
-    tagDao: TagDao,
+    private val recordRepository: RecordRepository,
+    tagRepository: TagRepository,
     private val settingsRepository: SettingsRepository,
 ) : ViewModel() {
     private val _searchQuery = MutableStateFlow("")
@@ -29,7 +29,7 @@ class RecordListViewModel @Inject constructor(
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), SortOrder.BY_NAME)
 
     private val allTags: StateFlow<List<Tag>> =
-        tagDao
+        tagRepository
             .getAllTags()
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -45,9 +45,9 @@ class RecordListViewModel @Inject constructor(
         }.flatMapLatest { (query, sort, tagId) ->
             val flow =
                 if (query.isBlank()) {
-                    recordDao.getAllRecords()
+                    recordRepository.getAllRecords()
                 } else {
-                    recordDao.searchRecords(query)
+                    recordRepository.searchRecords(query)
                 }
             flow.map { list ->
                 val filtered = if (tagId != null) list.filter { it.tag?.id == tagId } else list

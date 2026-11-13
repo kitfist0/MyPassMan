@@ -13,13 +13,13 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import my.passman.data.Record
-import my.passman.data.RecordDao
-import my.passman.data.TagDao
+import my.passman.data.RecordRepository
+import my.passman.data.TagRepository
 
 @HiltViewModel(assistedFactory = EditRecordViewModel.Factory::class)
 class EditRecordViewModel @AssistedInject constructor(
-    private val recordDao: RecordDao,
-    private val tagDao: TagDao,
+    private val recordRepository: RecordRepository,
+    private val tagRepository: TagRepository,
     @Assisted val recordId: Long?,
 ) : ViewModel() {
     private val _uiState =
@@ -63,13 +63,13 @@ class EditRecordViewModel @AssistedInject constructor(
 
     init {
         viewModelScope.launch {
-            tagDao.getAllTags().collect { tags ->
+            tagRepository.getAllTags().collect { tags ->
                 update { it.copy(allTags = tags) }
             }
         }
         if (recordId != null) {
             viewModelScope.launch {
-                val record = recordDao.getRecordById(recordId)
+                val record = recordRepository.getRecordById(recordId)
                 if (record != null) {
                     originalName = record.name
                     originalLogin = record.login
@@ -161,15 +161,13 @@ class EditRecordViewModel @AssistedInject constructor(
                 comment = state.comment.trim(),
                 tagId = state.selectedTagId,
             )
-        viewModelScope.launch { recordDao.upsertRecord(record) }
+        viewModelScope.launch { recordRepository.saveRecord(record) }
         return state.recordId
     }
 
     fun delete() {
         val id = _uiState.value.recordId ?: return
-        viewModelScope.launch {
-            recordDao.getRecordById(id)?.let { recordDao.deleteRecord(it) }
-        }
+        viewModelScope.launch { recordRepository.deleteRecord(id) }
     }
 
     @AssistedFactory

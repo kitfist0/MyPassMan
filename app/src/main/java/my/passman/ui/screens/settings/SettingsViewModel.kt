@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import my.passman.R
 import my.passman.data.AppTheme
-import my.passman.data.RecordDao
+import my.passman.data.RecordRepository
 import my.passman.data.SettingsRepository
 import my.passman.data.SortOrder
 import my.passman.data.SyncProvider
@@ -42,7 +42,7 @@ class SettingsViewModel @Inject constructor(
     private val syncScheduler: SyncScheduler,
     private val biometricAvailability: BiometricAvailability,
     private val eventBus: AppEventBus,
-    recordDao: RecordDao,
+    recordRepository: RecordRepository,
 ) : ViewModel() {
     private val _dialogState = MutableStateFlow(DialogState())
 
@@ -95,7 +95,7 @@ class SettingsViewModel @Inject constructor(
             settingsRepository.pinHash,
             settingsRepository.fingerprintEnabled,
             settingsRepository.hasShownPinHint,
-            recordDao.hasRecords(),
+            recordRepository.hasRecords(),
         ) { pinHash, fingerprintEnabled, hasShownPinHint, hasRecords ->
             PinSettings(pinHash != null, fingerprintEnabled, hasShownPinHint, hasRecords)
         }

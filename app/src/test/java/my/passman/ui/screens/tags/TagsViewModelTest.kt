@@ -1,6 +1,5 @@
 package my.passman.ui.screens.tags
 
-import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
@@ -16,7 +15,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import my.passman.data.Tag
 import my.passman.data.TagColor
-import my.passman.data.TagDao
+import my.passman.data.TagRepository
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
@@ -31,10 +30,9 @@ class TagsViewModelTest {
 
     private val tags = MutableStateFlow(listOf(work, home))
 
-    private val tagDao =
-        mockk<TagDao>(relaxUnitFun = true) {
+    private val tagRepository =
+        mockk<TagRepository>(relaxUnitFun = true) {
             every { getAllTags() } returns tags
-            coEvery { upsertTag(any()) } returns 0
         }
 
     @BeforeEach
@@ -49,7 +47,7 @@ class TagsViewModelTest {
 
     /** Creates the view model and keeps [TagsViewModel.uiState] subscribed, as the screen does. */
     private fun TestScope.viewModel(): TagsViewModel {
-        val vm = TagsViewModel(tagDao)
+        val vm = TagsViewModel(tagRepository)
         backgroundScope.launch { vm.uiState.collect {} }
         advanceUntilIdle()
         return vm
@@ -58,7 +56,7 @@ class TagsViewModelTest {
     private val TagsViewModel.dialog get() = uiState.value.dialog
 
     @Test
-    fun tags_followTagDao() =
+    fun tags_followRepository() =
         runTest {
             val vm = viewModel()
             assertEquals(listOf(work, home), vm.uiState.value.tags)
@@ -128,7 +126,7 @@ class TagsViewModelTest {
                 vm.dismissDialog()
                 advanceUntilIdle()
 
-                coVerify(exactly = 1) { tagDao.upsertTag(Tag(name = "bank", color = TagColor.GREEN)) }
+                coVerify(exactly = 1) { tagRepository.saveTag(Tag(name = "bank", color = TagColor.GREEN)) }
             }
 
         @Test
@@ -141,7 +139,7 @@ class TagsViewModelTest {
                 vm.onAddDialogConfirmButtonClick()
                 advanceUntilIdle()
 
-                coVerify(exactly = 0) { tagDao.upsertTag(any()) }
+                coVerify(exactly = 0) { tagRepository.saveTag(any()) }
             }
     }
 
@@ -172,7 +170,7 @@ class TagsViewModelTest {
                 vm.dismissDialog()
                 advanceUntilIdle()
 
-                coVerify(exactly = 1) { tagDao.upsertTag(work.copy(name = "job")) }
+                coVerify(exactly = 1) { tagRepository.saveTag(work.copy(name = "job")) }
             }
 
         @Test
@@ -185,7 +183,7 @@ class TagsViewModelTest {
                 vm.onEditDialogConfirmButtonClick()
                 advanceUntilIdle()
 
-                coVerify(exactly = 1) { tagDao.upsertTag(work.copy(color = TagColor.PINK)) }
+                coVerify(exactly = 1) { tagRepository.saveTag(work.copy(color = TagColor.PINK)) }
             }
 
         @Test
@@ -197,7 +195,7 @@ class TagsViewModelTest {
                 vm.onEditDialogConfirmButtonClick()
                 advanceUntilIdle()
 
-                coVerify(exactly = 0) { tagDao.upsertTag(any()) }
+                coVerify(exactly = 0) { tagRepository.saveTag(any()) }
             }
 
         @Test
@@ -210,7 +208,7 @@ class TagsViewModelTest {
                 vm.onEditDialogConfirmButtonClick()
                 advanceUntilIdle()
 
-                coVerify(exactly = 0) { tagDao.upsertTag(any()) }
+                coVerify(exactly = 0) { tagRepository.saveTag(any()) }
             }
 
         @Test
@@ -223,7 +221,7 @@ class TagsViewModelTest {
                 vm.onEditDialogConfirmButtonClick()
                 advanceUntilIdle()
 
-                coVerify(exactly = 0) { tagDao.upsertTag(any()) }
+                coVerify(exactly = 0) { tagRepository.saveTag(any()) }
             }
     }
 
@@ -250,7 +248,7 @@ class TagsViewModelTest {
                 vm.dismissDialog()
                 advanceUntilIdle()
 
-                coVerify(exactly = 1) { tagDao.deleteTag(home) }
+                coVerify(exactly = 1) { tagRepository.deleteTag(home) }
                 assertNull(vm.dialog.activeDialog)
             }
     }

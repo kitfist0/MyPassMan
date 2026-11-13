@@ -17,12 +17,12 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import my.passman.data.Record
-import my.passman.data.RecordDao
+import my.passman.data.RecordRepository
 import my.passman.data.RecordWithTag
 import my.passman.data.SettingsRepository
 import my.passman.data.SortOrder
 import my.passman.data.Tag
-import my.passman.data.TagDao
+import my.passman.data.TagRepository
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -47,16 +47,16 @@ class RecordListViewModelTest {
     private val pinHash = MutableStateFlow<String?>(null)
     private val hasShownLongPressHint = MutableStateFlow(false)
 
-    private val recordDao =
-        mockk<RecordDao> {
+    private val recordRepository =
+        mockk<RecordRepository> {
             every { getAllRecords() } returns records
             every { searchRecords(any()) } answers {
                 val query = firstArg<String>()
                 records.map { list -> list.filter { query in it.record.name || query in it.record.login } }
             }
         }
-    private val tagDao =
-        mockk<TagDao> {
+    private val tagRepository =
+        mockk<TagRepository> {
             every { getAllTags() } returns tags
         }
     private val settingsRepository =
@@ -78,7 +78,7 @@ class RecordListViewModelTest {
 
     /** Creates the view model and keeps [RecordListViewModel.uiState] subscribed, as the screen does. */
     private fun TestScope.viewModel(): RecordListViewModel {
-        val vm = RecordListViewModel(recordDao, tagDao, settingsRepository)
+        val vm = RecordListViewModel(recordRepository, tagRepository, settingsRepository)
         backgroundScope.launch { vm.uiState.collect {} }
         advanceUntilIdle()
         return vm
@@ -90,7 +90,7 @@ class RecordListViewModelTest {
     fun isLoading_untilRecordsArrive() =
         runTest {
             val pending = MutableSharedFlow<List<RecordWithTag>>()
-            every { recordDao.getAllRecords() } returns pending
+            every { recordRepository.getAllRecords() } returns pending
             val vm = viewModel()
             assertTrue(vm.uiState.value.isLoading)
 
@@ -113,7 +113,7 @@ class RecordListViewModelTest {
         }
 
     @Test
-    fun availableTags_followTagDao() =
+    fun availableTags_followRepository() =
         runTest {
             val vm = viewModel()
             assertEquals(listOf(work, home), vm.uiState.value.availableTags)
@@ -195,7 +195,7 @@ class RecordListViewModelTest {
 
                 assertEquals("john", vm.uiState.value.searchQuery)
                 assertEquals(listOf("bank", "Mail"), vm.names())
-                verify { recordDao.searchRecords("john") }
+                verify { recordRepository.searchRecords("john") }
             }
 
         @Test
@@ -207,7 +207,7 @@ class RecordListViewModelTest {
                 advanceUntilIdle()
 
                 assertEquals(3, vm.uiState.value.records.size)
-                verify(exactly = 0) { recordDao.searchRecords(any()) }
+                verify(exactly = 0) { recordRepository.searchRecords(any()) }
             }
 
         @Test
