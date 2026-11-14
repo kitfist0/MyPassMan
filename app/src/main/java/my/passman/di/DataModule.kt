@@ -15,7 +15,6 @@ import my.passman.data.EncryptedOpenHelperFactory
 import my.passman.data.RecordDao
 import my.passman.data.TagDao
 import my.passman.data.VaultStateDao
-import my.passman.util.BackupManager
 import javax.inject.Singleton
 
 private val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
@@ -23,13 +22,6 @@ private val Context.settingsDataStore: DataStore<Preferences> by preferencesData
 @Module
 @InstallIn(SingletonComponent::class)
 object DataModule {
-    @Provides
-    @Singleton
-    fun provideBackupManager(
-        recordDao: RecordDao,
-        tagDao: TagDao,
-    ): BackupManager = BackupManager(recordDao, tagDao)
-
     @Provides
     @Singleton
     fun provideDatabase(

@@ -1,25 +1,19 @@
 package my.passman.sync.yandex
 
-import androidx.room.withTransaction
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.mockkStatic
-import io.mockk.unmockkStatic
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
-import my.passman.data.AppDatabase
 import my.passman.data.Record
-import my.passman.data.RecordDao
 import my.passman.data.SettingsRepository
 import my.passman.data.SyncProvider
 import my.passman.data.Tag
-import my.passman.data.TagDao
+import my.passman.data.VaultChangeTracker
 import my.passman.sync.SyncResult
 import my.passman.util.BackupManager
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -34,10 +28,8 @@ class YandexSyncManagerTest {
     private val lastSyncedRemote = MutableStateFlow<Long?>(LAST_REMOTE)
     private val passphrase = "passphrase".toCharArray()
 
-    private val appDatabase = mockk<AppDatabase>()
-    private val recordDao = mockk<RecordDao>(relaxUnitFun = true)
-    private val tagDao = mockk<TagDao>(relaxUnitFun = true)
-    private val backupManager = mockk<BackupManager>()
+    private val changeTracker = mockk<VaultChangeTracker>()
+    private val backupManager = mockk<BackupManager>(relaxUnitFun = true)
     private val settingsRepository =
         mockk<SettingsRepository>(relaxUnitFun = true) {
             every { syncProvider } returns this@YandexSyncManagerTest.syncProvider
@@ -53,9 +45,7 @@ class YandexSyncManagerTest {
 
     private val manager =
         YandexSyncManager(
-            appDatabase = appDatabase,
-            recordDao = recordDao,
-            tagDao = tagDao,
+            changeTracker = changeTracker,
             backupManager = backupManager,
             settingsRepository = settingsRepository,
             yandexAuthManager = authManager,
@@ -64,21 +54,12 @@ class YandexSyncManagerTest {
 
     @BeforeEach
     fun setUp() {
-        mockkStatic("androidx.room.RoomDatabaseKt")
-        coEvery { appDatabase.withTransaction(any<suspend () -> Any?>()) } coAnswers {
-            secondArg<suspend () -> Any?>().invoke()
-        }
-        coEvery { recordDao.getMaxModified() } returns LAST_LOCAL
+        coEvery { changeTracker.changedAt() } returns LAST_LOCAL
         coEvery { backupManager.exportPayload() } returns localPayload
         coEvery { backupManager.encryptPayload(localPayload, any()) } returns ENCRYPTED_LOCAL
         coEvery { backupManager.decryptPayload(ENCRYPTED_REMOTE, any()) } returns remotePayload
-        coEvery { apiClient.uploadBackup(TOKEN, ENCRYPTED_LOCAL) } returns RemoteYandexFile(PATH, UPLOADED_AT)
+        coEvery { apiClient.uploadBackup(TOKEN, ENCRYPTED_LOCAL, any()) } answers { RemoteYandexFile(PATH, thirdArg()) }
         coEvery { apiClient.downloadBackup(TOKEN) } returns ENCRYPTED_REMOTE
-    }
-
-    @AfterEach
-    fun tearDown() {
-        unmockkStatic("androidx.room.RoomDatabaseKt")
     }
 
     private fun givenRemote(contentTimestamp: Long?) {
@@ -88,18 +69,16 @@ class YandexSyncManagerTest {
     private fun assertPassphraseWiped() = assertTrue(passphrase.all { it == '\u0000' })
 
     private fun verifyUploaded(localChangedAt: Long) {
-        coVerify(exactly = 1) { apiClient.uploadBackup(TOKEN, ENCRYPTED_LOCAL) }
+        coVerify(exactly = 1) { apiClient.uploadBackup(TOKEN, ENCRYPTED_LOCAL, localChangedAt) }
         coVerify(exactly = 0) { apiClient.downloadBackup(any()) }
-        coVerify { settingsRepository.recordSyncSuccess(localChangedAt = localChangedAt, contentTimestamp = UPLOADED_AT) }
+        coVerify { settingsRepository.recordSyncSuccess(localChangedAt = localChangedAt, contentTimestamp = localChangedAt) }
     }
 
-    private fun verifyDownloaded() {
-        coVerify(exactly = 0) { apiClient.uploadBackup(any(), any()) }
+    private fun verifyDownloaded(remoteTimestamp: Long) {
+        coVerify(exactly = 0) { apiClient.uploadBackup(any(), any(), any()) }
         coVerifyOrder {
-            recordDao.deleteAllRecords()
-            tagDao.deleteAllTags()
-            tagDao.upsertTags(remotePayload.tags)
-            recordDao.upsertRecords(remotePayload.records)
+            backupManager.replaceVault(remotePayload, changedAt = remoteTimestamp)
+            settingsRepository.recordSyncSuccess(localChangedAt = remoteTimestamp, contentTimestamp = remoteTimestamp)
         }
     }
 
@@ -149,7 +128,7 @@ class YandexSyncManagerTest {
                 givenRemote(LAST_REMOTE)
 
                 assertEquals(SyncResult.UpToDate, manager.sync())
-                coVerify(exactly = 0) { apiClient.uploadBackup(any(), any()) }
+                coVerify(exactly = 0) { apiClient.uploadBackup(any(), any(), any()) }
                 coVerify(exactly = 0) { apiClient.downloadBackup(any()) }
                 coVerify(exactly = 0) { settingsRepository.recordSyncSuccess(any(), any()) }
                 assertPassphraseWiped()
@@ -159,7 +138,7 @@ class YandexSyncManagerTest {
         fun onlyLocalChanged_uploads() =
             runTest {
                 givenRemote(LAST_REMOTE)
-                coEvery { recordDao.getMaxModified() } returns LAST_LOCAL + 1
+                coEvery { changeTracker.changedAt() } returns LAST_LOCAL + 1
 
                 assertEquals(SyncResult.Uploaded, manager.sync())
                 verifyUploaded(LAST_LOCAL + 1)
@@ -169,16 +148,10 @@ class YandexSyncManagerTest {
         fun onlyRemoteChanged_replacesLocalData() =
             runTest {
                 givenRemote(LAST_REMOTE + 1)
-                coEvery { recordDao.getMaxModified() } returnsMany listOf(LAST_LOCAL, IMPORTED_MAX_MODIFIED)
+                coEvery { changeTracker.changedAt() } returns LAST_LOCAL
 
                 assertEquals(SyncResult.Downloaded, manager.sync())
-                verifyDownloaded()
-                coVerify {
-                    settingsRepository.recordSyncSuccess(
-                        localChangedAt = IMPORTED_MAX_MODIFIED,
-                        contentTimestamp = LAST_REMOTE + 1,
-                    )
-                }
+                verifyDownloaded(LAST_REMOTE + 1)
                 assertPassphraseWiped()
             }
 
@@ -186,7 +159,7 @@ class YandexSyncManagerTest {
         fun bothChanged_localNewer_uploads() =
             runTest {
                 givenRemote(LAST_REMOTE + 1)
-                coEvery { recordDao.getMaxModified() } returns LAST_REMOTE + 2
+                coEvery { changeTracker.changedAt() } returns LAST_REMOTE + 2
 
                 assertEquals(SyncResult.Uploaded, manager.sync())
                 verifyUploaded(LAST_REMOTE + 2)
@@ -196,7 +169,7 @@ class YandexSyncManagerTest {
         fun bothChanged_sameTimestamp_prefersLocal() =
             runTest {
                 givenRemote(LAST_REMOTE + 1)
-                coEvery { recordDao.getMaxModified() } returns LAST_REMOTE + 1
+                coEvery { changeTracker.changedAt() } returns LAST_REMOTE + 1
 
                 assertEquals(SyncResult.Uploaded, manager.sync())
                 verifyUploaded(LAST_REMOTE + 1)
@@ -206,10 +179,10 @@ class YandexSyncManagerTest {
         fun bothChanged_remoteNewer_downloads() =
             runTest {
                 givenRemote(LAST_REMOTE + 2)
-                coEvery { recordDao.getMaxModified() } returnsMany listOf(LAST_REMOTE + 1, IMPORTED_MAX_MODIFIED)
+                coEvery { changeTracker.changedAt() } returns LAST_REMOTE + 1
 
                 assertEquals(SyncResult.Downloaded, manager.sync())
-                verifyDownloaded()
+                verifyDownloaded(LAST_REMOTE + 2)
             }
 
         @Test
@@ -218,10 +191,10 @@ class YandexSyncManagerTest {
                 lastSyncedLocal.value = null
                 lastSyncedRemote.value = null
                 givenRemote(LAST_REMOTE)
-                coEvery { recordDao.getMaxModified() } returnsMany listOf(null, IMPORTED_MAX_MODIFIED)
+                coEvery { changeTracker.changedAt() } returns 0L
 
                 assertEquals(SyncResult.Downloaded, manager.sync())
-                verifyDownloaded()
+                verifyDownloaded(LAST_REMOTE)
             }
 
         @Test
@@ -230,7 +203,7 @@ class YandexSyncManagerTest {
                 lastSyncedLocal.value = null
                 lastSyncedRemote.value = null
                 givenRemote(null)
-                coEvery { recordDao.getMaxModified() } returns null
+                coEvery { changeTracker.changedAt() } returns 0L
 
                 assertEquals(SyncResult.Uploaded, manager.sync())
                 verifyUploaded(0L)
@@ -243,8 +216,7 @@ class YandexSyncManagerTest {
                 coEvery { backupManager.decryptPayload(any(), any()) } throws AEADBadTagException("tag mismatch")
 
                 assertEquals(SyncResult.InvalidPassphrase, manager.sync())
-                coVerify(exactly = 0) { recordDao.deleteAllRecords() }
-                coVerify(exactly = 0) { tagDao.deleteAllTags() }
+                coVerify(exactly = 0) { backupManager.replaceVault(any(), any()) }
                 coVerify(exactly = 0) { settingsRepository.recordSyncSuccess(any(), any()) }
                 assertPassphraseWiped()
             }
@@ -265,7 +237,7 @@ class YandexSyncManagerTest {
                 coEvery { apiClient.findBackupFile(TOKEN) } throws YandexUnauthorizedException()
 
                 assertEquals(SyncResult.LoginRequired, manager.sync())
-                coVerify(exactly = 0) { apiClient.uploadBackup(any(), any()) }
+                coVerify(exactly = 0) { apiClient.uploadBackup(any(), any(), any()) }
                 coVerify(exactly = 0) { settingsRepository.recordSyncSuccess(any(), any()) }
                 assertPassphraseWiped()
             }
@@ -274,7 +246,7 @@ class YandexSyncManagerTest {
         fun uploadError_doesNotRecordSuccess() =
             runTest {
                 givenRemote(null)
-                coEvery { apiClient.uploadBackup(any(), any()) } throws IllegalStateException("no link")
+                coEvery { apiClient.uploadBackup(any(), any(), any()) } throws IllegalStateException("no link")
 
                 assertEquals(SyncResult.Failed("no link"), manager.sync())
                 coVerify(exactly = 0) { settingsRepository.recordSyncSuccess(any(), any()) }
@@ -320,8 +292,8 @@ class YandexSyncManagerTest {
                 assertEquals(SyncResult.Uploaded, manager.resetRemoteBackup())
                 coVerifyOrder {
                     apiClient.deleteBackup(TOKEN)
-                    apiClient.uploadBackup(TOKEN, ENCRYPTED_LOCAL)
-                    settingsRepository.recordSyncSuccess(localChangedAt = LAST_LOCAL, contentTimestamp = UPLOADED_AT)
+                    apiClient.uploadBackup(TOKEN, ENCRYPTED_LOCAL, LAST_LOCAL)
+                    settingsRepository.recordSyncSuccess(localChangedAt = LAST_LOCAL, contentTimestamp = LAST_LOCAL)
                 }
                 assertPassphraseWiped()
             }
@@ -343,7 +315,7 @@ class YandexSyncManagerTest {
 
                 assertEquals(SyncResult.LoginRequired, manager.resetRemoteBackup())
                 coVerify(exactly = 0) { apiClient.deleteBackup(any()) }
-                coVerify(exactly = 0) { apiClient.uploadBackup(any(), any()) }
+                coVerify(exactly = 0) { apiClient.uploadBackup(any(), any(), any()) }
                 assertPassphraseWiped()
             }
 
@@ -354,7 +326,7 @@ class YandexSyncManagerTest {
                 coEvery { apiClient.deleteBackup(TOKEN) } throws IOException("offline")
 
                 assertEquals(SyncResult.Failed("offline"), manager.resetRemoteBackup())
-                coVerify(exactly = 0) { apiClient.uploadBackup(any(), any()) }
+                coVerify(exactly = 0) { apiClient.uploadBackup(any(), any(), any()) }
                 assertPassphraseWiped()
             }
     }
@@ -364,8 +336,6 @@ class YandexSyncManagerTest {
         const val PATH = "app:/backup.pman"
         const val LAST_LOCAL = 1_000L
         const val LAST_REMOTE = 2_000L
-        const val UPLOADED_AT = 9_000L
-        const val IMPORTED_MAX_MODIFIED = 5_000L
         val ENCRYPTED_LOCAL = byteArrayOf(1, 2, 3)
         val ENCRYPTED_REMOTE = byteArrayOf(4, 5, 6)
 

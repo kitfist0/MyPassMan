@@ -1,12 +1,9 @@
 package my.passman.sync.yandex
 
-import androidx.room.withTransaction
 import kotlinx.coroutines.flow.first
-import my.passman.data.AppDatabase
-import my.passman.data.RecordDao
 import my.passman.data.SettingsRepository
 import my.passman.data.SyncProvider
-import my.passman.data.TagDao
+import my.passman.data.VaultChangeTracker
 import my.passman.sync.SyncResult
 import my.passman.util.BackupManager
 import javax.crypto.BadPaddingException
@@ -18,9 +15,7 @@ import javax.inject.Inject
  * instead of Drive's `appDataFolder`. See that class for the policy rationale.
  */
 class YandexSyncManager @Inject constructor(
-    private val appDatabase: AppDatabase,
-    private val recordDao: RecordDao,
-    private val tagDao: TagDao,
+    private val changeTracker: VaultChangeTracker,
     private val backupManager: BackupManager,
     private val settingsRepository: SettingsRepository,
     private val yandexAuthManager: YandexAuthManager,
@@ -62,7 +57,7 @@ class YandexSyncManager @Inject constructor(
                     if (yandexDiskApiClient.findBackupFile(accessToken) != null) {
                         yandexDiskApiClient.deleteBackup(accessToken)
                     }
-                    val localChangedAt = recordDao.getMaxModified() ?: 0L
+                    val localChangedAt = changeTracker.changedAt()
                     uploadLocal(accessToken, localChangedAt, passphrase)
                     SyncResult.Uploaded
                 }
@@ -81,7 +76,7 @@ class YandexSyncManager @Inject constructor(
         accessToken: String,
         passphrase: CharArray,
     ): SyncResult {
-        val localChangedAt = recordDao.getMaxModified() ?: 0L
+        val localChangedAt = changeTracker.changedAt()
         val lastSyncedLocal = settingsRepository.lastSyncedLocalChangedAt.first() ?: -1L
         val lastSyncedRemote = settingsRepository.lastSyncedContentTimestamp.first() ?: -1L
 
@@ -126,7 +121,7 @@ class YandexSyncManager @Inject constructor(
     ) {
         val payload = backupManager.exportPayload()
         val encrypted = backupManager.encryptPayload(payload, passphrase)
-        val remote = yandexDiskApiClient.uploadBackup(accessToken, encrypted)
+        val remote = yandexDiskApiClient.uploadBackup(accessToken, encrypted, localChangedAt)
         settingsRepository.recordSyncSuccess(
             localChangedAt = localChangedAt,
             contentTimestamp = remote.contentTimestamp,
@@ -140,15 +135,9 @@ class YandexSyncManager @Inject constructor(
     ) {
         val encrypted = yandexDiskApiClient.downloadBackup(accessToken)
         val payload = backupManager.decryptPayload(encrypted, passphrase)
-        appDatabase.withTransaction {
-            recordDao.deleteAllRecords()
-            tagDao.deleteAllTags()
-            tagDao.upsertTags(payload.tags)
-            recordDao.upsertRecords(payload.records)
-        }
-        val localChangedAt = recordDao.getMaxModified() ?: 0L
+        backupManager.replaceVault(payload, changedAt = remoteFile.contentTimestamp)
         settingsRepository.recordSyncSuccess(
-            localChangedAt = localChangedAt,
+            localChangedAt = remoteFile.contentTimestamp,
             contentTimestamp = remoteFile.contentTimestamp,
         )
     }

@@ -1,12 +1,9 @@
 package my.passman.sync.google
 
-import androidx.room.withTransaction
 import kotlinx.coroutines.flow.first
-import my.passman.data.AppDatabase
-import my.passman.data.RecordDao
 import my.passman.data.SettingsRepository
 import my.passman.data.SyncProvider
-import my.passman.data.TagDao
+import my.passman.data.VaultChangeTracker
 import my.passman.sync.SyncResult
 import my.passman.util.BackupManager
 import javax.crypto.BadPaddingException
@@ -15,21 +12,15 @@ import javax.inject.Inject
 /**
  * Orchestrates one sync pass against the app's Drive `appDataFolder` backup
  * file. Conflict policy is whole-payload "newer content wins": local content
- * recency is the most recent [my.passman.data.Record.modified] timestamp
- * across all records, remote content recency is the `contentTimestamp` the
- * uploading device stamped into the file's `appProperties`. Whichever side is
- * newer fully replaces the other — there is no per-record merge here (manual
+ * recency is [VaultChangeTracker.changedAt], which every record and tag edit
+ * (deletions included) moves; remote content recency is the `contentTimestamp`
+ * the uploading device stamped into the file's `appProperties`. Whichever side
+ * is newer fully replaces the other — there is no per-record merge here (manual
  * file import via Settings still merges per-record via
  * [my.passman.data.RecordDao.importRecords]).
- *
- * Tag-only edits (rename/add/delete with no record touched) do not bump the
- * local recency signal, since [my.passman.data.Tag] has no modified column;
- * such changes sync on the next pass that also touches a record.
  */
 class GoogleSyncManager @Inject constructor(
-    private val appDatabase: AppDatabase,
-    private val recordDao: RecordDao,
-    private val tagDao: TagDao,
+    private val changeTracker: VaultChangeTracker,
     private val backupManager: BackupManager,
     private val settingsRepository: SettingsRepository,
     private val driveAuthManager: GoogleDriveAuthManager,
@@ -77,7 +68,7 @@ class GoogleSyncManager @Inject constructor(
                     driveApiClient.findBackupFile(accessToken)?.let { remoteFile ->
                         driveApiClient.deleteBackup(accessToken, remoteFile.id)
                     }
-                    val localChangedAt = recordDao.getMaxModified() ?: 0L
+                    val localChangedAt = changeTracker.changedAt()
                     uploadLocal(accessToken, null, localChangedAt, passphrase)
                     SyncResult.Uploaded
                 }
@@ -95,7 +86,7 @@ class GoogleSyncManager @Inject constructor(
         accessToken: String,
         passphrase: CharArray,
     ): SyncResult {
-        val localChangedAt = recordDao.getMaxModified() ?: 0L
+        val localChangedAt = changeTracker.changedAt()
         val lastSyncedLocal = settingsRepository.lastSyncedLocalChangedAt.first() ?: -1L
         val lastSyncedRemote = settingsRepository.lastSyncedContentTimestamp.first() ?: -1L
 
@@ -156,15 +147,9 @@ class GoogleSyncManager @Inject constructor(
     ) {
         val encrypted = driveApiClient.downloadBackup(accessToken, remoteFile.id)
         val payload = backupManager.decryptPayload(encrypted, passphrase)
-        appDatabase.withTransaction {
-            recordDao.deleteAllRecords()
-            tagDao.deleteAllTags()
-            tagDao.upsertTags(payload.tags)
-            recordDao.upsertRecords(payload.records)
-        }
-        val localChangedAt = recordDao.getMaxModified() ?: 0L
+        backupManager.replaceVault(payload, changedAt = remoteFile.contentTimestamp)
         settingsRepository.recordSyncSuccess(
-            localChangedAt = localChangedAt,
+            localChangedAt = remoteFile.contentTimestamp,
             contentTimestamp = remoteFile.contentTimestamp,
         )
     }

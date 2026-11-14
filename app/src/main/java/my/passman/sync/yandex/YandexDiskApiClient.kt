@@ -22,11 +22,9 @@ class YandexUnauthorizedException : IOException("Yandex Disk rejected the access
  * uses Drive's hidden `appDataFolder`. Requires the Yandex OAuth app to be
  * registered with the `cloud_api:disk.app_folder` scope.
  *
- * Yandex doesn't offer a custom-metadata field like Drive's `appProperties`, so
- * content recency is tracked via the resource's own `modified` timestamp instead
- * — less precise than Drive's approach (it reflects upload wall-clock time, not
- * necessarily the underlying data's own recency), but adequate since an upload
- * always immediately follows the local data being finalized.
+ * Like Drive's `appProperties`, the uploading device stamps the data's own recency into the
+ * file's `custom_properties`, so conflicts compare when the data changed rather than when it
+ * was uploaded. A file without the stamp falls back to its `modified` (upload) time.
  */
 class YandexDiskApiClient @Inject constructor(
     private val api: YandexDiskRestApi,
@@ -37,13 +35,17 @@ class YandexDiskApiClient @Inject constructor(
         // or sync would go on to overwrite a newer remote backup with local data.
         if (response.code() == HTTP_NOT_FOUND) return null
         val meta = response.requireSuccess("look up the backup").body() ?: return null
-        val timestamp = parseIsoTimestamp(meta.modified) ?: return null
+        val timestamp =
+            meta.customProperties?.get(CONTENT_TIMESTAMP)?.toLongOrNull()
+                ?: parseIsoTimestamp(meta.modified)
+                ?: return null
         return RemoteYandexFile(path = meta.path, contentTimestamp = timestamp)
     }
 
     suspend fun uploadBackup(
         accessToken: String,
         data: ByteArray,
+        contentTimestamp: Long,
     ): RemoteYandexFile {
         val link =
             api
@@ -53,8 +55,14 @@ class YandexDiskApiClient @Inject constructor(
                 ?: error("Yandex Disk did not return an upload link")
         val body = data.toRequestBody("application/octet-stream".toMediaType())
         api.uploadBytes(link.href, body).requireSuccess("upload the backup")
-        // The upload response carries no metadata, so re-fetch it for an authoritative timestamp.
-        return findBackupFile(accessToken) ?: RemoteYandexFile(BACKUP_PATH, System.currentTimeMillis())
+        // The upload itself cannot carry properties, so the stamp is written right after it.
+        api
+            .updateCustomProperties(
+                authHeader(accessToken),
+                BACKUP_PATH,
+                CustomPropertiesUpdate(mapOf(CONTENT_TIMESTAMP to contentTimestamp.toString())),
+            ).requireSuccess("stamp the backup")
+        return RemoteYandexFile(BACKUP_PATH, contentTimestamp)
     }
 
     suspend fun downloadBackup(accessToken: String): ByteArray {
@@ -91,6 +99,7 @@ class YandexDiskApiClient @Inject constructor(
 
     private companion object {
         const val BACKUP_PATH = "app:/backup.pman"
+        const val CONTENT_TIMESTAMP = "contentTimestamp"
         const val HTTP_UNAUTHORIZED = 401
         const val HTTP_NOT_FOUND = 404
     }

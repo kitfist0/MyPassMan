@@ -8,12 +8,17 @@ import my.passman.data.Record
 import my.passman.data.RecordDao
 import my.passman.data.Tag
 import my.passman.data.TagDao
+import my.passman.data.VaultChangeTracker
 import java.io.InputStream
 import java.io.OutputStream
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class BackupManager(
+@Singleton
+class BackupManager @Inject constructor(
     private val recordDao: RecordDao,
     private val tagDao: TagDao,
+    private val changeTracker: VaultChangeTracker,
 ) {
     @Serializable
     data class BackupPayload(
@@ -63,7 +68,25 @@ class BackupManager(
         password: CharArray,
     ) {
         val payload = decryptPayload(encryptedData, password)
-        tagDao.upsertTags(payload.tags)
-        recordDao.importRecords(payload.records)
+        changeTracker.recordChange {
+            tagDao.upsertTags(payload.tags)
+            recordDao.importRecords(payload.records)
+        }
+    }
+
+    /**
+     * Replaces the whole vault with a synced copy. Unlike [importDatabase] nothing is merged, and the
+     * vault takes [changedAt] from the copy rather than counting as a fresh local edit.
+     */
+    suspend fun replaceVault(
+        payload: BackupPayload,
+        changedAt: Long,
+    ) {
+        changeTracker.applySyncedChange(changedAt) {
+            recordDao.deleteAllRecords()
+            tagDao.deleteAllTags()
+            tagDao.upsertTags(payload.tags)
+            recordDao.upsertRecords(payload.records)
+        }
     }
 }

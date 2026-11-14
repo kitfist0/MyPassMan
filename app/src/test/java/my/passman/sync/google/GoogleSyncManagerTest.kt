@@ -1,26 +1,20 @@
 package my.passman.sync.google
 
 import android.app.PendingIntent
-import androidx.room.withTransaction
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.mockkStatic
-import io.mockk.unmockkStatic
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
-import my.passman.data.AppDatabase
 import my.passman.data.Record
-import my.passman.data.RecordDao
 import my.passman.data.SettingsRepository
 import my.passman.data.SyncProvider
 import my.passman.data.Tag
-import my.passman.data.TagDao
+import my.passman.data.VaultChangeTracker
 import my.passman.sync.SyncResult
 import my.passman.util.BackupManager
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -36,10 +30,8 @@ class GoogleSyncManagerTest {
     private val passphrase = "passphrase".toCharArray()
     private val pendingIntent = mockk<PendingIntent>()
 
-    private val appDatabase = mockk<AppDatabase>()
-    private val recordDao = mockk<RecordDao>(relaxUnitFun = true)
-    private val tagDao = mockk<TagDao>(relaxUnitFun = true)
-    private val backupManager = mockk<BackupManager>()
+    private val changeTracker = mockk<VaultChangeTracker>()
+    private val backupManager = mockk<BackupManager>(relaxUnitFun = true)
     private val settingsRepository =
         mockk<SettingsRepository>(relaxUnitFun = true) {
             every { syncProvider } returns this@GoogleSyncManagerTest.syncProvider
@@ -55,9 +47,7 @@ class GoogleSyncManagerTest {
 
     private val manager =
         GoogleSyncManager(
-            appDatabase = appDatabase,
-            recordDao = recordDao,
-            tagDao = tagDao,
+            changeTracker = changeTracker,
             backupManager = backupManager,
             settingsRepository = settingsRepository,
             driveAuthManager = authManager,
@@ -66,11 +56,7 @@ class GoogleSyncManagerTest {
 
     @BeforeEach
     fun setUp() {
-        mockkStatic("androidx.room.RoomDatabaseKt")
-        coEvery { appDatabase.withTransaction(any<suspend () -> Any?>()) } coAnswers {
-            secondArg<suspend () -> Any?>().invoke()
-        }
-        coEvery { recordDao.getMaxModified() } returns LAST_LOCAL
+        coEvery { changeTracker.changedAt() } returns LAST_LOCAL
         coEvery { backupManager.exportPayload() } returns localPayload
         coEvery { backupManager.encryptPayload(localPayload, any()) } returns ENCRYPTED_LOCAL
         coEvery { backupManager.decryptPayload(ENCRYPTED_REMOTE, any()) } returns remotePayload
@@ -78,11 +64,6 @@ class GoogleSyncManagerTest {
             RemoteBackupFile(id = secondArg<String?>() ?: NEW_FILE_ID, contentTimestamp = arg(3))
         }
         coEvery { apiClient.downloadBackup(TOKEN, FILE_ID) } returns ENCRYPTED_REMOTE
-    }
-
-    @AfterEach
-    fun tearDown() {
-        unmockkStatic("androidx.room.RoomDatabaseKt")
     }
 
     private fun givenRemote(contentTimestamp: Long?) {
@@ -100,13 +81,11 @@ class GoogleSyncManagerTest {
         coVerify { settingsRepository.recordSyncSuccess(localChangedAt = localChangedAt, contentTimestamp = localChangedAt) }
     }
 
-    private fun verifyDownloaded() {
+    private fun verifyDownloaded(remoteTimestamp: Long) {
         coVerify(exactly = 0) { apiClient.uploadBackup(any(), any(), any(), any()) }
         coVerifyOrder {
-            recordDao.deleteAllRecords()
-            tagDao.deleteAllTags()
-            tagDao.upsertTags(remotePayload.tags)
-            recordDao.upsertRecords(remotePayload.records)
+            backupManager.replaceVault(remotePayload, changedAt = remoteTimestamp)
+            settingsRepository.recordSyncSuccess(localChangedAt = remoteTimestamp, contentTimestamp = remoteTimestamp)
         }
     }
 
@@ -176,7 +155,7 @@ class GoogleSyncManagerTest {
         fun onlyLocalChanged_updatesExistingFile() =
             runTest {
                 givenRemote(LAST_REMOTE)
-                coEvery { recordDao.getMaxModified() } returns LAST_LOCAL + 1
+                coEvery { changeTracker.changedAt() } returns LAST_LOCAL + 1
 
                 assertEquals(SyncResult.Uploaded, manager.sync())
                 verifyUploaded(existingFileId = FILE_ID, localChangedAt = LAST_LOCAL + 1)
@@ -186,16 +165,10 @@ class GoogleSyncManagerTest {
         fun onlyRemoteChanged_replacesLocalData() =
             runTest {
                 givenRemote(LAST_REMOTE + 1)
-                coEvery { recordDao.getMaxModified() } returnsMany listOf(LAST_LOCAL, IMPORTED_MAX_MODIFIED)
+                coEvery { changeTracker.changedAt() } returns LAST_LOCAL
 
                 assertEquals(SyncResult.Downloaded, manager.sync())
-                verifyDownloaded()
-                coVerify {
-                    settingsRepository.recordSyncSuccess(
-                        localChangedAt = IMPORTED_MAX_MODIFIED,
-                        contentTimestamp = LAST_REMOTE + 1,
-                    )
-                }
+                verifyDownloaded(LAST_REMOTE + 1)
                 assertPassphraseWiped()
             }
 
@@ -203,7 +176,7 @@ class GoogleSyncManagerTest {
         fun bothChanged_localNewer_updatesExistingFile() =
             runTest {
                 givenRemote(LAST_REMOTE + 1)
-                coEvery { recordDao.getMaxModified() } returns LAST_REMOTE + 2
+                coEvery { changeTracker.changedAt() } returns LAST_REMOTE + 2
 
                 assertEquals(SyncResult.Uploaded, manager.sync())
                 verifyUploaded(existingFileId = FILE_ID, localChangedAt = LAST_REMOTE + 2)
@@ -213,7 +186,7 @@ class GoogleSyncManagerTest {
         fun bothChanged_sameTimestamp_prefersLocal() =
             runTest {
                 givenRemote(LAST_REMOTE + 1)
-                coEvery { recordDao.getMaxModified() } returns LAST_REMOTE + 1
+                coEvery { changeTracker.changedAt() } returns LAST_REMOTE + 1
 
                 assertEquals(SyncResult.Uploaded, manager.sync())
                 verifyUploaded(existingFileId = FILE_ID, localChangedAt = LAST_REMOTE + 1)
@@ -223,10 +196,10 @@ class GoogleSyncManagerTest {
         fun bothChanged_remoteNewer_downloads() =
             runTest {
                 givenRemote(LAST_REMOTE + 2)
-                coEvery { recordDao.getMaxModified() } returnsMany listOf(LAST_REMOTE + 1, IMPORTED_MAX_MODIFIED)
+                coEvery { changeTracker.changedAt() } returns LAST_REMOTE + 1
 
                 assertEquals(SyncResult.Downloaded, manager.sync())
-                verifyDownloaded()
+                verifyDownloaded(LAST_REMOTE + 2)
             }
 
         @Test
@@ -235,10 +208,10 @@ class GoogleSyncManagerTest {
                 lastSyncedLocal.value = null
                 lastSyncedRemote.value = null
                 givenRemote(LAST_REMOTE)
-                coEvery { recordDao.getMaxModified() } returnsMany listOf(null, IMPORTED_MAX_MODIFIED)
+                coEvery { changeTracker.changedAt() } returns 0L
 
                 assertEquals(SyncResult.Downloaded, manager.sync())
-                verifyDownloaded()
+                verifyDownloaded(LAST_REMOTE)
             }
 
         @Test
@@ -247,7 +220,7 @@ class GoogleSyncManagerTest {
                 lastSyncedLocal.value = null
                 lastSyncedRemote.value = null
                 givenRemote(null)
-                coEvery { recordDao.getMaxModified() } returns null
+                coEvery { changeTracker.changedAt() } returns 0L
 
                 assertEquals(SyncResult.Uploaded, manager.sync())
                 verifyUploaded(existingFileId = null, localChangedAt = 0L)
@@ -260,8 +233,7 @@ class GoogleSyncManagerTest {
                 coEvery { backupManager.decryptPayload(any(), any()) } throws AEADBadTagException("tag mismatch")
 
                 assertEquals(SyncResult.InvalidPassphrase, manager.sync())
-                coVerify(exactly = 0) { recordDao.deleteAllRecords() }
-                coVerify(exactly = 0) { tagDao.deleteAllTags() }
+                coVerify(exactly = 0) { backupManager.replaceVault(any(), any()) }
                 coVerify(exactly = 0) { settingsRepository.recordSyncSuccess(any(), any()) }
                 assertPassphraseWiped()
             }
@@ -384,7 +356,6 @@ class GoogleSyncManagerTest {
         const val NEW_FILE_ID = "new-file-id"
         const val LAST_LOCAL = 1_000L
         const val LAST_REMOTE = 2_000L
-        const val IMPORTED_MAX_MODIFIED = 5_000L
         val ENCRYPTED_LOCAL = byteArrayOf(1, 2, 3)
         val ENCRYPTED_REMOTE = byteArrayOf(4, 5, 6)
 

@@ -9,6 +9,7 @@ import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Header
+import retrofit2.http.PATCH
 import retrofit2.http.PUT
 import retrofit2.http.Query
 import retrofit2.http.Url
@@ -38,6 +39,12 @@ data class DiskFileMeta(
     val name: String,
     val modified: String? = null,
     val type: String? = null,
+    @SerializedName("custom_properties") val customProperties: Map<String, String>? = null,
+)
+
+@Keep
+data class CustomPropertiesUpdate(
+    @SerializedName("custom_properties") val customProperties: Map<String, String>,
 )
 
 @Keep
@@ -86,7 +93,14 @@ interface YandexDiskRestApi {
     suspend fun getResourceMeta(
         @Header("Authorization") token: String,
         @Query("path") path: String,
-        @Query("fields") fields: String = "path,name,modified,type",
+        @Query("fields") fields: String = "path,name,modified,type,custom_properties",
+    ): Response<DiskFileMeta>
+
+    @PATCH("resources")
+    suspend fun updateCustomProperties(
+        @Header("Authorization") token: String,
+        @Query("path") path: String,
+        @Body body: CustomPropertiesUpdate,
     ): Response<DiskFileMeta>
 
     @DELETE("resources")

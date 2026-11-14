@@ -1,7 +1,9 @@
 package my.passman.sync.yandex
 
+import io.mockk.CapturingSlot
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.coVerifyOrder
 import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.test.runTest
@@ -13,7 +15,6 @@ import okio.Buffer
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -27,9 +28,20 @@ class YandexDiskApiClientTest {
     private val api = mockk<YandexDiskRestApi>(relaxUnitFun = true)
     private val client = YandexDiskApiClient(api)
 
-    private fun givenMeta(modified: String?) {
+    private fun givenMeta(
+        modified: String?,
+        customProperties: Map<String, String>? = null,
+    ) {
         coEvery { api.getResourceMeta(AUTH, PATH, any()) } returns
-            Response.success(DiskFileMeta(path = PATH, name = "backup.pman", modified = modified, type = "file"))
+            Response.success(
+                DiskFileMeta(
+                    path = PATH,
+                    name = "backup.pman",
+                    modified = modified,
+                    type = "file",
+                    customProperties = customProperties,
+                ),
+            )
     }
 
     private fun <T> errorResponse(code: Int): Response<T> = Response.error(code, "{}".toResponseBody(JSON))
@@ -47,6 +59,22 @@ class YandexDiskApiClientTest {
                     RemoteYandexFile(PATH, epochMillis("2026-11-11T10:15:30+00:00")),
                     client.findBackupFile(TOKEN),
                 )
+            }
+
+        @Test
+        fun prefersStampedContentTimestampOverModified() =
+            runTest {
+                givenMeta("2026-11-11T10:15:30+00:00", mapOf("contentTimestamp" to "$STAMP"))
+
+                assertEquals(RemoteYandexFile(PATH, STAMP), client.findBackupFile(TOKEN))
+            }
+
+        @Test
+        fun malformedStamp_fallsBackToModified() =
+            runTest {
+                givenMeta("2026-11-11T10:15:30+00:00", mapOf("contentTimestamp" to "soon"))
+
+                assertEquals(epochMillis("2026-11-11T10:15:30+00:00"), client.findBackupFile(TOKEN)?.contentTimestamp)
             }
 
         @ParameterizedTest
@@ -113,34 +141,38 @@ class YandexDiskApiClientTest {
 
     @Nested
     inner class UploadBackup {
+        private fun givenUploadSucceeds(body: CapturingSlot<RequestBody> = slot()) {
+            coEvery { api.getUploadLink(AUTH, PATH, true) } returns Response.success(Link(UPLOAD_HREF, "PUT", false))
+            coEvery { api.uploadBytes(UPLOAD_HREF, capture(body)) } returns Response.success(Unit)
+        }
+
         @Test
-        fun putsBytesToUploadLink_andReturnsRefetchedTimestamp() =
+        fun putsBytesToUploadLink_thenStampsContentTimestamp() =
             runTest {
                 val body = slot<RequestBody>()
-                coEvery { api.getUploadLink(AUTH, PATH, true) } returns Response.success(Link(UPLOAD_HREF, "PUT", false))
-                coEvery { api.uploadBytes(UPLOAD_HREF, capture(body)) } returns Response.success(Unit)
-                givenMeta("2026-11-11T10:15:30+00:00")
+                givenUploadSucceeds(body)
+                coEvery { api.updateCustomProperties(AUTH, PATH, any()) } returns Response.success(null)
 
-                val result = client.uploadBackup(TOKEN, DATA)
+                val result = client.uploadBackup(TOKEN, DATA, STAMP)
 
-                assertEquals(RemoteYandexFile(PATH, epochMillis("2026-11-11T10:15:30+00:00")), result)
+                assertEquals(RemoteYandexFile(PATH, STAMP), result)
                 assertEquals("application/octet-stream", body.captured.contentType().toString())
                 assertArrayEquals(DATA, Buffer().also { body.captured.writeTo(it) }.readByteArray())
+                coVerifyOrder {
+                    api.uploadBytes(UPLOAD_HREF, any())
+                    api.updateCustomProperties(AUTH, PATH, CustomPropertiesUpdate(mapOf("contentTimestamp" to "$STAMP")))
+                }
             }
 
         @Test
-        fun metadataUnavailableAfterUpload_fallsBackToCurrentTime() =
+        fun stampError_throws() =
             runTest {
-                coEvery { api.getUploadLink(AUTH, PATH, true) } returns Response.success(Link(UPLOAD_HREF, "PUT", false))
-                coEvery { api.uploadBytes(UPLOAD_HREF, any()) } returns Response.success(Unit)
-                coEvery { api.getResourceMeta(AUTH, PATH, any()) } returns errorResponse(404)
+                givenUploadSucceeds()
+                coEvery { api.updateCustomProperties(AUTH, PATH, any()) } returns errorResponse(500)
 
-                val before = System.currentTimeMillis()
-                val result = client.uploadBackup(TOKEN, DATA)
-                val after = System.currentTimeMillis()
+                val error = assertThrows<IOException> { client.uploadBackup(TOKEN, DATA, STAMP) }
 
-                assertEquals(PATH, result.path)
-                assertTrue(result.contentTimestamp in before..after)
+                assertEquals("Yandex Disk failed to stamp the backup (HTTP 500)", error.message)
             }
 
         @Test
@@ -148,7 +180,7 @@ class YandexDiskApiClientTest {
             runTest {
                 coEvery { api.getUploadLink(AUTH, PATH, true) } returns errorResponse(507)
 
-                val error = assertThrows<IOException> { client.uploadBackup(TOKEN, DATA) }
+                val error = assertThrows<IOException> { client.uploadBackup(TOKEN, DATA, STAMP) }
 
                 assertEquals("Yandex Disk failed to get an upload link (HTTP 507)", error.message)
                 coVerify(exactly = 0) { api.uploadBytes(any(), any()) }
@@ -159,7 +191,7 @@ class YandexDiskApiClientTest {
             runTest {
                 coEvery { api.getUploadLink(AUTH, PATH, true) } returns Response.success(null)
 
-                val error = assertThrows<IllegalStateException> { client.uploadBackup(TOKEN, DATA) }
+                val error = assertThrows<IllegalStateException> { client.uploadBackup(TOKEN, DATA, STAMP) }
 
                 assertEquals("Yandex Disk did not return an upload link", error.message)
                 coVerify(exactly = 0) { api.uploadBytes(any(), any()) }
@@ -170,7 +202,7 @@ class YandexDiskApiClientTest {
             runTest {
                 coEvery { api.getUploadLink(AUTH, PATH, true) } returns errorResponse(401)
 
-                assertThrows<YandexUnauthorizedException> { client.uploadBackup(TOKEN, DATA) }
+                assertThrows<YandexUnauthorizedException> { client.uploadBackup(TOKEN, DATA, STAMP) }
             }
 
         @Test
@@ -179,10 +211,10 @@ class YandexDiskApiClientTest {
                 coEvery { api.getUploadLink(AUTH, PATH, true) } returns Response.success(Link(UPLOAD_HREF, "PUT", false))
                 coEvery { api.uploadBytes(UPLOAD_HREF, any()) } returns errorResponse(500)
 
-                val error = assertThrows<IOException> { client.uploadBackup(TOKEN, DATA) }
+                val error = assertThrows<IOException> { client.uploadBackup(TOKEN, DATA, STAMP) }
 
                 assertEquals("Yandex Disk failed to upload the backup (HTTP 500)", error.message)
-                coVerify(exactly = 0) { api.getResourceMeta(any(), any(), any()) }
+                coVerify(exactly = 0) { api.updateCustomProperties(any(), any(), any()) }
             }
     }
 
@@ -260,6 +292,7 @@ class YandexDiskApiClientTest {
 
     private companion object {
         const val TOKEN = "token"
+        const val STAMP = 1_762_000_000_000L
         const val AUTH = "OAuth token"
         const val PATH = "app:/backup.pman"
         const val UPLOAD_HREF = "https://uploader.example/upload"
