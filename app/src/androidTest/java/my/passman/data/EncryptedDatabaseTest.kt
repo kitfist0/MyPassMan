@@ -50,7 +50,7 @@ class EncryptedDatabaseTest {
             .build()
 
     private fun record(name: String) =
-        Record(created = 1, modified = 1, name = name, login = "login", secret = "secret", comment = "")
+        Record(uuid = Record.newUuid(), created = 1, modified = 1, name = name, login = "login", secret = "secret", comment = "")
 
     private fun File.hasPlaintextHeader(): Boolean = readBytes().copyOf(16).decodeToString() == "SQLite format 3\u0000"
 

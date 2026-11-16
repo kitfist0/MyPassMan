@@ -37,6 +37,7 @@ class EditRecordViewModel @AssistedInject constructor(
     private var originalComment: String = ""
     private var originalTagId: Long? = null
     private var originalCreated: Long = 0
+    private var originalUuid: String? = null
 
     private fun EditRecordScreenState.hasChanges(): Boolean {
         if (isLoading || recordId == null && name.isEmpty() && login.isEmpty() && secret.isEmpty() && comment.isEmpty()) {
@@ -77,6 +78,7 @@ class EditRecordViewModel @AssistedInject constructor(
                     originalComment = record.comment
                     originalTagId = record.tagId
                     originalCreated = record.created
+                    originalUuid = record.uuid
                     // Сначала обновляем данные, isLoading станет false и hasChanges() вернет false
                     _uiState.update {
                         it.copy(
@@ -153,6 +155,7 @@ class EditRecordViewModel @AssistedInject constructor(
         val record =
             Record(
                 id = state.recordId ?: 0,
+                uuid = originalUuid ?: Record.newUuid(),
                 created = if (state.recordId == null) now else originalCreated,
                 modified = now,
                 name = state.name.trim(),

@@ -335,6 +335,7 @@ class RecordListViewModelTest {
             record =
                 Record(
                     id = id,
+                    uuid = "uuid-$id",
                     created = created,
                     modified = modified,
                     name = name,

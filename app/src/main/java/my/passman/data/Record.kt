@@ -6,6 +6,7 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import kotlinx.serialization.Serializable
+import java.util.UUID
 
 @Serializable
 @Entity(
@@ -18,11 +19,13 @@ import kotlinx.serialization.Serializable
             onDelete = ForeignKey.SET_NULL,
         ),
     ],
-    indices = [Index(value = ["tag_id"])],
+    indices = [Index(value = ["tag_id"]), Index(value = ["uuid"], unique = true)],
 )
 data class Record(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
+    /** Identifies the record across devices and backups; [id] only means something on this device. */
+    val uuid: String,
     val created: Long,
     val modified: Long,
     val name: String,
@@ -31,4 +34,8 @@ data class Record(
     val comment: String,
     @ColumnInfo(name = "tag_id")
     val tagId: Long? = null,
-)
+) {
+    companion object {
+        fun newUuid(): String = UUID.randomUUID().toString()
+    }
+}

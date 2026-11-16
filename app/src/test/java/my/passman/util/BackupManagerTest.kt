@@ -18,7 +18,10 @@ import javax.crypto.BadPaddingException
 class BackupManagerTest {
     private val payload =
         BackupManager.BackupPayload(
-            records = listOf(Record(id = 1, created = 1L, modified = 2L, name = "Банк", login = "me", secret = "p@ss", comment = "")),
+            records =
+                listOf(
+                    Record(id = 1, uuid = "bank", created = 1L, modified = 2L, name = "Банк", login = "me", secret = "p@ss", comment = ""),
+                ),
             tags = listOf(Tag(id = 1, name = "work")),
         )
 

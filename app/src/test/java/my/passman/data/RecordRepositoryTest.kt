@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test
 
 class RecordRepositoryTest {
     private val record =
-        Record(id = 7, created = 1L, modified = 2L, name = "bank", login = "me", secret = "s", comment = "")
+        Record(id = 7, uuid = "uuid-7", created = 1L, modified = 2L, name = "bank", login = "me", secret = "s", comment = "")
 
     private val recordDao =
         mockk<RecordDao>(relaxUnitFun = true) {

@@ -355,6 +355,7 @@ class YandexSyncManagerTest {
             name: String,
         ) = Record(
             id = id,
+            uuid = "uuid-$id",
             created = 0L,
             modified = 0L,
             name = name,

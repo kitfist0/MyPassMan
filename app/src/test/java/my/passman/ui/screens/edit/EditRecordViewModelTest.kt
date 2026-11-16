@@ -22,6 +22,7 @@ import my.passman.data.TagRepository
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -34,6 +35,7 @@ class EditRecordViewModelTest {
     private val existing =
         Record(
             id = 7,
+            uuid = "existing-uuid",
             created = 1_000,
             modified = 2_000,
             name = "Mail",
@@ -195,6 +197,8 @@ class EditRecordViewModelTest {
                     assertEquals(2L, tagId)
                     assertTrue(created in before..after)
                     assertEquals(created, modified)
+                    assertNotEquals(existing.uuid, uuid)
+                    assertTrue(uuid.isNotBlank())
                 }
             }
 
@@ -320,7 +324,7 @@ class EditRecordViewModelTest {
             }
 
         @Test
-        fun save_keepsIdAndCreationTime() =
+        fun save_keepsIdUuidAndCreationTime() =
             runTest {
                 val saved = slot<Record>()
                 coEvery { recordRepository.saveRecord(capture(saved)) } returns Unit
@@ -334,6 +338,7 @@ class EditRecordViewModelTest {
                 assertEquals(existing.id, returnedId)
                 with(saved.captured) {
                     assertEquals(existing.id, id)
+                    assertEquals(existing.uuid, uuid)
                     assertEquals(existing.created, created)
                     assertTrue(modified >= before)
                     assertEquals("new@example.com", login)
