@@ -68,9 +68,26 @@ class BackupManager @Inject constructor(
         password: CharArray,
     ) {
         val payload = decryptPayload(encryptedData, password)
-        changeTracker.recordChange {
-            tagDao.upsertTags(payload.tags)
-            recordDao.importRecords(payload.records)
+        changeTracker.recordChange { mergeIntoVault(payload) }
+    }
+
+    /**
+     * Merges a backup into the vault. Row ids only mean something on the device that made them, so
+     * nothing is matched by id: tags are matched by their unique name (an existing tag keeps its
+     * color) and records by [Record.uuid], where the newer [Record.modified] wins. Imported records
+     * are pointed at the local ids of their tags.
+     */
+    private suspend fun mergeIntoVault(payload: BackupPayload) {
+        val localTagIds =
+            payload.tags.associate { tag ->
+                tag.id to (tagDao.getTagByName(tag.name)?.id ?: tagDao.insertTag(tag.copy(id = 0)))
+            }
+        payload.records.forEach { record ->
+            val existing = recordDao.getRecordByUuid(record.uuid)
+            if (existing != null && record.modified <= existing.modified) return@forEach
+            recordDao.upsertRecord(
+                record.copy(id = existing?.id ?: 0, tagId = record.tagId?.let(localTagIds::get)),
+            )
         }
     }
 

@@ -11,6 +11,9 @@ interface RecordDao {
     @Query("SELECT * FROM records WHERE id = :id")
     suspend fun getRecordById(id: Long): Record?
 
+    @Query("SELECT * FROM records WHERE uuid = :uuid")
+    suspend fun getRecordByUuid(uuid: String): Record?
+
     @Transaction
     @Query("SELECT * FROM records ORDER BY id DESC")
     fun getAllRecords(): Flow<List<RecordWithTag>>
@@ -33,14 +36,4 @@ interface RecordDao {
 
     @Upsert
     suspend fun upsertRecords(records: List<Record>)
-
-    @Transaction
-    suspend fun importRecords(records: List<Record>) {
-        records.forEach { record ->
-            val existing = getRecordById(record.id)
-            if (existing == null || record.modified > existing.modified) {
-                upsertRecord(record)
-            }
-        }
-    }
 }

@@ -8,6 +8,9 @@ interface TagDao {
     @Upsert
     suspend fun upsertTag(tag: Tag): Long
 
+    @Insert
+    suspend fun insertTag(tag: Tag): Long
+
     @Query("SELECT * FROM tags WHERE id = :id")
     suspend fun getTagById(id: Long): Tag?
 

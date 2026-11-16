@@ -17,7 +17,7 @@ import javax.inject.Inject
  * the uploading device stamped into the file's `appProperties`. Whichever side
  * is newer fully replaces the other — there is no per-record merge here (manual
  * file import via Settings still merges per-record via
- * [my.passman.data.RecordDao.importRecords]).
+ * [BackupManager.importDatabase]).
  */
 class GoogleSyncManager @Inject constructor(
     private val changeTracker: VaultChangeTracker,
