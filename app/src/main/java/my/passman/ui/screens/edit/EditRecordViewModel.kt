@@ -169,8 +169,8 @@ class EditRecordViewModel @AssistedInject constructor(
     }
 
     fun delete() {
-        val id = _uiState.value.recordId ?: return
-        viewModelScope.launch { recordRepository.deleteRecord(id) }
+        val uuid = originalUuid ?: return
+        viewModelScope.launch { recordRepository.deleteRecord(uuid) }
     }
 
     @AssistedFactory

@@ -354,7 +354,7 @@ class EditRecordViewModelTest {
                 vm.delete()
                 advanceUntilIdle()
 
-                coVerify(exactly = 1) { recordRepository.deleteRecord(existing.id) }
+                coVerify(exactly = 1) { recordRepository.deleteRecord(existing.uuid) }
             }
 
         @Test

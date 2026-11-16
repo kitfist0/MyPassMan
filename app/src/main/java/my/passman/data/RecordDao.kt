@@ -21,8 +21,8 @@ interface RecordDao {
     @Upsert
     suspend fun upsertRecord(record: Record)
 
-    @Delete
-    suspend fun deleteRecord(record: Record)
+    @Query("DELETE FROM records WHERE uuid = :uuid")
+    suspend fun deleteRecordByUuid(uuid: String)
 
     @Transaction
     @Query("SELECT * FROM records WHERE name LIKE '%' || :searchQuery || '%' OR login LIKE '%' || :searchQuery || '%'")
