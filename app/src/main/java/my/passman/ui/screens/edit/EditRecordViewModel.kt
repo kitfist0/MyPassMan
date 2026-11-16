@@ -35,7 +35,7 @@ class EditRecordViewModel @AssistedInject constructor(
     private var originalLogin: String = ""
     private var originalSecret: String = ""
     private var originalComment: String = ""
-    private var originalTagId: Long? = null
+    private var originalTagUuid: String? = null
     private var originalCreated: Long = 0
     private var originalUuid: String? = null
 
@@ -47,7 +47,7 @@ class EditRecordViewModel @AssistedInject constructor(
             login != originalLogin ||
             secret != originalSecret ||
             comment != originalComment ||
-            selectedTagId != originalTagId
+            selectedTagUuid != originalTagUuid
     }
 
     private fun update(transform: (EditRecordScreenState) -> EditRecordScreenState) {
@@ -76,7 +76,7 @@ class EditRecordViewModel @AssistedInject constructor(
                     originalLogin = record.login
                     originalSecret = record.secret
                     originalComment = record.comment
-                    originalTagId = record.tagId
+                    originalTagUuid = record.tagUuid
                     originalCreated = record.created
                     originalUuid = record.uuid
                     // Сначала обновляем данные, isLoading станет false и hasChanges() вернет false
@@ -87,7 +87,7 @@ class EditRecordViewModel @AssistedInject constructor(
                             login = record.login,
                             secret = record.secret,
                             comment = record.comment,
-                            selectedTagId = record.tagId,
+                            selectedTagUuid = record.tagUuid,
                             canSave = false,
                             created = record.created,
                             modified = record.modified,
@@ -116,8 +116,8 @@ class EditRecordViewModel @AssistedInject constructor(
         update { it.copy(comment = value.replace("\n", "")) }
     }
 
-    fun onTagChange(tagId: Long?) {
-        update { it.copy(selectedTagId = tagId) }
+    fun onTagChange(tagUuid: String?) {
+        update { it.copy(selectedTagUuid = tagUuid) }
     }
 
     fun toggleSecretVisibility() {
@@ -162,7 +162,7 @@ class EditRecordViewModel @AssistedInject constructor(
                 login = state.login.trim(),
                 secret = state.secret,
                 comment = state.comment.trim(),
-                tagId = state.selectedTagId,
+                tagUuid = state.selectedTagUuid,
             )
         viewModelScope.launch { recordRepository.saveRecord(record) }
         return state.recordId

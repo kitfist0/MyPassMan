@@ -11,8 +11,8 @@ interface TagDao {
     @Insert
     suspend fun insertTag(tag: Tag): Long
 
-    @Query("SELECT * FROM tags WHERE id = :id")
-    suspend fun getTagById(id: Long): Tag?
+    @Query("SELECT * FROM tags WHERE uuid = :uuid")
+    suspend fun getTagByUuid(uuid: String): Tag?
 
     @Query("SELECT * FROM tags WHERE name = :name")
     suspend fun getTagByName(name: String): Tag?

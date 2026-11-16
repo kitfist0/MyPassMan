@@ -216,7 +216,7 @@ class RecordListViewModelTest {
                 val vm = viewModel()
                 vm.onSearchClick()
                 vm.updateSearchQuery("john")
-                vm.onTagClick(home.id)
+                vm.onTagClick(home.uuid)
                 advanceUntilIdle()
 
                 vm.onCloseSearch()
@@ -225,7 +225,7 @@ class RecordListViewModelTest {
                 val state = vm.uiState.value
                 assertFalse(state.isSearchActive)
                 assertEquals("", state.searchQuery)
-                assertNull(state.selectedTagId)
+                assertNull(state.selectedTagUuid)
                 assertEquals(3, state.records.size)
             }
     }
@@ -237,10 +237,10 @@ class RecordListViewModelTest {
             runTest {
                 val vm = viewModel()
 
-                vm.onTagClick(work.id)
+                vm.onTagClick(work.uuid)
                 advanceUntilIdle()
 
-                assertEquals(work.id, vm.uiState.value.selectedTagId)
+                assertEquals(work.uuid, vm.uiState.value.selectedTagUuid)
                 assertEquals(listOf("Alpha"), vm.names())
             }
 
@@ -248,13 +248,13 @@ class RecordListViewModelTest {
         fun onTagClick_sameTagAgain_clearsFilter() =
             runTest {
                 val vm = viewModel()
-                vm.onTagClick(work.id)
+                vm.onTagClick(work.uuid)
                 advanceUntilIdle()
 
-                vm.onTagClick(work.id)
+                vm.onTagClick(work.uuid)
                 advanceUntilIdle()
 
-                assertNull(vm.uiState.value.selectedTagId)
+                assertNull(vm.uiState.value.selectedTagUuid)
                 assertEquals(3, vm.uiState.value.records.size)
             }
 
@@ -262,12 +262,12 @@ class RecordListViewModelTest {
         fun onTagClick_otherTag_switchesFilter() =
             runTest {
                 val vm = viewModel()
-                vm.onTagClick(work.id)
+                vm.onTagClick(work.uuid)
 
-                vm.onTagClick(home.id)
+                vm.onTagClick(home.uuid)
                 advanceUntilIdle()
 
-                assertEquals(home.id, vm.uiState.value.selectedTagId)
+                assertEquals(home.uuid, vm.uiState.value.selectedTagUuid)
                 assertEquals(listOf("bank"), vm.names())
             }
 
@@ -277,7 +277,7 @@ class RecordListViewModelTest {
                 val vm = viewModel()
 
                 vm.updateSearchQuery("john")
-                vm.onTagClick(home.id)
+                vm.onTagClick(home.uuid)
                 advanceUntilIdle()
 
                 assertEquals(listOf("bank"), vm.names())
@@ -342,7 +342,7 @@ class RecordListViewModelTest {
                     login = login,
                     secret = "secret",
                     comment = "",
-                    tagId = tag?.id,
+                    tagUuid = tag?.uuid,
                 ),
             tag = tag,
         )

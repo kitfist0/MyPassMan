@@ -41,33 +41,43 @@ class BackupImportTest {
     fun backupFromAnotherDevice_mergesWithoutTouchingUnrelatedLocalRows() =
         runBlocking {
             val workId = db.tagDao().insertTag(Tag(uuid = "local-work", name = "work"))
-            db.recordDao().upsertRecord(record(uuid = "mail", name = "mail", tagId = workId))
+            db.recordDao().upsertRecord(record(uuid = "mail", name = "mail", tagUuid = "local-work"))
             val mailId = db.recordDao().getRecordByUuid("mail")!!.id
 
-            // The other device numbered its rows independently, so the ids collide with local ones.
+            // The other device numbered its rows independently, so the ids collide with local ones,
+            // and it created its own "work" tag under another uuid.
             val backup =
                 BackupManager.BackupPayload(
-                    tags = listOf(Tag(id = workId, uuid = "bank", name = "bank"), Tag(id = 5, uuid = "tag-5", name = "work")),
+                    tags = listOf(Tag(id = workId, uuid = "bank", name = "bank"), Tag(id = 5, uuid = "other-work", name = "work")),
                     records =
                         listOf(
-                            record(id = mailId, uuid = "card", name = "card", tagId = 5),
-                            record(id = 2, uuid = "loan", name = "loan", tagId = workId),
+                            record(id = mailId, uuid = "card", name = "card", tagUuid = "other-work"),
+                            record(id = 2, uuid = "loan", name = "loan", tagUuid = "bank"),
                         ),
                 )
 
             import(backup)
             import(backup) // A second import of the same file must not duplicate anything.
 
-            val tags = db.tagDao().getTagsList().associate { it.name to it.id }
-            assertEquals(setOf("work", "bank"), tags.keys)
-            assertEquals(workId, tags["work"])
+            val tags = db.tagDao().getTagsList()
+            assertEquals(setOf("work" to "local-work", "bank" to "bank"), tags.map { it.name to it.uuid }.toSet())
+            assertEquals(workId, tags.single { it.name == "work" }.id)
             assertEquals(
-                mapOf("mail" to "work", "card" to "work", "loan" to "bank"),
-                db.recordDao().getRecordsList().associate { record ->
-                    record.name to tags.entries.single { it.value == record.tagId }.key
-                },
+                mapOf("mail" to "local-work", "card" to "local-work", "loan" to "bank"),
+                db.recordDao().getRecordsList().associate { it.name to it.tagUuid },
             )
             assertEquals(mailId, db.recordDao().getRecordByUuid("mail")!!.id)
+        }
+
+    @Test
+    fun deletingATag_clearsItFromRecords() =
+        runBlocking {
+            db.tagDao().insertTag(Tag(uuid = "work", name = "work"))
+            db.recordDao().upsertRecord(record(uuid = "mail", name = "mail", tagUuid = "work"))
+
+            db.tagDao().deleteTag(db.tagDao().getTagByUuid("work")!!)
+
+            assertEquals(null, db.recordDao().getRecordByUuid("mail")!!.tagUuid)
         }
 
     private suspend fun import(payload: BackupManager.BackupPayload) {
@@ -79,7 +89,7 @@ class BackupImportTest {
         id: Long = 0,
         uuid: String,
         name: String,
-        tagId: Long?,
+        tagUuid: String?,
     ) = Record(
         id = id,
         uuid = uuid,
@@ -89,6 +99,6 @@ class BackupImportTest {
         login = "login",
         secret = "secret",
         comment = "",
-        tagId = tagId,
+        tagUuid = tagUuid,
     )
 }

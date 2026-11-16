@@ -14,12 +14,12 @@ import java.util.UUID
     foreignKeys = [
         ForeignKey(
             entity = Tag::class,
-            parentColumns = ["id"],
-            childColumns = ["tag_id"],
+            parentColumns = ["uuid"],
+            childColumns = ["tag_uuid"],
             onDelete = ForeignKey.SET_NULL,
         ),
     ],
-    indices = [Index(value = ["tag_id"]), Index(value = ["uuid"], unique = true)],
+    indices = [Index(value = ["tag_uuid"]), Index(value = ["uuid"], unique = true)],
 )
 data class Record(
     @PrimaryKey(autoGenerate = true)
@@ -32,8 +32,9 @@ data class Record(
     val login: String,
     val secret: String,
     val comment: String,
-    @ColumnInfo(name = "tag_id")
-    val tagId: Long? = null,
+    /** The record's tag, by [Tag.uuid]. */
+    @ColumnInfo(name = "tag_uuid")
+    val tagUuid: String? = null,
 ) {
     companion object {
         fun newUuid(): String = UUID.randomUUID().toString()

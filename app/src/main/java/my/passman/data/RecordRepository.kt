@@ -27,8 +27,8 @@ class RecordRepository @Inject constructor(
     suspend fun saveRecord(record: Record) {
         changeTracker.recordChange {
             val id = recordDao.getRecordByUuid(record.uuid)?.id ?: 0
-            val tagId = record.tagId?.takeIf { tagDao.getTagById(it) != null }
-            recordDao.upsertRecord(record.copy(id = id, tagId = tagId))
+            val tagUuid = record.tagUuid?.takeIf { tagDao.getTagByUuid(it) != null }
+            recordDao.upsertRecord(record.copy(id = id, tagUuid = tagUuid))
         }
     }
 

@@ -42,7 +42,7 @@ class EditRecordViewModelTest {
             login = "me@example.com",
             secret = "s3cret",
             comment = "personal",
-            tagId = 1,
+            tagUuid = "tag-1",
         )
 
     private val recordRepository =
@@ -101,13 +101,13 @@ class EditRecordViewModelTest {
             vm.onNameChange("Bank")
             vm.onLoginChange("john")
             vm.onSecretChange("pa55")
-            vm.onTagChange(2)
+            vm.onTagChange("tag-2")
 
             val state = vm.uiState.value
             assertEquals("Bank", state.name)
             assertEquals("john", state.login)
             assertEquals("pa55", state.secret)
-            assertEquals(2L, state.selectedTagId)
+            assertEquals("tag-2", state.selectedTagUuid)
         }
 
     @Test
@@ -180,7 +180,7 @@ class EditRecordViewModelTest {
                 vm.onLoginChange(" john ")
                 vm.onSecretChange(" pa55 ")
                 vm.onCommentChange(" main account ")
-                vm.onTagChange(2)
+                vm.onTagChange("tag-2")
 
                 val before = System.currentTimeMillis()
                 val returnedId = vm.save()
@@ -194,7 +194,7 @@ class EditRecordViewModelTest {
                     assertEquals("john", login)
                     assertEquals(" pa55 ", secret, "the secret must be stored verbatim")
                     assertEquals("main account", comment)
-                    assertEquals(2L, tagId)
+                    assertEquals("tag-2", tagUuid)
                     assertTrue(created in before..after)
                     assertEquals(created, modified)
                     assertNotEquals(existing.uuid, uuid)
@@ -268,7 +268,7 @@ class EditRecordViewModelTest {
                     assertEquals(existing.login, loaded.login)
                     assertEquals(existing.secret, loaded.secret)
                     assertEquals(existing.comment, loaded.comment)
-                    assertEquals(existing.tagId, loaded.selectedTagId)
+                    assertEquals(existing.tagUuid, loaded.selectedTagUuid)
                     assertEquals(existing.created, loaded.created)
                     assertEquals(existing.modified, loaded.modified)
                     assertFalse(loaded.canSave)

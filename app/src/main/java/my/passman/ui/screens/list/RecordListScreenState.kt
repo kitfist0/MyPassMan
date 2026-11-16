@@ -10,6 +10,6 @@ data class RecordListScreenState(
     val isLoading: Boolean = true,
     val isPinEnabled: Boolean = false,
     val availableTags: List<Tag> = emptyList(),
-    val selectedTagId: Long? = null,
+    val selectedTagUuid: String? = null,
     val showLongPressHint: Boolean = false,
 )

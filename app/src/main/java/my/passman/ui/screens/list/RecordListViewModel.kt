@@ -22,7 +22,7 @@ class RecordListViewModel @Inject constructor(
 ) : ViewModel() {
     private val _searchQuery = MutableStateFlow("")
     private val _isSearchActive = MutableStateFlow(false)
-    private val _selectedTagId = MutableStateFlow<Long?>(null)
+    private val _selectedTagUuid = MutableStateFlow<String?>(null)
 
     private val sortOrder =
         settingsRepository.sortOrder
@@ -39,10 +39,10 @@ class RecordListViewModel @Inject constructor(
         combine(
             _searchQuery,
             sortOrder,
-            _selectedTagId,
-        ) { query, sort, tagId ->
-            Triple(query, sort, tagId)
-        }.flatMapLatest { (query, sort, tagId) ->
+            _selectedTagUuid,
+        ) { query, sort, tagUuid ->
+            Triple(query, sort, tagUuid)
+        }.flatMapLatest { (query, sort, tagUuid) ->
             val flow =
                 if (query.isBlank()) {
                     recordRepository.getAllRecords()
@@ -50,7 +50,7 @@ class RecordListViewModel @Inject constructor(
                     recordRepository.searchRecords(query)
                 }
             flow.map { list ->
-                val filtered = if (tagId != null) list.filter { it.tag?.id == tagId } else list
+                val filtered = if (tagUuid != null) list.filter { it.tag?.uuid == tagUuid } else list
                 when (sort) {
                     SortOrder.BY_NAME -> filtered.sortedBy { it.record.name.lowercase() }
                     SortOrder.BY_CREATED -> filtered.sortedByDescending { it.record.created }
@@ -61,17 +61,17 @@ class RecordListViewModel @Inject constructor(
 
     private data class ListExtras(
         val availableTags: List<Tag>,
-        val selectedTagId: Long?,
+        val selectedTagUuid: String?,
         val hasShownLongPressHint: Boolean,
     )
 
     private val listExtras: Flow<ListExtras> =
         combine(
             allTags,
-            _selectedTagId,
+            _selectedTagUuid,
             settingsRepository.hasShownLongPressHint,
-        ) { tags, selectedTagId, hasShownLongPressHint ->
-            ListExtras(tags, selectedTagId, hasShownLongPressHint)
+        ) { tags, selectedTagUuid, hasShownLongPressHint ->
+            ListExtras(tags, selectedTagUuid, hasShownLongPressHint)
         }
 
     val uiState: StateFlow<RecordListScreenState> =
@@ -89,7 +89,7 @@ class RecordListViewModel @Inject constructor(
                 isLoading = recordsList == null,
                 isPinEnabled = pinHash != null,
                 availableTags = extras.availableTags,
-                selectedTagId = extras.selectedTagId,
+                selectedTagUuid = extras.selectedTagUuid,
                 showLongPressHint = recordsList?.isNotEmpty() == true && !extras.hasShownLongPressHint,
             )
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), RecordListScreenState())
@@ -105,11 +105,11 @@ class RecordListViewModel @Inject constructor(
     fun onCloseSearch() {
         _isSearchActive.value = false
         _searchQuery.value = ""
-        _selectedTagId.value = null
+        _selectedTagUuid.value = null
     }
 
-    fun onTagClick(tagId: Long) {
-        _selectedTagId.value = if (_selectedTagId.value == tagId) null else tagId
+    fun onTagClick(tagUuid: String) {
+        _selectedTagUuid.value = if (_selectedTagUuid.value == tagUuid) null else tagUuid
     }
 
     fun dismissLongPressHint() {

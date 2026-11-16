@@ -131,8 +131,8 @@ fun RecordListScreen(
                                 items(state.availableTags, key = { it.id }) { tag ->
                                     TagFilterChip(
                                         tag = tag,
-                                        selected = state.selectedTagId == tag.id,
-                                        onClick = { viewModel.onTagClick(tag.id) },
+                                        selected = state.selectedTagUuid == tag.uuid,
+                                        onClick = { viewModel.onTagClick(tag.uuid) },
                                     )
                                 }
                             }
@@ -164,7 +164,7 @@ fun RecordListScreen(
                             .padding(padding),
                     contentAlignment = Alignment.Center,
                 ) {
-                    val searchQueryIsEmpty = state.searchQuery.isEmpty() && state.selectedTagId == null
+                    val searchQueryIsEmpty = state.searchQuery.isEmpty() && state.selectedTagUuid == null
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(
                             imageVector = Icons.Default.Inbox,

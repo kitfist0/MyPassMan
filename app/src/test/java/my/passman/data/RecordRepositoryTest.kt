@@ -13,7 +13,17 @@ import org.junit.jupiter.api.Test
 
 class RecordRepositoryTest {
     private val record =
-        Record(id = 7, uuid = "uuid-7", created = 1L, modified = 2L, name = "bank", login = "me", secret = "s", comment = "", tagId = 3)
+        Record(
+            id = 7,
+            uuid = "uuid-7",
+            created = 1L,
+            modified = 2L,
+            name = "bank",
+            login = "me",
+            secret = "s",
+            comment = "",
+            tagUuid = "tag-3",
+        )
 
     private val recordDao =
         mockk<RecordDao>(relaxUnitFun = true) {
@@ -24,8 +34,8 @@ class RecordRepositoryTest {
         }
     private val tagDao =
         mockk<TagDao> {
-            coEvery { getTagById(any()) } returns null
-            coEvery { getTagById(3) } returns Tag(id = 3, uuid = "tag-3", name = "work")
+            coEvery { getTagByUuid(any()) } returns null
+            coEvery { getTagByUuid("tag-3") } returns Tag(id = 3, uuid = "tag-3", name = "work")
         }
     private val changeTracker =
         mockk<VaultChangeTracker> {
@@ -93,9 +103,9 @@ class RecordRepositoryTest {
     @Test
     fun saveRecord_withTagThatNoLongerExists_dropsTheTag() =
         runTest {
-            repository.saveRecord(record.copy(tagId = 99))
+            repository.saveRecord(record.copy(tagUuid = "gone"))
 
-            coVerify(exactly = 1) { recordDao.upsertRecord(record.copy(tagId = null)) }
+            coVerify(exactly = 1) { recordDao.upsertRecord(record.copy(tagUuid = null)) }
         }
 
     @Test

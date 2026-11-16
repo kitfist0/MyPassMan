@@ -308,7 +308,7 @@ fun EditRecordScreen(
                 }
 
                 var expanded by remember { mutableStateOf(false) }
-                val selectedTag = state.allTags.find { it.id == state.selectedTagId }
+                val selectedTag = state.allTags.find { it.uuid == state.selectedTagUuid }
 
                 ExposedDropdownMenuBox(
                     expanded = expanded,
@@ -347,7 +347,7 @@ fun EditRecordScreen(
                                 text = { Text(tag.name) },
                                 leadingIcon = { TagColorDot(color = tag.color, size = TAG_DOT_SIZE) },
                                 onClick = {
-                                    viewModel.onTagChange(tag.id)
+                                    viewModel.onTagChange(tag.uuid)
                                     expanded = false
                                 },
                             )

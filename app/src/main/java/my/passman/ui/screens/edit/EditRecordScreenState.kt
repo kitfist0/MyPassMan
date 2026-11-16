@@ -9,7 +9,7 @@ data class EditRecordScreenState(
     val login: String = "",
     val secret: String = "",
     val comment: String = "",
-    val selectedTagId: Long? = null,
+    val selectedTagUuid: String? = null,
     val allTags: List<Tag> = emptyList(),
     val secretVisible: Boolean = false,
     val showExitDialog: Boolean = false,

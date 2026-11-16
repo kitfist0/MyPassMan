@@ -20,8 +20,8 @@ import javax.crypto.BadPaddingException
 class BackupManagerTest {
     private val payload =
         BackupManager.BackupPayload(
-            records = listOf(record(id = 1, uuid = "bank", modified = 2L, tagId = 1)),
-            tags = listOf(Tag(id = 1, uuid = "tag-1", name = "work")),
+            records = listOf(record(id = 1, uuid = "bank", modified = 2L, tagUuid = WORK)),
+            tags = listOf(Tag(id = 1, uuid = WORK, name = "work")),
         )
 
     private val recordDao =
@@ -32,6 +32,7 @@ class BackupManagerTest {
     private val tagDao =
         mockk<TagDao>(relaxUnitFun = true) {
             coEvery { getTagsList() } returns payload.tags
+            coEvery { getTagByUuid(any()) } returns null
             coEvery { getTagByName(any()) } returns null
             coEvery { insertTag(any()) } returns NEW_TAG_ID
         }
@@ -98,25 +99,38 @@ class BackupManagerTest {
             }
 
         @Test
-        fun newTag_isInsertedUnderAFreshId_andRecordsFollowIt() =
+        fun newTag_isInsertedUnderAFreshIdKeepingItsUuid() =
             runTest {
                 import(payload)
 
-                coVerify(exactly = 1) { tagDao.insertTag(Tag(id = 0, uuid = "tag-1", name = "work")) }
-                coVerify(exactly = 1) { recordDao.upsertRecord(payload.records.single().copy(id = 0, tagId = NEW_TAG_ID)) }
+                coVerify(exactly = 1) { tagDao.insertTag(Tag(id = 0, uuid = WORK, name = "work")) }
+                coVerify(exactly = 1) { recordDao.upsertRecord(payload.records.single().copy(id = 0)) }
             }
 
         @Test
-        fun tagWithLocalName_reusesLocalTag_keepingItsColor() =
+        fun tagKnownByUuid_keepsItsLocalNameAndColor() =
             runTest {
-                // The same name under another id: a backup from another device, or a tag recreated since.
-                coEvery { tagDao.getTagByName("work") } returns Tag(id = 9, uuid = "tag-9", name = "work", color = TagColor.RED)
+                // Renamed and recolored on this device since the backup was made.
+                coEvery { tagDao.getTagByUuid(WORK) } returns Tag(id = 9, uuid = WORK, name = "job", color = TagColor.RED)
 
-                import(payload.copy(tags = listOf(Tag(id = 1, uuid = "tag-1", name = "work", color = TagColor.BLUE))))
+                import(payload)
 
                 coVerify(exactly = 0) { tagDao.insertTag(any()) }
                 coVerify(exactly = 0) { tagDao.upsertTag(any()) }
-                coVerify(exactly = 1) { recordDao.upsertRecord(payload.records.single().copy(id = 0, tagId = 9)) }
+                coVerify(exactly = 1) { recordDao.upsertRecord(payload.records.single().copy(id = 0)) }
+            }
+
+        @Test
+        fun tagWithLocalNameButAnotherUuid_reusesLocalTag() =
+            runTest {
+                // The same name created independently on another device.
+                coEvery { tagDao.getTagByName("work") } returns Tag(id = 9, uuid = "local-work", name = "work", color = TagColor.RED)
+
+                import(payload)
+
+                coVerify(exactly = 0) { tagDao.insertTag(any()) }
+                coVerify(exactly = 0) { tagDao.upsertTag(any()) }
+                coVerify(exactly = 1) { recordDao.upsertRecord(payload.records.single().copy(id = 0, tagUuid = "local-work")) }
             }
 
         @Test
@@ -124,7 +138,7 @@ class BackupManagerTest {
             runTest {
                 import(payload.copy(tags = emptyList()))
 
-                coVerify(exactly = 1) { recordDao.upsertRecord(payload.records.single().copy(id = 0, tagId = null)) }
+                coVerify(exactly = 1) { recordDao.upsertRecord(payload.records.single().copy(id = 0, tagUuid = null)) }
             }
 
         @Test
@@ -145,7 +159,7 @@ class BackupManagerTest {
 
                 import(payload)
 
-                coVerify(exactly = 1) { recordDao.upsertRecord(payload.records.single().copy(id = 5, tagId = NEW_TAG_ID)) }
+                coVerify(exactly = 1) { recordDao.upsertRecord(payload.records.single().copy(id = 5)) }
             }
 
         @Test
@@ -162,12 +176,13 @@ class BackupManagerTest {
     private companion object {
         const val PASSWORD = "correct horse"
         const val NEW_TAG_ID = 42L
+        const val WORK = "work-uuid"
 
         fun record(
             id: Long,
             uuid: String,
             modified: Long,
-            tagId: Long? = null,
+            tagUuid: String? = null,
         ) = Record(
             id = id,
             uuid = uuid,
@@ -177,7 +192,7 @@ class BackupManagerTest {
             login = "me",
             secret = "p@ss",
             comment = "",
-            tagId = tagId,
+            tagUuid = tagUuid,
         )
     }
 }

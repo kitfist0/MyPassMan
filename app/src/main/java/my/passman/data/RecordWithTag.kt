@@ -6,8 +6,8 @@ import androidx.room.Relation
 data class RecordWithTag(
     @Embedded val record: Record,
     @Relation(
-        parentColumn = "tag_id",
-        entityColumn = "id",
+        parentColumn = "tag_uuid",
+        entityColumn = "uuid",
     )
     val tag: Tag?,
 )
