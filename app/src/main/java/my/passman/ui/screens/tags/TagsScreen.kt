@@ -58,15 +58,8 @@ fun TagsScreen(
                             label = { Text(stringResource(R.string.label_tag_name)) },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
-                            isError = dialogState.tagName.isNotEmpty() && !isValid,
-                            supportingText = {
-                                if (dialogState.tagName.isNotEmpty() && !isValid) {
-                                    Text(
-                                        text = stringResource(R.string.tag_name_error, Tag.MAX_NAME_LENGTH),
-                                        color = MaterialTheme.colorScheme.error,
-                                    )
-                                }
-                            },
+                            isError = (dialogState.tagName.isNotEmpty() && !isValid) || dialogState.isNameTaken,
+                            supportingText = { TagNameError(dialogState, isValid) },
                         )
                         TagColorPicker(
                             selected = dialogState.tagColor,
@@ -76,10 +69,9 @@ fun TagsScreen(
                 },
                 confirmButton = {
                     TextButton(
-                        enabled = isValid,
+                        enabled = isValid && !dialogState.isNameTaken,
                         onClick = {
                             viewModel.onAddDialogConfirmButtonClick()
-                            viewModel.dismissDialog()
                         },
                     ) {
                         Text(stringResource(R.string.add))
@@ -107,15 +99,8 @@ fun TagsScreen(
                             label = { Text(stringResource(R.string.label_tag_name)) },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
-                            isError = dialogState.tagName.isNotEmpty() && !isValid,
-                            supportingText = {
-                                if (dialogState.tagName.isNotEmpty() && !isValid) {
-                                    Text(
-                                        text = stringResource(R.string.tag_name_error, Tag.MAX_NAME_LENGTH),
-                                        color = MaterialTheme.colorScheme.error,
-                                    )
-                                }
-                            },
+                            isError = (dialogState.tagName.isNotEmpty() && !isValid) || dialogState.isNameTaken,
+                            supportingText = { TagNameError(dialogState, isValid) },
                         )
                         TagColorPicker(
                             selected = dialogState.tagColor,
@@ -127,10 +112,10 @@ fun TagsScreen(
                     TextButton(
                         enabled =
                             isValid &&
+                                !dialogState.isNameTaken &&
                                 (dialogState.tagName != dialog.tag.name || dialogState.tagColor != dialog.tag.color),
                         onClick = {
                             viewModel.onEditDialogConfirmButtonClick()
-                            viewModel.dismissDialog()
                         },
                     ) {
                         Text(stringResource(R.string.save))
@@ -337,3 +322,17 @@ private fun TagColor.labelRes(): Int =
         TagColor.PINK -> R.string.tag_color_pink
         TagColor.GRAY -> R.string.tag_color_gray
     }
+
+@Composable
+private fun TagNameError(
+    dialogState: TagsDialogState,
+    isValid: Boolean,
+) {
+    val message =
+        when {
+            dialogState.tagName.isNotEmpty() && !isValid -> stringResource(R.string.tag_name_error, Tag.MAX_NAME_LENGTH)
+            dialogState.isNameTaken -> stringResource(R.string.tag_name_taken_error)
+            else -> return
+        }
+    Text(text = message, color = MaterialTheme.colorScheme.error)
+}

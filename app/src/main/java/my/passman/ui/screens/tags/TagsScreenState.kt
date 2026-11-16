@@ -12,6 +12,8 @@ data class TagsDialogState(
     val activeDialog: TagsDialog? = null,
     val tagName: String = "",
     val tagColor: TagColor = TagColor.DEFAULT,
+    /** Another tag already has [tagName], so it cannot be saved. */
+    val isNameTaken: Boolean = false,
 )
 
 sealed interface TagsDialog {

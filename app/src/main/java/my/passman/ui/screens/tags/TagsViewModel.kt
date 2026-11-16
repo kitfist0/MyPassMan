@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import my.passman.data.SaveTagResult
 import my.passman.data.Tag
 import my.passman.data.TagColor
 import my.passman.data.TagRepository
@@ -28,7 +29,7 @@ class TagsViewModel @Inject constructor(
         ) { tags, dialogState ->
             TagsScreenState(
                 tags = tags,
-                dialog = dialogState,
+                dialog = dialogState.copy(isNameTaken = isNameTaken(tags, dialogState)),
             )
         }.stateIn(
             scope = viewModelScope,
@@ -65,9 +66,7 @@ class TagsViewModel @Inject constructor(
     fun onAddDialogConfirmButtonClick() {
         val state = _dialogState.value
         if (state.tagName.isBlank()) return
-        viewModelScope.launch {
-            tagRepository.saveTag(Tag(name = state.tagName.trim(), color = state.tagColor))
-        }
+        save(Tag(name = state.tagName.trim(), color = state.tagColor))
     }
 
     fun onEditDialogConfirmButtonClick() {
@@ -77,10 +76,30 @@ class TagsViewModel @Inject constructor(
             val tag = activeDialog.tag
             val newName = state.tagName
             if (newName.isBlank() || (newName == tag.name && state.tagColor == tag.color)) return
-            viewModelScope.launch {
-                tagRepository.saveTag(tag.copy(name = newName.trim(), color = state.tagColor))
-            }
+            save(tag.copy(name = newName.trim(), color = state.tagColor))
         }
+    }
+
+    /** Closes the dialog once saved; a taken name keeps it open, where the error is shown. */
+    private fun save(tag: Tag) {
+        if (uiState.value.dialog.isNameTaken) return
+        viewModelScope.launch {
+            if (tagRepository.saveTag(tag) == SaveTagResult.Saved) dismissDialog()
+        }
+    }
+
+    private fun isNameTaken(
+        tags: List<Tag>,
+        dialogState: TagsDialogState,
+    ): Boolean {
+        val editedId =
+            when (val dialog = dialogState.activeDialog) {
+                TagsDialog.Add -> null
+                is TagsDialog.Edit -> dialog.tag.id
+                else -> return false
+            }
+        val name = dialogState.tagName.trim()
+        return tags.any { it.name == name && it.id != editedId }
     }
 
     fun onDeleteDialogConfirmButtonClick(tag: Tag) {

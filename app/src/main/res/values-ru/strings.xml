@@ -84,6 +84,7 @@
     <string name="add">Добавить</string>
     <string name="add_tag_description">Добавить тег</string>
     <string name="tag_name_error">Тег должен содержать от 1 до %1$d символов: буквы, цифры, точки или дефисы (без пробелов).</string>
+    <string name="tag_name_taken_error">Тег с таким именем уже есть.</string>
     <string name="settings_manage_tags">Управление тегами</string>
     <string name="delete_tag_title">Удалить тег?</string>
     <string name="delete_tag_text">Вы уверены, что хотите удалить тег \"%1$s\"? Он будет удалён из всех связанных записей.</string>

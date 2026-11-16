@@ -1,5 +1,6 @@
 package my.passman.ui.screens.tags
 
+import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
@@ -13,12 +14,15 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import my.passman.data.SaveTagResult
 import my.passman.data.Tag
 import my.passman.data.TagColor
 import my.passman.data.TagRepository
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -33,6 +37,7 @@ class TagsViewModelTest {
     private val tagRepository =
         mockk<TagRepository>(relaxUnitFun = true) {
             every { getAllTags() } returns tags
+            coEvery { saveTag(any()) } returns SaveTagResult.Saved
         }
 
     @BeforeEach
@@ -130,6 +135,52 @@ class TagsViewModelTest {
             }
 
         @Test
+        fun confirm_closesDialogOnceSaved() =
+            runTest {
+                val vm = viewModel()
+                vm.showAddDialog()
+                vm.onTagNameChange("bank")
+
+                vm.onAddDialogConfirmButtonClick()
+                advanceUntilIdle()
+
+                assertEquals(TagsDialogState(), vm.dialog)
+            }
+
+        @Test
+        fun nameOfExistingTag_isReportedAndNotSaved() =
+            runTest {
+                val vm = viewModel()
+                vm.showAddDialog()
+                vm.onTagNameChange(" work ")
+                advanceUntilIdle()
+
+                assertTrue(vm.dialog.isNameTaken)
+
+                vm.onAddDialogConfirmButtonClick()
+                advanceUntilIdle()
+
+                coVerify(exactly = 0) { tagRepository.saveTag(any()) }
+                assertEquals(TagsDialog.Add, vm.dialog.activeDialog)
+            }
+
+        @Test
+        fun nameTakenBySave_keepsDialogOpen() =
+            runTest {
+                // The tag list has not caught up with a tag that already got the name.
+                coEvery { tagRepository.saveTag(any()) } returns SaveTagResult.NameTaken
+                val vm = viewModel()
+                vm.showAddDialog()
+                vm.onTagNameChange("bank")
+
+                vm.onAddDialogConfirmButtonClick()
+                advanceUntilIdle()
+
+                assertEquals(TagsDialog.Add, vm.dialog.activeDialog)
+                assertEquals("bank", vm.dialog.tagName)
+            }
+
+        @Test
         fun confirm_withBlankName_doesNothing() =
             runTest {
                 val vm = viewModel()
@@ -171,6 +222,34 @@ class TagsViewModelTest {
                 advanceUntilIdle()
 
                 coVerify(exactly = 1) { tagRepository.saveTag(work.copy(name = "job")) }
+            }
+
+        @Test
+        fun ownName_isNotTaken() =
+            runTest {
+                val vm = viewModel()
+
+                vm.showEditDialog(work)
+                advanceUntilIdle()
+
+                assertFalse(vm.dialog.isNameTaken)
+            }
+
+        @Test
+        fun renameToAnotherTagsName_isReportedAndNotSaved() =
+            runTest {
+                val vm = viewModel()
+                vm.showEditDialog(work)
+                vm.onTagNameChange("home")
+                advanceUntilIdle()
+
+                assertTrue(vm.dialog.isNameTaken)
+
+                vm.onEditDialogConfirmButtonClick()
+                advanceUntilIdle()
+
+                coVerify(exactly = 0) { tagRepository.saveTag(any()) }
+                assertEquals(TagsDialog.Edit(work), vm.dialog.activeDialog)
             }
 
         @Test
