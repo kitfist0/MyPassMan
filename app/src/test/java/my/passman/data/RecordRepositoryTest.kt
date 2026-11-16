@@ -25,7 +25,7 @@ class RecordRepositoryTest {
     private val tagDao =
         mockk<TagDao> {
             coEvery { getTagById(any()) } returns null
-            coEvery { getTagById(3) } returns Tag(id = 3, name = "work")
+            coEvery { getTagById(3) } returns Tag(id = 3, uuid = "tag-3", name = "work")
         }
     private val changeTracker =
         mockk<VaultChangeTracker> {

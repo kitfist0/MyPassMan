@@ -21,7 +21,7 @@ class BackupManagerTest {
     private val payload =
         BackupManager.BackupPayload(
             records = listOf(record(id = 1, uuid = "bank", modified = 2L, tagId = 1)),
-            tags = listOf(Tag(id = 1, name = "work")),
+            tags = listOf(Tag(id = 1, uuid = "tag-1", name = "work")),
         )
 
     private val recordDao =
@@ -102,7 +102,7 @@ class BackupManagerTest {
             runTest {
                 import(payload)
 
-                coVerify(exactly = 1) { tagDao.insertTag(Tag(id = 0, name = "work")) }
+                coVerify(exactly = 1) { tagDao.insertTag(Tag(id = 0, uuid = "tag-1", name = "work")) }
                 coVerify(exactly = 1) { recordDao.upsertRecord(payload.records.single().copy(id = 0, tagId = NEW_TAG_ID)) }
             }
 
@@ -110,9 +110,9 @@ class BackupManagerTest {
         fun tagWithLocalName_reusesLocalTag_keepingItsColor() =
             runTest {
                 // The same name under another id: a backup from another device, or a tag recreated since.
-                coEvery { tagDao.getTagByName("work") } returns Tag(id = 9, name = "work", color = TagColor.RED)
+                coEvery { tagDao.getTagByName("work") } returns Tag(id = 9, uuid = "tag-9", name = "work", color = TagColor.RED)
 
-                import(payload.copy(tags = listOf(Tag(id = 1, name = "work", color = TagColor.BLUE))))
+                import(payload.copy(tags = listOf(Tag(id = 1, uuid = "tag-1", name = "work", color = TagColor.BLUE))))
 
                 coVerify(exactly = 0) { tagDao.insertTag(any()) }
                 coVerify(exactly = 0) { tagDao.upsertTag(any()) }

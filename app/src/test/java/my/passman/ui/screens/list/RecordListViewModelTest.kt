@@ -34,8 +34,8 @@ import org.junit.jupiter.api.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class RecordListViewModelTest {
-    private val work = Tag(id = 1, name = "work")
-    private val home = Tag(id = 2, name = "home")
+    private val work = Tag(id = 1, uuid = "tag-1", name = "work")
+    private val home = Tag(id = 2, uuid = "tag-2", name = "home")
 
     private val bank = item(id = 1, name = "bank", login = "john", created = 300, modified = 100, tag = home)
     private val alpha = item(id = 2, name = "Alpha", login = "a.smith", created = 100, modified = 300, tag = work)

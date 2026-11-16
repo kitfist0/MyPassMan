@@ -40,14 +40,14 @@ class BackupImportTest {
     @Test
     fun backupFromAnotherDevice_mergesWithoutTouchingUnrelatedLocalRows() =
         runBlocking {
-            val workId = db.tagDao().insertTag(Tag(name = "work"))
+            val workId = db.tagDao().insertTag(Tag(uuid = "local-work", name = "work"))
             db.recordDao().upsertRecord(record(uuid = "mail", name = "mail", tagId = workId))
             val mailId = db.recordDao().getRecordByUuid("mail")!!.id
 
             // The other device numbered its rows independently, so the ids collide with local ones.
             val backup =
                 BackupManager.BackupPayload(
-                    tags = listOf(Tag(id = workId, name = "bank"), Tag(id = 5, name = "work")),
+                    tags = listOf(Tag(id = workId, uuid = "bank", name = "bank"), Tag(id = 5, uuid = "tag-5", name = "work")),
                     records =
                         listOf(
                             record(id = mailId, uuid = "card", name = "card", tagId = 5),

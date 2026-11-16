@@ -66,7 +66,7 @@ class TagsViewModel @Inject constructor(
     fun onAddDialogConfirmButtonClick() {
         val state = _dialogState.value
         if (state.tagName.isBlank()) return
-        save(Tag(name = state.tagName.trim(), color = state.tagColor))
+        save(Tag(uuid = Tag.newUuid(), name = state.tagName.trim(), color = state.tagColor))
     }
 
     fun onEditDialogConfirmButtonClick() {

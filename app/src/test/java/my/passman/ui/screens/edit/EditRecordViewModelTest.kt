@@ -31,7 +31,7 @@ import org.junit.jupiter.api.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class EditRecordViewModelTest {
-    private val tags = MutableStateFlow(listOf(Tag(id = 1, name = "work"), Tag(id = 2, name = "home")))
+    private val tags = MutableStateFlow(listOf(Tag(id = 1, uuid = "tag-1", name = "work"), Tag(id = 2, uuid = "tag-2", name = "home")))
     private val existing =
         Record(
             id = 7,
@@ -76,7 +76,7 @@ class EditRecordViewModelTest {
             val vm = viewModel(null)
             assertEquals(tags.value, vm.uiState.value.allTags)
 
-            val updated = listOf(Tag(id = 3, name = "bank"))
+            val updated = listOf(Tag(id = 3, uuid = "tag-3", name = "bank"))
             tags.value = updated
             advanceUntilIdle()
 
@@ -317,7 +317,7 @@ class EditRecordViewModelTest {
             runTest {
                 val vm = viewModel(existing.id)
 
-                tags.value = tags.value + Tag(id = 3, name = "bank")
+                tags.value = tags.value + Tag(id = 3, uuid = "tag-3", name = "bank")
                 advanceUntilIdle()
 
                 assertFalse(vm.uiState.value.canSave)

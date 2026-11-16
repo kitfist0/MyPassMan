@@ -362,12 +362,12 @@ class GoogleSyncManagerTest {
         val localPayload =
             BackupManager.BackupPayload(
                 records = listOf(record(id = 1, name = "local")),
-                tags = listOf(Tag(id = 1, name = "work")),
+                tags = listOf(Tag(id = 1, uuid = "tag-1", name = "work")),
             )
         val remotePayload =
             BackupManager.BackupPayload(
                 records = listOf(record(id = 2, name = "remote")),
-                tags = listOf(Tag(id = 2, name = "home")),
+                tags = listOf(Tag(id = 2, uuid = "tag-2", name = "home")),
             )
 
         fun record(

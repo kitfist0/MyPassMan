@@ -29,8 +29,8 @@ import org.junit.jupiter.api.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class TagsViewModelTest {
-    private val work = Tag(id = 1, name = "work", color = TagColor.BLUE)
-    private val home = Tag(id = 2, name = "home")
+    private val work = Tag(id = 1, uuid = "tag-1", name = "work", color = TagColor.BLUE)
+    private val home = Tag(id = 2, uuid = "tag-2", name = "home")
 
     private val tags = MutableStateFlow(listOf(work, home))
 
@@ -131,7 +131,9 @@ class TagsViewModelTest {
                 vm.dismissDialog()
                 advanceUntilIdle()
 
-                coVerify(exactly = 1) { tagRepository.saveTag(Tag(name = "bank", color = TagColor.GREEN)) }
+                coVerify(exactly = 1) {
+                    tagRepository.saveTag(match { it.id == 0L && it.name == "bank" && it.color == TagColor.GREEN && it.uuid.isNotBlank() })
+                }
             }
 
         @Test

@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Test
 
 class TagRepositoryTest {
-    private val tag = Tag(id = 3, name = "work")
+    private val tag = Tag(id = 3, uuid = "tag-3", name = "work")
 
     private val tagDao =
         mockk<TagDao>(relaxUnitFun = true) {
@@ -60,8 +60,8 @@ class TagRepositoryTest {
         runTest {
             coEvery { tagDao.getTagByName("work") } returns tag
 
-            assertEquals(SaveTagResult.NameTaken, repository.saveTag(Tag(name = "work")))
-            assertEquals(SaveTagResult.NameTaken, repository.saveTag(Tag(id = 4, name = "work")))
+            assertEquals(SaveTagResult.NameTaken, repository.saveTag(Tag(uuid = "tag-new", name = "work")))
+            assertEquals(SaveTagResult.NameTaken, repository.saveTag(Tag(id = 4, uuid = "tag-4", name = "work")))
 
             coVerify(exactly = 0) { tagDao.upsertTag(any()) }
             coVerify(exactly = 0) { changeTracker.recordChange(any<suspend () -> Any?>()) }
