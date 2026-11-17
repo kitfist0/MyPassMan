@@ -20,6 +20,12 @@ data class Tag(
     // A default keeps backups made before tags had colors readable.
     val color: TagColor = TagColor.DEFAULT,
 ) {
+    /**
+     * Whether this tag is called [name], ignoring case: "Work" and "work" are the same tag. Done here
+     * rather than by the database, whose case folding (NOCASE) only covers ASCII letters.
+     */
+    fun hasName(name: String): Boolean = this.name.equals(name, ignoreCase = true)
+
     companion object {
         const val MAX_NAME_LENGTH = 25
 

@@ -227,6 +227,28 @@ class TagsViewModelTest {
             }
 
         @Test
+        fun nameOfExistingTagInAnotherCase_isTaken() =
+            runTest {
+                val vm = viewModel()
+                vm.showEditDialog(home)
+                vm.onTagNameChange("WORK")
+                advanceUntilIdle()
+
+                assertTrue(vm.dialog.isNameTaken)
+            }
+
+        @Test
+        fun ownNameInAnotherCase_isNotTaken() =
+            runTest {
+                val vm = viewModel()
+                vm.showEditDialog(work)
+                vm.onTagNameChange("Work")
+                advanceUntilIdle()
+
+                assertFalse(vm.dialog.isNameTaken)
+            }
+
+        @Test
         fun ownName_isNotTaken() =
             runTest {
                 val vm = viewModel()

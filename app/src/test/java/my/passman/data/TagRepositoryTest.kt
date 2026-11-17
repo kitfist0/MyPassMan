@@ -17,7 +17,7 @@ class TagRepositoryTest {
     private val tagDao =
         mockk<TagDao>(relaxUnitFun = true) {
             coEvery { upsertTag(any()) } returns tag.id
-            coEvery { getTagByName(any()) } returns null
+            coEvery { getTagsList() } returns listOf(tag)
         }
     private val changeTracker =
         mockk<VaultChangeTracker> {
@@ -48,23 +48,38 @@ class TagRepositoryTest {
     @Test
     fun saveTag_keepingItsOwnName_saves() =
         runTest {
-            coEvery { tagDao.getTagByName("work") } returns tag
-
             assertEquals(SaveTagResult.Saved, repository.saveTag(tag.copy(color = TagColor.RED)))
 
             coVerify(exactly = 1) { tagDao.upsertTag(tag.copy(color = TagColor.RED)) }
         }
 
     @Test
+    fun saveTag_changingOnlyTheCaseOfItsOwnName_saves() =
+        runTest {
+            assertEquals(SaveTagResult.Saved, repository.saveTag(tag.copy(name = "Work")))
+
+            coVerify(exactly = 1) { tagDao.upsertTag(tag.copy(name = "Work")) }
+        }
+
+    @Test
     fun saveTag_withNameOfAnotherTag_isRejectedWithoutWriting() =
         runTest {
-            coEvery { tagDao.getTagByName("work") } returns tag
-
             assertEquals(SaveTagResult.NameTaken, repository.saveTag(Tag(uuid = "tag-new", name = "work")))
             assertEquals(SaveTagResult.NameTaken, repository.saveTag(Tag(id = 4, uuid = "tag-4", name = "work")))
 
             coVerify(exactly = 0) { tagDao.upsertTag(any()) }
             coVerify(exactly = 0) { changeTracker.recordChange(any<suspend () -> Any?>()) }
+        }
+
+    @Test
+    fun saveTag_withNameOfAnotherTagInAnotherCase_isRejected() =
+        runTest {
+            coEvery { tagDao.getTagsList() } returns listOf(tag, Tag(id = 5, uuid = "tag-5", name = "Работа"))
+
+            assertEquals(SaveTagResult.NameTaken, repository.saveTag(Tag(uuid = "tag-new", name = "WORK")))
+            assertEquals(SaveTagResult.NameTaken, repository.saveTag(Tag(uuid = "tag-new", name = "работа")))
+
+            coVerify(exactly = 0) { tagDao.upsertTag(any()) }
         }
 
     @Test

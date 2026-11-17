@@ -12,6 +12,7 @@ import my.passman.data.TagColor
 import my.passman.data.TagDao
 import my.passman.data.VaultChangeTracker
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -32,8 +33,6 @@ class BackupManagerTest {
     private val tagDao =
         mockk<TagDao>(relaxUnitFun = true) {
             coEvery { getTagsList() } returns payload.tags
-            coEvery { getTagByUuid(any()) } returns null
-            coEvery { getTagByName(any()) } returns null
             coEvery { insertTag(any()) } returns NEW_TAG_ID
         }
     private val changeTracker =
@@ -71,6 +70,11 @@ class BackupManagerTest {
 
     @Nested
     inner class Import {
+        @BeforeEach
+        fun noLocalTags() {
+            coEvery { tagDao.getTagsList() } returns emptyList()
+        }
+
         private suspend fun import(payload: BackupManager.BackupPayload) {
             backupManager.importDatabase(backupManager.encryptPayload(payload, PASSWORD.toCharArray()), PASSWORD.toCharArray())
         }
@@ -111,7 +115,7 @@ class BackupManagerTest {
         fun tagKnownByUuid_keepsItsLocalNameAndColor() =
             runTest {
                 // Renamed and recolored on this device since the backup was made.
-                coEvery { tagDao.getTagByUuid(WORK) } returns Tag(id = 9, uuid = WORK, name = "job", color = TagColor.RED)
+                coEvery { tagDao.getTagsList() } returns listOf(Tag(id = 9, uuid = WORK, name = "job", color = TagColor.RED))
 
                 import(payload)
 
@@ -123,14 +127,30 @@ class BackupManagerTest {
         @Test
         fun tagWithLocalNameButAnotherUuid_reusesLocalTag() =
             runTest {
-                // The same name created independently on another device.
-                coEvery { tagDao.getTagByName("work") } returns Tag(id = 9, uuid = "local-work", name = "work", color = TagColor.RED)
+                // The same name, in another case, created independently on another device.
+                coEvery { tagDao.getTagsList() } returns listOf(Tag(id = 9, uuid = "local-work", name = "Work", color = TagColor.RED))
 
                 import(payload)
 
                 coVerify(exactly = 0) { tagDao.insertTag(any()) }
                 coVerify(exactly = 0) { tagDao.upsertTag(any()) }
                 coVerify(exactly = 1) { recordDao.upsertRecord(payload.records.single().copy(id = 0, tagUuid = "local-work")) }
+            }
+
+        @Test
+        fun tagsOfTheSameNameInOneBackup_becomeOneTag() =
+            runTest {
+                val other = record(id = 2, uuid = "card", modified = 2L, tagUuid = "other-work")
+
+                import(
+                    BackupManager.BackupPayload(
+                        records = payload.records + other,
+                        tags = payload.tags + Tag(id = 2, uuid = "other-work", name = "WORK"),
+                    ),
+                )
+
+                coVerify(exactly = 1) { tagDao.insertTag(any()) }
+                coVerify(exactly = 1) { recordDao.upsertRecord(other.copy(id = 0, tagUuid = WORK)) }
             }
 
         @Test

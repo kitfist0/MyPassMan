@@ -14,9 +14,6 @@ interface TagDao {
     @Query("SELECT * FROM tags WHERE uuid = :uuid")
     suspend fun getTagByUuid(uuid: String): Tag?
 
-    @Query("SELECT * FROM tags WHERE name = :name")
-    suspend fun getTagByName(name: String): Tag?
-
     @Query("SELECT * FROM tags")
     fun getAllTags(): Flow<List<Tag>>
 

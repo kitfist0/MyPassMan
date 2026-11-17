@@ -99,7 +99,7 @@ class TagsViewModel @Inject constructor(
                 else -> return false
             }
         val name = dialogState.tagName.trim()
-        return tags.any { it.name == name && it.id != editedId }
+        return tags.any { it.hasName(name) && it.id != editedId }
     }
 
     fun onDeleteDialogConfirmButtonClick(tag: Tag) {

@@ -73,17 +73,20 @@ class BackupManager @Inject constructor(
 
     /**
      * Merges a backup into the vault. Row ids only mean something on the device that made them, so
-     * nothing is matched by id. A tag is matched by [Tag.uuid], then by its unique name, and an
+     * nothing is matched by id. A tag is matched by [Tag.uuid], then by name ([Tag.hasName]), and an
      * existing tag keeps its local name and color (tags carry no edit time to pick a winner by).
      * Records are matched by [Record.uuid], where the newer [Record.modified] wins, and point at
      * the local uuids of their tags.
      */
     private suspend fun mergeIntoVault(payload: BackupPayload) {
+        val localTags = tagDao.getTagsList().toMutableList()
         val localTagUuids =
             payload.tags.associate { tag ->
-                val local = tagDao.getTagByUuid(tag.uuid) ?: tagDao.getTagByName(tag.name)
-                if (local == null) tagDao.insertTag(tag.copy(id = 0))
-                tag.uuid to (local?.uuid ?: tag.uuid)
+                val local =
+                    localTags.find { it.uuid == tag.uuid }
+                        ?: localTags.find { it.hasName(tag.name) }
+                        ?: tag.copy(id = tagDao.insertTag(tag.copy(id = 0))).also(localTags::add)
+                tag.uuid to local.uuid
             }
         payload.records.forEach { record ->
             val existing = recordDao.getRecordByUuid(record.uuid)
